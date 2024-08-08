@@ -20,6 +20,7 @@
 
 <script setup lang="ts">
 import { useVueFlow, useNode, Position, Handle } from '@vue-flow/core';
+
 const { removeNodes } = useVueFlow();
 
 const node = useNode();
@@ -31,4 +32,5 @@ const closeNode = () => {
     removeNodes(node.id)
   }
 }
+
 </script>
