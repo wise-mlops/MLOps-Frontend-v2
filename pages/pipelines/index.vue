@@ -5,7 +5,7 @@
     <LayoutPageToolbar :links="toolbarLinks" />
     <ModuleDataTable v-model:columns="pipelineColumns" v-model:data="data" v-model:pending="pending">\
       <template #expand="{ row }" :on-click="test">
-        <div class="px-8 bg-slate-100">
+        <div class="px-8 bg-slate-100 dark:bg-slate-800">
           <PipelinesPipelineVersionList v-model:pipeline-id="row.pipeline_id" />
         </div>
       </template>
@@ -41,7 +41,7 @@
       </template>
       <template #action-data="{ row }">
         <div>
-          <UButton icon="i-heroicons-pencil-square" variant="ghost" class="px-2 py-0" />
+          <UButton @click="detailPipeline" icon="i-heroicons-pencil-square" variant="ghost" class="px-2 py-0" />
         </div>
       </template>
     </ModuleDataTable>
@@ -73,6 +73,10 @@ const reloadPipelines = () => {
   pending.value = true;
   data.value = []
   loadPipelies();
+}
+
+const detailPipeline = (pipelineId: string) => {
+  navigateTo(`/pipelines/details/${pipelineId}`)
 }
 
 onMounted(() => {
