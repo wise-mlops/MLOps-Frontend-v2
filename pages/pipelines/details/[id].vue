@@ -9,7 +9,8 @@
         <UCard class="min-h-10 mb-4">
           <div class="space-y-4">
             <UFormGroup label="NAME" name="pipeline_name" class="py-0">
-              <UInput v-model="pipeline.name" placeholder="Input Name" variant="outline" size="md" autocomplete="false">
+              <UInput v-model="pipeline.display_name" placeholder="Input Name" variant="outline" size="md"
+                autocomplete="false">
               </UInput>
             </UFormGroup>
             <UFormGroup label="Description" name="pipeline_description" class="py-0">
@@ -35,12 +36,7 @@
 const router = useRouter();
 const route = useRoute()
 
-const pipeline = ref({
-  name: '',
-  description: '',
-  pipeline: {},
-  nodeInfo: {},
-})
+const pipeline = ref({})
 
 const breadcrumbs = ref([
   {
@@ -57,9 +53,18 @@ const breadcrumbs = ref([
 ])
 const pageTitle = ref('Pipeline details')
 const pipelineId = ref(route.params.id)
+const pipelineVersion = route.query.version ? route.query.version.toString() : ''
+
+const loadPipelineDetails = async () => {
+  console.log(pipelineId.value)
+  // const response = await getPipelineDetails(pipelineId.value, pipelineVersion.value)
+  // pipeline.value = response.result ? response.result : {}
+
+}
 
 onBeforeMount(() => {
-  console.log(pipelineId);
+  loadPipelineDetails()
+
 })
 
 

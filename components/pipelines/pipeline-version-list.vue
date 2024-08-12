@@ -4,9 +4,15 @@
       :loading-state="{ icon: 'i-heroicons-arrow-path', label: 'Loading' }"
       :progress="{ color: 'primary', animation: 'carousel' }"
       :empty-state="{ icon: 'i-heroicons-circle-stack', label: 'No items.' }">
-      <template #loading-state>
-        <div class="flex items-center justify-center h-12">
-
+      <template #created_at-data="{ row }">
+        <div>
+          {{ new Date(row.created_at).toLocaleString() }}
+        </div>
+      </template>
+      <template #action-data="{ row }">
+        <div>
+          <UButton @click="pipelineVersionDetail(row.pipeline_id, row.pipeline_version_id)"
+            icon="i-heroicons-pencil-square" variant="ghost" class="px-2 py-0" />
         </div>
       </template>
     </UTable>
@@ -25,6 +31,10 @@ const loadPipelineVersion = async () => {
   pending.value = false;
 }
 
+const pipelineVersionDetail = (pipelineId: string, pipelineVersion: string) => {
+  navigateTo(`/pipelines/details/${pipelineId}?version=${pipelineVersion}`);
+}
+
 onMounted(() => {
   loadPipelineVersion();
 })
@@ -39,7 +49,7 @@ const pipelineVersionColumns = ref([
     label: '최종갱신'
   },
   {
-    key: 'detail',
+    key: 'action',
     label: '상세보기'
   },
 ])

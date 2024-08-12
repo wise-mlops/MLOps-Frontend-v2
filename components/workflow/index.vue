@@ -66,9 +66,13 @@ const onAddNode = () => {
       y: (Math.random() * dimensions.value.height) / 3
     },
     data: {
-      attributes: {
+      attribute: {
 
+      },
+      toolbar: {
+        position: 'right'
       }
+
     }
   })
 

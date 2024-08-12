@@ -11,7 +11,7 @@
       </template>
       <template #display_name-data="{ row }">
         <UPopover mode="hover">
-          <div class="truncate w-96">
+          <div class="truncate max-w-64">
             {{ row.display_name ? row.display_name : '' }}
           </div>
           <template #panel>
@@ -23,7 +23,7 @@
       </template>
       <template #description-data="{ row }">
         <UPopover mode="hover">
-          <div class="truncate w-96">
+          <div class="truncate max-w-64">
             {{ row.description ? row.description : '' }}
           </div>
           <template #panel>
@@ -40,9 +40,10 @@
         </div>
       </template>
       <template #action-data="{ row }">
-        <div>
-          <UButton @click="detailPipeline" icon="i-heroicons-pencil-square" variant="ghost" class="px-2 py-0" />
-        </div>
+        <UTooltip text="detail">
+          <UButton @click="pipelineDetail(row.pipeline_id)" icon="i-heroicons-pencil-square" variant="ghost"
+            class="px-2 py-0" />
+        </UTooltip>
       </template>
     </ModuleDataTable>
   </div>
@@ -75,7 +76,7 @@ const reloadPipelines = () => {
   loadPipelies();
 }
 
-const detailPipeline = (pipelineId: string) => {
+const pipelineDetail = (pipelineId: string) => {
   navigateTo(`/pipelines/details/${pipelineId}`)
 }
 

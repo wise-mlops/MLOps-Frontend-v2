@@ -9,11 +9,13 @@
         <UCard class="min-h-10 mb-4">
           <div class="space-y-4">
             <UFormGroup label="NAME" name="pipeline_name" class="py-0">
-              <UInput v-model="pipeline.name" placeholder="Input Name" variant="outline" size="md" autocomplete="false">
+              <UInput v-model="pipeline.pipeline_id" placeholder="Input Name" variant="outline" size="md"
+                autocomplete="false">
               </UInput>
             </UFormGroup>
             <UFormGroup label="Description" name="pipeline_description" class="py-0">
-              <UInput v-model="pipeline.description" placeholder="Input Description" size="md" autocomplete="false">
+              <UInput v-model="pipeline.pipeline_description" placeholder="Input Description" size="md"
+                autocomplete="false">
               </UInput>
             </UFormGroup>
           </div>
@@ -33,13 +35,20 @@
 
 <script setup lang="ts">
 
-
 const router = useRouter();
+import { useVueFlow } from '@vue-flow/core';
+const { toObject } = useVueFlow()
 const pipeline = ref({
-  name: '',
-  description: '',
-  pipeline: {},
-  nodeInfo: {},
+  pipeline_id: '',
+  pipeline_name: '',
+  pipeline_description: '',
+  nodes: [],
+  edges: [],
+  position: [],
+  zoom: 0,
+  viewport: {},
+  created_at: new Date(),
+  updated_at: new Date(),
 })
 
 const breadcrumbs = ref([
@@ -57,6 +66,31 @@ const breadcrumbs = ref([
 ])
 const pageTitle = ref('Add Pipeline')
 
+const savePipeline = async () => {
+  const pipelineObject = toObject();
+  pipeline.value.nodes = pipelineObject.nodes;
+  pipeline.value.edges = pipelineObject.edges;
+  pipeline.value.position = pipelineObject.position;
+  pipeline.value.zoom = pipelineObject.zoom;
+  pipeline.value.viewport = pipelineObject.viewport;
+
+  createPipeline(pipeline.value)
+    .then(res => {
+      console.log(res)
+      // if (res && res.code == 102200) {
+      //   navigateTo(`/pipelines`, {
+      //     replace: true,
+      //     redirectCode: 301,
+      //     external: true
+      //   })
+      // } else {
+      //   alert("오류[" + res.code + "]: " + res.message)
+      // }
+    })
+
+}
+
+
 
 // toolbar links  
 const toolbarLinks = ref([
@@ -71,7 +105,7 @@ const toolbarLinks = ref([
     {
       label: '등록',
       icon: 'i-heroicons-plus-circle',
-
+      click: savePipeline
     },
   ]
 ])
