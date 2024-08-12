@@ -36,10 +36,10 @@ const links = [
     icon: 'i-heroicons-document-text',
     to: '/notebooks'
   },
-  {
-    label: 'ENDPOINTS',
-    icon: 'i-heroicons-share',
-    to: '/notebooks'
-  }
+  // {
+  //   label: 'ENDPOINTS',
+  //   icon: 'i-heroicons-share',
+  //   to: '/notebooks'
+  // }
 ]
 </script>

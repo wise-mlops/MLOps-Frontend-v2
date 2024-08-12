@@ -28,11 +28,11 @@ const breadcrumbs = ref([
     to: '/experiments/'
   },
   {
-    label: 'Detail',
+    label: 'Details',
   },
 ])
 
-const pageTitle = ref('Edit Experiment')
+const pageTitle = ref('Experiment details')
 const experimentId = ref(route.params.id)
 
 onBeforeMount(() => {

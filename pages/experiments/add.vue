@@ -6,7 +6,7 @@
     <UCard class="min-h-10">
       <div class="space-y-4">
         <UFormGroup label="NAME" name="experiment_name" class="py-2">
-          <UInput v-model="experiment.name" placeholder="Input Name" variant="outline" 2 />
+          <UInput v-model="experiment.name" placeholder="Input Name" variant="outline" />
         </UFormGroup>
         <UFormGroup label="Description" name="experiment_description" class="py-2">
           <UInput v-model="experiment.description" placeholder="Input Description" size="md" autocomplete="off" />

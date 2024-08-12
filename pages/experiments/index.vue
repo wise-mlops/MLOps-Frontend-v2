@@ -36,7 +36,7 @@
       <template #action-data="{ row }">
         <div>
           <UTooltip text="detail">
-            <UButton @click="editExperiment(row.experiment_id)" icon="i-heroicons-pencil-square" variant="ghost"
+            <UButton @click="detailExperiment(row.experiment_id)" icon="i-heroicons-pencil-square" variant="ghost"
               class="px-2 py-0" />
           </UTooltip>
         </div>
@@ -73,7 +73,7 @@ const reloadExperiments = () => {
   loadExperiments();
 }
 
-const editExperiment = (experimentId: string) => {
+const detailExperiment = (experimentId: string) => {
   navigateTo(`/experiments/details/${experimentId}`)
 }
 
