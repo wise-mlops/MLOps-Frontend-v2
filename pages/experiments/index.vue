@@ -6,7 +6,7 @@
     <ModuleDataTable v-model:columns="experimentColumns" v-model:data="data" v-model:pending="pending">
       <template #display_name-data="{ row }">
         <UPopover mode="hover">
-          <div class="truncate w-96">
+          <div class="truncate max-w-96">
             {{ row.display_name ? row.display_name : '' }}
           </div>
           <template #panel>
@@ -18,7 +18,7 @@
       </template>
       <template #description-data="{ row }">
         <UPopover mode="hover">
-          <div class="truncate w-96">
+          <div class="truncate max-w-96">
             {{ row.description ? row.description : '' }}
           </div>
           <template #panel>

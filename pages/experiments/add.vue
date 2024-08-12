@@ -42,7 +42,7 @@ const breadcrumbs = ref([
 ])
 const pageTitle = ref('Add Experiment')
 
-const createtExperiment = async () => {
+const saveExperiment = async () => {
   console.log(experiment)
   createExperiment(experiment)
     .then(res => {
@@ -71,7 +71,7 @@ const toolbarLinks = ref([
     {
       label: '등록',
       icon: 'i-heroicons-plus-circle',
-      click: createtExperiment
+      click: saveExperiment
     },
   ]
 ])

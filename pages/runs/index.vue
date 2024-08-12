@@ -6,7 +6,7 @@
     <ModuleDataTable v-model:columns="pipelineColumns" v-model:data="data" v-model:pending="pending">
       <template #display_name-data="{ row }">
         <UPopover mode="hover">
-          <div class="truncate w-96">
+          <div class="truncate max-w-64">
             {{ row.display_name ? row.display_name : '' }}
           </div>
           <template #panel>
@@ -26,6 +26,19 @@
           {{ new Date(row.created_at).toLocaleString() }}
         </div>
       </template>
+      <template #experiment_id-data="{ row }">
+        <UPopover mode="hover">
+          <div class="truncate max-w-64">
+            {{ row.experiment_id ? row.experiment_id : '' }}
+          </div>
+          <template #panel>
+            <div class="text-wrap p-4">
+              {{ row.experiment_id ? row.experiment_id : '' }}
+            </div>
+          </template>
+        </UPopover>
+      </template>
+
       <template #pipeline_spec-data="{ row }">
         {{ row.pipeline_spec.pipelineInfo.name }}
       </template>
