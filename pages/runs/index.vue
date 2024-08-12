@@ -81,7 +81,7 @@ const toolbarLinks = ref([
     {
       label: '등록',
       icon: 'i-heroicons-pencil-square-solid',
-
+      to: '/runs/add'
     }]
 ])
 
