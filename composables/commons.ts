@@ -5,3 +5,65 @@ const config = useAppConfig()
 
 
 
+/* Convert Json to Yaml */
+export const jsonToYaml = (jsonData: string) => {
+  // Parse the JSON string into a JavaScript object
+  const data = JSON.parse(jsonData);
+
+  // Helper function to convert a JavaScript object to a YAML string
+  const convertToYaml = (obj: any, indent: number = 0) => {
+    let yamlString = '';
+    const indentSpaces = ' '.repeat(indent);
+
+    if (typeof obj === 'object' && obj !== null) {
+      // If obj is an array, iterate through each element
+      if (Array.isArray(obj)) {
+        for (const element of obj) {
+          yamlString += `${indentSpaces}- ${convertToYaml(element, indent + 2)}`;
+        }
+      } else {
+        // Check if object contains only one key
+        const keys = Object.keys(obj);
+        const keyCount = keys.length;
+
+        for (let i = 0; i < keyCount; i++) {
+          const key = keys[i];
+          const value = obj[key];
+
+          // Check if the value is an object or array
+          if (typeof value === 'object' && value !== null) {
+            // Add key and colon
+            yamlString += `${indentSpaces}${key}:`;
+            // Check if the object has only one key
+            const childKeys = Object.keys(value);
+            const childKeyCount = childKeys.length;
+            if (childKeyCount === 1 && typeof value[childKeys[0]] !== 'object') {
+              // If the child object has only one key, keep value on the same line
+              yamlString += ` ${JSON.stringify(value[childKeys[0]])}\n`;
+            } else {
+              // Otherwise, proceed with normal indentation
+              yamlString += `\n${convertToYaml(value, indent + 2)}`;
+            }
+          } else {
+            // Convert primitive types (string, number, boolean, null)
+            yamlString += `${indentSpaces}${key}: ${JSON.stringify(value)}\n`;
+          }
+        }
+      }
+    } else {
+      // Convert primitive types (string, number, boolean, null)
+      if (obj === null) {
+        yamlString += 'null\n';
+      } else if (typeof obj === 'boolean') {
+        yamlString += `${obj}\n`;
+      } else {
+        yamlString += `${JSON.stringify(obj)}\n`;
+      }
+    }
+
+    return yamlString;
+  }
+
+  // Convert the data object to a YAML string
+  return convertToYaml(data);
+}

@@ -26,7 +26,7 @@
             <UButton @click="detail(row.name)" icon="i-heroicons-pencil-square" variant="ghost" class="px-2 py-0" />
           </UTooltip>
           <UTooltip text="connect">
-            <UButton @click="detail(row.name)" icon="i-heroicons-link" variant="ghost" class="px-2 py-0" />
+            <UButton @click="connect(row.connect)" icon="i-heroicons-link" variant="ghost" class="px-2 py-0" />
           </UTooltip>
           <UTooltip text="delete">
             <UButton icon="i-heroicons-trash" variant="ghost" class="px-2 py-0" />
@@ -65,7 +65,11 @@ const reloadNotebooks = () => {
 }
 
 const detail = (notebookName: string) => {
-  console.log(notebookName)
+  navigateTo(`/notebooks/detail/${notebookName}`)
+}
+
+const connect = (connect: string) => {
+  navigateTo(connect, { external: true, open: { target: '_blank' } })
 }
 
 onMounted(() => {
