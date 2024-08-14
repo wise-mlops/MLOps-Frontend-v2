@@ -44,6 +44,10 @@
           <UButton @click="pipelineDetail(row.pipeline_id)" icon="i-heroicons-pencil-square" variant="ghost"
             class="px-2 py-0" />
         </UTooltip>
+        <UTooltip text="delete">
+          <UButton @click="deletePipeline(row.pipeline_id)" icon="i-heroicons-trash" variant="ghost"
+            class="px-2 py-0" />
+        </UTooltip>
       </template>
     </ModuleDataTable>
   </div>
@@ -78,6 +82,19 @@ const reloadPipelines = () => {
 
 const pipelineDetail = (pipelineId: string) => {
   navigateTo(`/pipelines/details/${pipelineId}`)
+}
+
+const deletePipeline = async (pipelineId: string) => {
+  if (confirm('delete?')) {
+    const response = await removePipeline(pipelineId)
+
+    if (response.code == 102200) {
+      alert(`deleted`)
+      reloadPipelines();
+    } else {
+      alert("오류[" + response.code + "]: " + response.message + ' ' + response.result)
+    }
+  }
 }
 
 onMounted(() => {

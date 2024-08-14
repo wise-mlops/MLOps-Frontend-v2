@@ -9,7 +9,7 @@
         <UCard class="min-h-10 mb-4">
           <div class="space-y-4">
             <UFormGroup label="NAME" name="pipeline_name" class="py-0">
-              <UInput v-model="pipeline.pipeline_id" placeholder="Input Name" variant="outline" size="md"
+              <UInput v-model="pipeline.pipeline_name" placeholder="Input Name" variant="outline" size="md"
                 autocomplete="false">
               </UInput>
             </UFormGroup>
@@ -24,7 +24,7 @@
       <template #pipeline="{ item }">
         <!-- <UCard class="min-h-10"> -->
         <div class="w-full h-96 relative border">
-          <Workflow />
+          <Workflow :isEditable="true" />
         </div>
         <!-- </UCard> -->
       </template>
@@ -39,7 +39,7 @@ const router = useRouter();
 import { useVueFlow } from '@vue-flow/core';
 const { toObject } = useVueFlow()
 const pipeline = ref({
-  pipeline_id: '',
+
   pipeline_name: '',
   pipeline_description: '',
   nodes: [],
@@ -68,24 +68,26 @@ const pageTitle = ref('Add Pipeline')
 
 const savePipeline = async () => {
   const pipelineObject = toObject();
+
   pipeline.value.nodes = pipelineObject.nodes;
   pipeline.value.edges = pipelineObject.edges;
   pipeline.value.position = pipelineObject.position;
   pipeline.value.zoom = pipelineObject.zoom;
   pipeline.value.viewport = pipelineObject.viewport;
+  console.log(pipeline.value)
 
   createPipeline(pipeline.value)
     .then(res => {
       console.log(res)
-      // if (res && res.code == 102200) {
-      //   navigateTo(`/pipelines`, {
-      //     replace: true,
-      //     redirectCode: 301,
-      //     external: true
-      //   })
-      // } else {
-      //   alert("오류[" + res.code + "]: " + res.message)
-      // }
+      if (res && res.code == 100200) {
+        navigateTo(`/pipelines`, {
+          replace: true,
+          redirectCode: 301,
+          external: true
+        })
+      } else {
+        alert("오류[" + res.code + "]: " + res.message)
+      }
     })
 
 }

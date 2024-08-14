@@ -9,12 +9,12 @@
         <UCard class="min-h-10 mb-4">
           <div class="space-y-4">
             <UFormGroup label="NAME" name="pipeline_name" class="py-0">
-              <UInput v-model="pipeline.display_name" placeholder="Input Name" variant="outline" size="md"
+              <UInput v-model="pipelineInfo.display_name" placeholder="Input Name" variant="outline" size="md"
                 autocomplete="false">
               </UInput>
             </UFormGroup>
             <UFormGroup label="Description" name="pipeline_description" class="py-0">
-              <UInput v-model="pipeline.description" placeholder="Input Description" size="md" autocomplete="false">
+              <UInput v-model="pipelineInfo.description" placeholder="Input Description" size="md" autocomplete="false">
               </UInput>
             </UFormGroup>
           </div>
@@ -23,7 +23,7 @@
       <template #pipeline="{ item }">
         <!-- <UCard class="min-h-10"> -->
         <div class="w-full h-96 relative border">
-          <Workflow />
+          <Workflow v-model="pipeline" :pannelOpen="false" />
         </div>
         <!-- </UCard> -->
       </template>
@@ -36,6 +36,7 @@
 const router = useRouter();
 const route = useRoute()
 
+const pipelineInfo = ref({})
 const pipeline = ref({})
 
 const breadcrumbs = ref([
@@ -53,18 +54,24 @@ const breadcrumbs = ref([
 ])
 const pageTitle = ref('Pipeline details')
 const pipelineId = ref(route.params.id)
-const pipelineVersion = route.query.version ? route.query.version.toString() : ''
+const pipelineVersion = ref(route.query.version ? route.query.version.toString() : '')
 
 const loadPipelineDetails = async () => {
-  console.log(pipelineId.value)
-  // const response = await getPipelineDetails(pipelineId.value, pipelineVersion.value)
-  // pipeline.value = response.result ? response.result : {}
 
+  if (!pipelineVersion.value) {
+    let pipelineVersions = await getPipelineVersions(pipelineId.value);
+    pipelineVersion.value = pipelineVersions.result['pipeline_versions'][0]['pipeline_version_id']
+    console.log(pipelineVersion.value);
+  }
+
+  let pipelineVersionDetail = await getPipelineVersionDetails(pipelineId.value, pipelineVersion.value);
+  pipelineInfo.value = pipelineVersionDetail.result ? pipelineVersionDetail.result : {}
+  let pipelineDetail = await getPipelineDetails(pipelineId.value, pipelineVersion.value)
+  pipeline.value = pipelineDetail.result;
 }
 
 onBeforeMount(() => {
   loadPipelineDetails()
-
 })
 
 

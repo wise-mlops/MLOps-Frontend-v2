@@ -10,10 +10,15 @@
         </div>
       </template>
       <template #action-data="{ row }">
-        <div>
+        <UTooltip text="detail">
           <UButton @click="pipelineVersionDetail(row.pipeline_id, row.pipeline_version_id)"
             icon="i-heroicons-pencil-square" variant="ghost" class="px-2 py-0" />
-        </div>
+        </UTooltip>
+        <UTooltip text="delete">
+          <UButton @click="deletePipelineVersion(row.pipeline_id, row.pipeline_version_id)" icon="i-heroicons-trash"
+            variant="ghost" class="px-2 py-0" />
+        </UTooltip>
+
       </template>
     </UTable>
   </div>
@@ -27,12 +32,24 @@ const pipelineVersions = ref<any>([])
 const loadPipelineVersion = async () => {
   pending.value = true;
   const response = await getPipelineVersions(pipelineId.value)
-  pipelineVersions.value = response.result ? response.result.pipeline_versions : []
+  pipelineVersions.value = response.result.pipeline_versions ? response.result.pipeline_versions : []
   pending.value = false;
 }
 
 const pipelineVersionDetail = (pipelineId: string, pipelineVersion: string) => {
   navigateTo(`/pipelines/details/${pipelineId}?version=${pipelineVersion}`);
+}
+
+const deletePipelineVersion = async (pipelineId: string, pipelineVersion: string) => {
+  if (confirm('delete?')) {
+    const response = await removePipelineVersion(pipelineId, pipelineVersion)
+    if (response.code == 102200) {
+      alert(`deleted`)
+      loadPipelineVersion()
+    } else {
+      alert("오류[" + response.code + "]: " + response.message + ' ' + response.result)
+    }
+  }
 }
 
 onMounted(() => {

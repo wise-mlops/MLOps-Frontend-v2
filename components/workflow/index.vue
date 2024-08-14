@@ -1,8 +1,9 @@
 <template>
   <!--VueFlow-->
   <div class="h-full " id="main-canvas">
-    <VueFlow :nodes="nodes" :edges="edges" :nodeTypes="nodeTypes">
-      <Panel position="top-left" v-show="true">
+    <VueFlow :nodes="pipeline ? pipeline.nodes : nodes" :edges="pipeline ? pipeline.edges : edges"
+      :nodeTypes="nodeTypes">
+      <Panel v-if="isEditable" position="top-left" v-show="true">
         <UDropdown :items="pannelItems" :popper="{ placement: 'bottom-start' }">
           <UButton label="Action" trailing-icon="i-heroicons-chevron-down-20-solid" />
         </UDropdown>
@@ -12,7 +13,7 @@
       <Background />
       <MiniMap />
     </VueFlow>
-    <WorkflowNodeInfo v-model:isOpen="isSideOpen" v-model:node="currentNode" />
+    <WorkflowNodeInfo v-model:isOpen="isSideOpen" v-model:node="currentNode" :isEditable="isEditable" />
   </div>
 </template>
 
@@ -30,15 +31,23 @@ const isSideOpen = ref(false);
 const currentNode = ref<Node>();
 const currentEdge = ref<Edge>();
 
+const pipeline = defineModel();
+const isEditable = defineModel('isEditable', { default: false });
+console.log(isEditable.value)
+
 const nodeTypes = ref<any>({
   'CustomNode': markRaw(CustomNode)
-
 })
+
+const nodeAttrbute = ref({
+  type: '',
+  model_name: ''
+})
+
 
 onNodeClick((event: NodeMouseEvent) => {
   isSideOpen.value = true;
   currentNode.value = event.node;
-
 })
 
 onEdgeClick((event: EdgeMouseEvent) => {
@@ -46,13 +55,23 @@ onEdgeClick((event: EdgeMouseEvent) => {
 })
 
 onConnect((params: Connection) => {
+
   const source = params.source;
   const target = params.target;
   if (source == target) {
     console.log('Can not connect itselft')
     return;
   }
+
+  params.sourceHandle = "__handle-" + Position.Left
+  params.targetHandle = "__handle-" + Position.Right
+  params.data = {
+    text: 'test'
+  }
+  params.markerEnd = 'arrowclosed'
+  console.log(params)
   addEdges(params)
+
 })
 
 const onAddNode = () => {
@@ -82,6 +101,11 @@ const onAddNode = () => {
 const removeAll = () => {
   removeNodes(nodes.value);
 }
+
+
+onMounted(() => {
+
+})
 
 const pannelItems = ref([
   [

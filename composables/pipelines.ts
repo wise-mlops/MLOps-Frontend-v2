@@ -21,7 +21,6 @@ export const getPipelineVersions = async ( pipelineId: string | string[] ) => {
 
 export const getPipelineDetails = async ( pipeline_id: string | string[], version: string ) => {
   let url = encodeURI(`/pipeline/${pipeline_id}`)
-  console.log(url)
   const response = await $fetch<ResponseBody>(url, {
     method: 'GET',
     baseURL: config.api.url
@@ -44,9 +43,42 @@ export const createPipeline = async ( pipeline: any ) => {
     headers: { "Content-type": "application/json" },
     method: 'POST',
     baseURL: config.api.url,
+    params: {
+      start_run: false
+    },
     body: pipeline
   }
   const response = await $fetch<ResponseBody>(url, options as object)
 
   return response
 }
+
+export const removePipeline = async ( pipeline_id : string ) => {
+  let url = encodeURI(`/kfp/pipelines/${pipeline_id}`)
+  const response = await $fetch<ResponseBody>(url, {
+    method: 'DELETE',
+    baseURL: config.api.url
+  })
+  return response;
+}
+
+export const removePipelineVersion = async ( pipeline_id : string , pipeline_version_id: string) =>  {
+  let url = encodeURI(`/kfp/pipelines/versions/${pipeline_id}/${pipeline_version_id}`)
+  const response = await $fetch<ResponseBody>(url, {
+    method: 'DELETE',
+    baseURL: config.api.url
+  })
+  return response;
+}
+
+export const getPipelineComponentTypes = async () => {
+  let url = encodeURI(`/workflow/component_type`);
+  const response = await $fetch<ResponseBody>(url, {
+    method: 'GET',
+    baseURL: config.api.url
+  })
+  return response;
+}
+
+
+
