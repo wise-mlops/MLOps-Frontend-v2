@@ -8,20 +8,29 @@
         <UFormGroup label="Pipeline" name="pipeline_name" class="py-2">
           <UButtonGroup size="md" orientation="horizontal">
             <UInput placeholder="Pipeline name" size="md" autocomplete="off" class="w-96" />
-            <UButton icon="i-heroicons-magnifying-glass" autocomplete="off" />
+            <UButton icon="i-heroicons-magnifying-glass" autocomplete="off" @click="pipelineModalOpen = true" />
           </UButtonGroup>
+          <UModal v-model="pipelineModalOpen">
+            <ModalPipelines />
+          </UModal>
         </UFormGroup>
         <UFormGroup label="Pipeline version" name="pipeline_version" class="py-2">
           <UButtonGroup size="md" orientation="horizontal">
             <UInput placeholder="Pipeline version" size="md" autocomplete="off" class="w-96" />
-            <UButton icon="i-heroicons-magnifying-glass" autocomplete="off" />
+            <UButton icon="i-heroicons-magnifying-glass" autocomplete="off" @click="pipelineVersionModalOpen = true" />
           </UButtonGroup>
+          <UModal v-model="pipelineVersionModalOpen">
+            <ModalPipelineVersions />
+          </UModal>
         </UFormGroup>
         <UFormGroup label="experiment" name="experiment_name" class="py-2">
           <UButtonGroup size="md" orientation="horizontal">
             <UInput placeholder="experiment" size="md" autocomplete="off" class="w-96" />
-            <UButton icon="i-heroicons-magnifying-glass" autocomplete="off" />
+            <UButton icon="i-heroicons-magnifying-glass" autocomplete="off" @click="experimentModalOpen = true" />
           </UButtonGroup>
+          <UModal v-model="experimentModalOpen">
+            <ModalExperiments />
+          </UModal>
         </UFormGroup>
         <UFormGroup label="Run name" name="run_name" class="py-2">
           <UInput placeholder="Run name" size="md" autocomplete="off" />
@@ -131,6 +140,9 @@ const run = ref({
   }
 })
 
+const pipelineModalOpen = ref(false);
+const pipelineVersionModalOpen = ref(false);
+const experimentModalOpen = ref(false);
 
 const runTypes = ref([
   { label: 'Once', value: 'once' },
