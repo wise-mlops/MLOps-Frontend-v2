@@ -68,7 +68,7 @@ const data = ref([])
 
 const loadRuns = async () => {
   const response = await getRuns(null);
-  data.value = response.result ? response.result.runs : []
+  data.value = response.result ? response.result.result : []
   console.log(data)
   pending.value = false;
 }
