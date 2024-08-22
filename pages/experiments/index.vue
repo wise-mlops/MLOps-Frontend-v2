@@ -63,7 +63,7 @@ const data = ref([])
 
 const loadExperiments = async () => {
   const response = await getExperiments()
-  data.value = response.result ? response.result.experiments : []
+  data.value = response.result ? response.result.result : []
   pending.value = false;
 }
 

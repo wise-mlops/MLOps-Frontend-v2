@@ -3,5 +3,6 @@ declare global {
     code: number;
     message? : string;
     result: any;
+    description?: string;
   }  
 }

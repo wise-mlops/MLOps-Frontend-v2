@@ -11,9 +11,9 @@
         <UFormGroup label="Description" name="experiment_description" class="py-2">
           <UInput v-model="experiment.description" placeholder="Input Description" size="md" autocomplete="off" />
         </UFormGroup>
-        <UFormGroup class="py-2">
+        <!-- <UFormGroup class="py-2">
           <UCheckbox v-model="experiment.createRun" name="createRun" label="Run after Register" disabled />
-        </UFormGroup>
+        </UFormGroup> -->
       </div>
     </UCard>
   </div>
@@ -24,7 +24,7 @@ const router = useRouter();
 const experiment = ref({
   name: '',
   description: '',
-  createRun: false
+  // createRun: false
 })
 
 const breadcrumbs = ref([
@@ -46,7 +46,7 @@ const saveExperiment = async () => {
   console.log(experiment)
   createExperiment(experiment)
     .then(res => {
-      if (res && res.code == 102200) {
+      if (res && res.code == 101200) {
         navigateTo(`/experiments`, {
           replace: true,
           redirectCode: 301,

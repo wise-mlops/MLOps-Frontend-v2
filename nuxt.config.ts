@@ -5,7 +5,8 @@ export default defineNuxtConfig({
       title: 'WISE MLOps'
     },
     api: {
-      url: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/api/'
+      // url: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/api/'
+      url: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/api-v2/'
     }
   },
   colorMode: {
