@@ -57,11 +57,10 @@ const pipelineId = ref(route.params.id)
 const pipelineVersion = ref(route.query.version ? route.query.version.toString() : '')
 
 const loadPipelineDetails = async () => {
-
   if (!pipelineVersion.value) {
     let pipelineVersions = await getPipelineVersions(pipelineId.value);
-    pipelineVersion.value = pipelineVersions.result['pipeline_versions'][0]['pipeline_version_id']
-    console.log(pipelineVersion.value);
+
+    pipelineVersion.value = pipelineVersions.result.result[0]['pipeline_version_id']
   }
 
   let pipelineVersionDetail = await getPipelineVersionDetails(pipelineId.value, pipelineVersion.value);

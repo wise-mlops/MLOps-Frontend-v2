@@ -32,7 +32,7 @@ const pipelineVersions = ref<any>([])
 const loadPipelineVersion = async () => {
   pending.value = true;
   const response = await getPipelineVersions(pipelineId.value)
-  pipelineVersions.value = response.result.pipeline_versions ? response.result.pipeline_versions : []
+  pipelineVersions.value = response.result ? response.result.result : []
   pending.value = false;
 }
 
@@ -43,7 +43,7 @@ const pipelineVersionDetail = (pipelineId: string, pipelineVersion: string) => {
 const deletePipelineVersion = async (pipelineId: string, pipelineVersion: string) => {
   if (confirm('delete?')) {
     const response = await removePipelineVersion(pipelineId, pipelineVersion)
-    if (response.code == 102200) {
+    if (response.code == 101200) {
       alert(`deleted`)
       loadPipelineVersion()
     } else {

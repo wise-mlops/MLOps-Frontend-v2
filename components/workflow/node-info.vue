@@ -71,8 +71,7 @@ const componentTypes = ref([]);
 const getComponentTypes = async () => {
   const response = await getPipelineComponentTypes()
   componentTypes.value = response.result ? response.result : []
-  componentTypes.value.push("load_data")
-  componentTypes.value.push("train_model")
+
 }
 
 onMounted(() => {

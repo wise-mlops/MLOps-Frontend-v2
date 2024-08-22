@@ -70,7 +70,7 @@ const data = ref([])
 
 const loadPipelies = async () => {
   const response = await getPipelines();
-  data.value = response.result ? response.result.pipelines : []
+  data.value = response.result ? response.result.result : []
   pending.value = false;
 }
 
@@ -88,7 +88,7 @@ const deletePipeline = async (pipelineId: string) => {
   if (confirm('delete?')) {
     const response = await removePipeline(pipelineId)
 
-    if (response.code == 102200) {
+    if (response.code == 101200) {
       alert(`deleted`)
       reloadPipelines();
     } else {

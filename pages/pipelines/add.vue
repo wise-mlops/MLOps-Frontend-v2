@@ -74,7 +74,7 @@ const savePipeline = async () => {
   pipeline.value.position = pipelineObject.position;
   pipeline.value.zoom = pipelineObject.zoom;
   pipeline.value.viewport = pipelineObject.viewport;
-  console.log(pipeline.value)
+  console.log(JSON.stringify(pipeline.value))
 
   createPipeline(pipeline.value)
     .then(res => {
