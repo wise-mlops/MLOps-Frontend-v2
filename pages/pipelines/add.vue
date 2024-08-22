@@ -38,15 +38,14 @@
 const router = useRouter();
 import { useVueFlow } from '@vue-flow/core';
 const { toObject } = useVueFlow()
-const pipeline = ref({
-
+const pipeline = ref<Pipeline>({
   pipeline_name: '',
   pipeline_description: '',
   nodes: [],
   edges: [],
-  position: [],
+  position: [0, 0],
   zoom: 0,
-  viewport: {},
+  viewport: { x: 0, y: 0, zoom: 0 },
   created_at: new Date(),
   updated_at: new Date(),
 })
