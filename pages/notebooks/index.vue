@@ -53,8 +53,7 @@ const data = ref([])
 
 const loadNotebooks = async () => {
   const response = await getNotebooks('kubeflow-user-example-com')
-  data.value = response.result ? response.result : []
-  console.log(data.value)
+  data.value = response.result ? response.result.result : []
   pending.value = false;
 }
 
