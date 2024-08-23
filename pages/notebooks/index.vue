@@ -9,7 +9,7 @@
           <UBadge color="green" :ui="{ rounded: 'rounded-full' }">running</UBadge>
         </div>
         <div v-else-if="row.status.hasOwnProperty('waiting')">
-          <UBadge color="orange" :ui="{ rounded: 'rounded-full' }">waiting</UBadge>
+          <UBadge color="yellow" :ui="{ rounded: 'rounded-full' }">waiting</UBadge>
         </div>
         <div v-else>
           <UBadge color="gray" :ui="{ rounded: 'rounded-full' }">unknown</UBadge>
@@ -20,16 +20,33 @@
           {{ new Date(row.created_at).toLocaleString() }}
         </div>
       </template>
+      <template #image-data="{ row }">
+        <UPopover mode="hover">
+          <div class="truncate max-w-64">
+            {{ row.image ? row.image : '' }}
+          </div>
+          <template #panel>
+            <div class="text-wrap p-4">
+              {{ row.image ? row.image : '' }}
+            </div>
+          </template>
+        </UPopover>
+      </template>
       <template #action-data="{ row }">
         <div>
           <UTooltip text="detail">
-            <UButton @click="detail(row.name)" icon="i-heroicons-pencil-square" variant="ghost" class="px-2 py-0" />
+            <UButton @click="detail(row.name)" icon="i-heroicons-pencil-square" variant="ghost" class="p-1 mx-2" />
           </UTooltip>
           <UTooltip text="connect">
-            <UButton @click="connect(row.connect)" icon="i-heroicons-link" variant="ghost" class="px-2 py-0" />
+            <div v-if="row.status.hasOwnProperty('running')">
+              <UButton @click="connect(row.connect)" icon="i-heroicons-link" variant="ghost" class="p-1 mx-2" />
+            </div>
+            <div v-else>
+              <UButton icon="i-heroicons-link" variant="ghost" class="p-1 mx-2" disabled />
+            </div>
           </UTooltip>
           <UTooltip text="delete">
-            <UButton icon="i-heroicons-trash" variant="ghost" class="px-2 py-0" />
+            <UButton @click="deleteNotebook(row.name)" icon="i-heroicons-trash" variant="ghost" class="p-1 mx-2" />
           </UTooltip>
         </div>
       </template>
@@ -70,6 +87,19 @@ const detail = (notebookName: string) => {
 const connect = (connect: string) => {
   navigateTo(connect, { external: true, open: { target: '_blank' } })
 }
+
+const deleteNotebook = async (notebookName: string) => {
+  if (confirm('delete?')) {
+    const response = await removeNotebook('kubeflow-user-example-com', notebookName);
+    if (response.code == 103200) {
+      alert(`deleted`)
+      reloadNotebooks()
+    } else {
+      alert("오류[" + response.code + "]: " + response.message + ' ' + JSON.stringify(response.result))
+    }
+  }
+}
+
 
 onMounted(() => {
   loadNotebooks();
