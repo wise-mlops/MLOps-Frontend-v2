@@ -264,7 +264,7 @@ const addNotebook = async () => {
 
   createNotebook('kubeflow-user-example-com', notebook)
     .then(response => {
-      if (response && response.code == 103200) {
+      if (response && response.code == 130200) {
         navigateTo(`/notebooks`, {
           replace: true,
           redirectCode: 301,

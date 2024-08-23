@@ -88,7 +88,7 @@ const deletePipeline = async (pipelineId: string) => {
   if (confirm('delete?')) {
     const response = await removePipeline(pipelineId)
 
-    if (response.code == 101200) {
+    if (response.code == 130200) {
       alert(`deleted`)
       reloadPipelines();
     } else {

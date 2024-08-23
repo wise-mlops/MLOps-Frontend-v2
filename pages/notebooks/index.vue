@@ -91,7 +91,7 @@ const connect = (connect: string) => {
 const deleteNotebook = async (notebookName: string) => {
   if (confirm('delete?')) {
     const response = await removeNotebook('kubeflow-user-example-com', notebookName);
-    if (response.code == 103200) {
+    if (response.code == 130200) {
       alert(`deleted`)
       reloadNotebooks()
     } else {

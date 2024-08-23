@@ -44,7 +44,7 @@ const pageTitle = ref('Add Experiment')
 
 const saveExperiment = async () => {
   const response = await createExperiment(experiment)
-  if (response.code == 101200) {
+  if (response.code == 130200) {
     navigateTo(`/experiments`, {
       replace: true,
       redirectCode: 301,

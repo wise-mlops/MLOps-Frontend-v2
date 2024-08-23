@@ -76,7 +76,7 @@ const savePipeline = async () => {
   console.log(JSON.stringify(pipeline.value))
 
   const response = await createPipeline(pipeline.value)
-  if (response.code == 101200) {
+  if (response.code == 130200) {
     navigateTo(`/pipelines`, {
       replace: true,
       redirectCode: 301,

@@ -43,7 +43,7 @@ const pipelineVersionDetail = (pipelineId: string, pipelineVersion: string) => {
 const deletePipelineVersion = async (pipelineId: string, pipelineVersion: string) => {
   if (confirm('delete?')) {
     const response = await removePipelineVersion(pipelineId, pipelineVersion)
-    if (response.code == 101200) {
+    if (response.code == 130200) {
       alert(`deleted`)
       loadPipelineVersion()
     } else {

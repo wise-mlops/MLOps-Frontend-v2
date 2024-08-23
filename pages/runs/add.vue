@@ -184,7 +184,7 @@ const addRun = async () => {
   run.value.version_id = runForm.value.pipeline_version.pipeline_version_id
 
   const response = await createRun(run);
-  if (response.code == 101200) {
+  if (response.code == 130200) {
     navigateTo(`/runs`, {
       replace: true,
       redirectCode: 301,
