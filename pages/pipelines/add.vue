@@ -1,10 +1,12 @@
 <template>
-  <div class="w-full">
+  <div class="w-full h-full flex flex-col">
     <LayoutPageBreadcrumb :breadcrumbs="breadcrumbs" />
     <LayoutPageHeader :title="pageTitle" />
     <LayoutPageToolbar :links="toolbarLinks" />
 
-    <UTabs :items="tabItems" :ui="{ list: { width: 'w-96' } }">
+    <UTabs :items="tabItems"
+      :ui="{ container: 'relative w-full grow', list: { width: 'w-96' }, base: 'focus:outline-none h-full' }"
+      class="grow flex flex-col">
       <template #info="{ item }">
         <UCard class="min-h-10 mb-4">
           <div class="space-y-4">
@@ -23,7 +25,7 @@
       </template>
       <template #pipeline="{ item }">
         <!-- <UCard class="min-h-10"> -->
-        <div class="w-full h-96 relative border">
+        <div class="w-full h-full border">
           <Workflow :isEditable="true" />
         </div>
         <!-- </UCard> -->

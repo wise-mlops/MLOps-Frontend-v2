@@ -1,14 +1,16 @@
 <template>
-  <div class="w-full">
+  <div class="w-full h-full flex flex-col">
     <LayoutPageBreadcrumb :breadcrumbs="breadcrumbs" />
     <LayoutPageHeader :title="pageTitle" />
     <LayoutPageToolbar :links="toolbarLinks" />
-    <UTabs :items="tabItems" :ui="{ list: { width: 'w-96' } }">
+    <UTabs :items="tabItems"
+      :ui="{ container: 'relative w-full grow', list: { width: 'w-96' }, base: 'focus:outline-none h-full' }"
+      class="grow flex flex-col">
       <template #info="{ item }">
 
       </template>
       <template #pipeline="{ item }">
-        <div class="w-full h-96 relative border">
+        <div class="w-full h-full border">
           <Workflow v-model="pipeline" :pannelOpen="false" />
         </div>
       </template>

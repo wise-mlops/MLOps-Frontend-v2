@@ -9,7 +9,7 @@
           <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark-20-solid" @click="closeNode" />
         </div>
       </template>
-      <div>
+      <div class="min-h-5">
         <UChip v-if="node.node.data.state" size="md" inset :color="getColor(node.node.data.state)">
           <UAvatar icon="i-heroicons-document-text" size="md" />
         </UChip>

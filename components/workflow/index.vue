@@ -1,6 +1,6 @@
 <template>
   <!--VueFlow-->
-  <div class="h-full " id="main-canvas">
+  <div class="w-full h-full grow" id="main-canvas">
     <VueFlow :nodes="pipeline ? pipeline.nodes : nodes" :edges="pipeline ? pipeline.edges : edges"
       :nodeTypes="nodeTypes">
       <Panel v-if="isEditable" position="top-left" v-show="true">
