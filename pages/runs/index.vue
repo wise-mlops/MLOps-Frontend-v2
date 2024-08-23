@@ -28,7 +28,7 @@
       </template>
       <template #experiment_id-data="{ row }">
         <UPopover mode="hover">
-          <div class="truncate max-w-64">
+          <div class="truncate max-w-36">
             {{ row.experiment_id ? row.experiment_id : '' }}
           </div>
           <template #panel>
@@ -40,11 +40,14 @@
       </template>
 
       <template #pipeline_spec-data="{ row }">
-        {{ row.pipeline_spec.pipelineInfo.name }}
+        {{ row.pipeline_spec ? row.pipeline_spec.pipelineInfo.name : '' }}
       </template>
       <template #detail-data="{ row }">
         <div>
-          <UButton>상세보기</UButton>
+          <UTooltip text="detail">
+            <UButton @click="detailRuns(row.run_id)" icon="i-heroicons-pencil-square" variant="ghost"
+              class="p-1 mx-2" />
+          </UTooltip>
         </div>
       </template>
 
@@ -69,7 +72,6 @@ const data = ref([])
 const loadRuns = async () => {
   const response = await getRuns(null);
   data.value = response.result ? response.result.result : []
-  console.log(data)
   pending.value = false;
 }
 
@@ -78,6 +80,11 @@ const reloadRuns = () => {
   data.value = []
   loadRuns();
 }
+
+const detailRuns = (run_id: string) => {
+  navigateTo(`/runs/details/${run_id}`)
+}
+
 
 onMounted(() => {
   loadRuns();

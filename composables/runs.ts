@@ -10,6 +10,29 @@ export const getRuns = async ( experiment_id : string | string[] | null) => {
     method: 'GET',
     baseURL: config.api.url,
   })
-  console.log(response)
   return response;
+}
+
+export const getRunDetails = async( run_id: string | string[] ) => {
+  
+  let url = encodeURI(`/workflows/runs/${run_id}`)
+  const response = await $fetch<ResponseBody>(url, {
+    method: 'GET',
+    baseURL: config.api.url,
+  })
+  
+  return response;
+}
+
+export const createRun = async ( body: any ) => {
+  let url = encodeURI(`/workflows/runs`);
+  const options = {
+    headers: { "Content-type": "application/json" },
+    method: 'POST',
+    baseURL: config.api.url,
+    body: body.value
+  }
+  const response = await $fetch<ResponseBody>(url, options as object)
+
+  return response
 }
