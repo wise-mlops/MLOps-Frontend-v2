@@ -92,7 +92,7 @@ const deletePipeline = async (pipelineId: string) => {
       alert(`deleted`)
       reloadPipelines();
     } else {
-      alert("오류[" + response.code + "]: " + response.message + ' ' + response.result)
+      alert("오류[" + response.code + "]: " + response.message + ' ' + JSON.stringify(response.result))
     }
   }
 }

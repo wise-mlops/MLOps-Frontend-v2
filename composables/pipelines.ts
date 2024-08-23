@@ -28,7 +28,6 @@ export const getPipelineDetails = async ( pipeline_id: string | string[], versio
     method: 'GET',
     baseURL: config.api.url
   })
-  console.log(response)
   return response;
 }
 
@@ -66,7 +65,6 @@ export const removePipeline = async ( pipeline_id : string ) => {
     method: 'DELETE',
     baseURL: config.api.url
   })
-  console.log(response)
   return response;
 }
 
@@ -77,7 +75,6 @@ export const removePipelineVersion = async ( pipeline_id : string , version_id: 
     method: 'DELETE',
     baseURL: config.api.url
   })
-  console.log(response)
   return response;
 }
 

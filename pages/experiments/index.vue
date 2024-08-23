@@ -37,7 +37,7 @@
         <div>
           <UTooltip text="detail">
             <UButton @click="detailExperiment(row.experiment_id)" icon="i-heroicons-pencil-square" variant="ghost"
-              class="px-2 py-0" />
+              class="p-1 mx-2" />
           </UTooltip>
         </div>
       </template>

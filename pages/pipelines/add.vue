@@ -75,20 +75,16 @@ const savePipeline = async () => {
   pipeline.value.viewport = pipelineObject.viewport;
   console.log(JSON.stringify(pipeline.value))
 
-  createPipeline(pipeline.value)
-    .then(res => {
-      console.log(res)
-      if (res && res.code == 100200) {
-        navigateTo(`/pipelines`, {
-          replace: true,
-          redirectCode: 301,
-          external: true
-        })
-      } else {
-        alert("오류[" + res.code + "]: " + res.message)
-      }
+  const response = await createPipeline(pipeline.value)
+  if (response.code == 101200) {
+    navigateTo(`/pipelines`, {
+      replace: true,
+      redirectCode: 301,
+      external: true
     })
-
+  } else {
+    alert("오류[" + response.code + "]: " + response.message)
+  }
 }
 
 

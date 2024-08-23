@@ -43,19 +43,16 @@ const breadcrumbs = ref([
 const pageTitle = ref('Add Experiment')
 
 const saveExperiment = async () => {
-  console.log(experiment)
-  createExperiment(experiment)
-    .then(res => {
-      if (res && res.code == 101200) {
-        navigateTo(`/experiments`, {
-          replace: true,
-          redirectCode: 301,
-          external: true
-        })
-      } else {
-        alert("오류[" + res.code + "]: " + res.message)
-      }
+  const response = await createExperiment(experiment)
+  if (response.code == 101200) {
+    navigateTo(`/experiments`, {
+      replace: true,
+      redirectCode: 301,
+      external: true
     })
+  } else {
+    alert("오류[" + response.code + "]: " + response.message)
+  }
 }
 
 // toolbar links  
