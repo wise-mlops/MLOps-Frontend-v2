@@ -33,7 +33,6 @@ const currentEdge = ref<Edge>();
 
 const pipeline = defineModel();
 const isEditable = defineModel('isEditable', { default: false });
-console.log(isEditable.value)
 
 const nodeTypes = ref<any>({
   'CustomNode': markRaw(CustomNode)
@@ -69,9 +68,7 @@ onConnect((params: Connection) => {
     text: 'test'
   }
   params.markerEnd = 'arrowclosed'
-  console.log(params)
   addEdges(params)
-
 })
 
 const onAddNode = () => {

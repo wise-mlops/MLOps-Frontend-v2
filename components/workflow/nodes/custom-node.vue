@@ -10,6 +10,9 @@
         </div>
       </template>
       <div>
+        <UChip v-if="node.node.data.state" size="md" inset :color="getColor(node.node.data.state)">
+          <UAvatar icon="i-heroicons-document-text" size="md" />
+        </UChip>
       </div>
     </UCard>
     <Handle type="source" :position="Position.Bottom" />
@@ -26,6 +29,20 @@ const { removeNodes } = useVueFlow();
 const node = useNode();
 const nodeId = ref<string>(node.id);
 
+const getColor = (state: string) => {
+  switch (state) {
+    case 'SUCCEEDED':
+      return 'green'
+    case 'PENDING':
+      return 'amber'
+    case 'RUNNING':
+      return 'blue'
+    case 'FAILED':
+      return 'red'
+    default:
+      return 'gray'
+  }
+}
 
 const closeNode = () => {
   if (confirm('delete?')) {

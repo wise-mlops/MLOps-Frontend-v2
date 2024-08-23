@@ -55,7 +55,6 @@ const isEditable = defineModel('isEditable', { default: false })
 const saveAttribute = () => {
 
   node.value.label = label.value
-  console.log(componentType)
   let attribute = {
     type: componentType.value,
     ...params.value
@@ -85,7 +84,6 @@ watch(watchOpen, () => {
     const { type, ...param } = node.value.data.attribute;
     componentType.value = type;
     params.value = param;
-    console.log(params.value)
   }
 })
 
