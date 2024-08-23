@@ -42,11 +42,13 @@
       <template #pipeline_spec-data="{ row }">
         {{ row.pipeline_spec ? row.pipeline_spec.pipelineInfo.name : '' }}
       </template>
-      <template #detail-data="{ row }">
+      <template #action-data="{ row }">
         <div>
           <UTooltip text="detail">
-            <UButton @click="detailRuns(row.run_id)" icon="i-heroicons-pencil-square" variant="ghost"
-              class="p-1 mx-2" />
+            <UButton @click="detailRun(row.run_id)" icon="i-heroicons-pencil-square" variant="ghost" class="p-1 mx-2" />
+          </UTooltip>
+          <UTooltip text="delete">
+            <UButton @click="deleteRun(row.run_id)" icon="i-heroicons-trash" variant="ghost" class="px-2 py-0" />
           </UTooltip>
         </div>
       </template>
@@ -81,10 +83,22 @@ const reloadRuns = () => {
   loadRuns();
 }
 
-const detailRuns = (run_id: string) => {
+const detailRun = (run_id: string) => {
   navigateTo(`/runs/details/${run_id}`)
 }
 
+const deleteRun = async (run_id: string) => {
+  if (confirm('delete?')) {
+    const response = await removeRun(run_id)
+
+    if (response.code == 130200) {
+      alert(`deleted`)
+      reloadRuns();
+    } else {
+      alert("오류[" + response.code + "]: " + response.message + ' ' + JSON.stringify(response.result))
+    }
+  }
+}
 
 onMounted(() => {
   loadRuns();
@@ -131,8 +145,8 @@ const pipelineColumns = ref([
     label: 'Pipeline'
   },
   {
-    key: 'detail',
-    label: '상세보기'
+    key: 'action',
+    label: '작업'
   },
 ])
 </script>

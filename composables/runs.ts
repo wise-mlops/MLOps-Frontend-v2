@@ -36,3 +36,12 @@ export const createRun = async ( body: any ) => {
 
   return response
 }
+
+export const removeRun = async ( run_id: string ) => {
+  let url = encodeURI(`/workflows/runs/${run_id}`)
+  const response = await $fetch<ResponseBody>(url, {
+    method: 'DELETE',
+    baseURL: config.api.url
+  })
+  return response;
+}
