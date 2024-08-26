@@ -77,7 +77,7 @@ const pipelineVersionColumns = ref([
   },
   {
     key: 'action',
-    label: '상세보기'
+    label: '선택'
   },
 ])
 

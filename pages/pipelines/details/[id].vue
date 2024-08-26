@@ -11,12 +11,13 @@
         <UCard class="min-h-10 mb-4">
           <div class="space-y-4">
             <UFormGroup label="NAME" name="pipeline_name" class="py-0">
-              <UInput v-model="pipelineInfo.display_name" placeholder="Input Name" variant="outline" size="md"
+              <UInput v-model="pipelineInfo.pipeline_name" placeholder="Input Name" variant="outline" size="md"
                 autocomplete="false">
               </UInput>
             </UFormGroup>
             <UFormGroup label="Description" name="pipeline_description" class="py-0">
-              <UInput v-model="pipelineInfo.description" placeholder="Input Description" size="md" autocomplete="false">
+              <UInput v-model="pipelineInfo.pipeline_description" placeholder="Input Description" size="md"
+                autocomplete="false">
               </UInput>
             </UFormGroup>
           </div>
@@ -40,8 +41,8 @@ const route = useRoute()
 
 const pipelineInfo = ref({
   ...{},
-  display_name: '',
-  description: ''
+  pipeline_name: '',
+  pipeline_description: ''
 })
 const pipeline = ref<Pipeline>()
 
@@ -65,12 +66,13 @@ const pipelineVersion = ref(route.query.version ? route.query.version.toString()
 const loadPipelineDetails = async () => {
   if (!pipelineVersion.value) {
     let pipelineVersions = await getPipelineVersions(pipelineId.value);
+
     pipelineVersion.value = pipelineVersions.result.result[0]['pipeline_version_id']
   }
 
   let pipelineVersionDetail = await getPipelineVersionDetails(pipelineId.value, pipelineVersion.value);
   pipelineInfo.value = pipelineVersionDetail.result ? pipelineVersionDetail.result : {}
-
+  console.log(pipelineInfo.value)
   let pipelineDetail = await getPipelineDetails(pipelineId.value, pipelineVersion.value)
   pipeline.value = pipelineDetail.result;
 }

@@ -9,40 +9,40 @@
           <PipelinesPipelineVersionList v-model:pipeline-id="row.pipeline_id" />
         </div>
       </template>
-      <template #display_name-data="{ row }">
+      <template #pipeline_name-data="{ row }">
         <UPopover mode="hover">
           <div class="truncate max-w-64">
-            {{ row.display_name ? row.display_name : '' }}
+            {{ row.pipeline_name ? row.pipeline_name : '' }}
           </div>
           <template #panel>
             <div class="text-wrap p-4">
-              {{ row.display_name ? row.display_name : '' }}
+              {{ row.pipeline_name ? row.pipeline_name : '' }}
             </div>
           </template>
         </UPopover>
       </template>
-      <template #description-data="{ row }">
+      <template #pipeline_description-data="{ row }">
         <UPopover mode="hover">
           <div class="truncate max-w-64">
-            {{ row.description ? row.description : '' }}
+            {{ row.pipeline_description ? row.pipeline_description : '' }}
           </div>
           <template #panel>
             <div class="text-wrap p-4">
-              {{ row.description ? row.description : '' }}
+              {{ row.pipeline_description ? row.pipeline_description : '' }}
             </div>
           </template>
         </UPopover>
       </template>
 
-      <template #created_at-data="{ row }">
+      <template #updated_at-data="{ row }">
         <div>
-          {{ new Date(row.created_at).toLocaleString() }}
+          {{ new Date(row.updated_at).toLocaleString() }}
         </div>
       </template>
       <template #action-data="{ row }">
         <UTooltip text="detail">
-          <UButton @click="pipelineDetail(row.pipeline_id)" icon="i-heroicons-pencil-square" variant="ghost"
-            class="px-2 py-0" />
+          <UButton @click="pipelineDetail(row.pipeline_id, row.last_version_id)" icon="i-heroicons-pencil-square"
+            variant="ghost" class="px-2 py-0" />
         </UTooltip>
         <UTooltip text="delete">
           <UButton @click="deletePipeline(row.pipeline_id)" icon="i-heroicons-trash" variant="ghost"
@@ -71,6 +71,7 @@ const data = ref([])
 const loadPipelies = async () => {
   const response = await getPipelines();
   data.value = response.result ? response.result.result : []
+  console.log(data.value)
   pending.value = false;
 }
 
@@ -80,8 +81,8 @@ const reloadPipelines = () => {
   loadPipelies();
 }
 
-const pipelineDetail = (pipelineId: string) => {
-  navigateTo(`/pipelines/details/${pipelineId}`)
+const pipelineDetail = (pipelineId: string, pipelineVersion: string) => {
+  navigateTo(`/pipelines/details/${pipelineId}?version=${pipelineVersion}`);
 }
 
 const deletePipeline = async (pipelineId: string) => {
@@ -124,15 +125,15 @@ const toolbarLinks = ref([
 
 const pipelineColumns = ref([
   {
-    key: 'display_name',
+    key: 'pipeline_name',
     label: '이름'
   },
   {
-    key: 'description',
+    key: 'pipeline_description',
     label: '설명'
   },
   {
-    key: 'created_at',
+    key: 'updated_at',
     label: '최종갱신'
   },
   {
