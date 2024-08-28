@@ -1,9 +1,10 @@
 <template>
   <div>
     <UTable :rows="pipelineVersions" :columns="pipelineVersionColumns" :loading="pending"
-      :loading-state="{ icon: 'i-heroicons-arrow-path', label: 'Loading' }"
+      :loading-state="{ icon: 'i-heroicons-arrow-path', label: '' }"
       :progress="{ color: 'primary', animation: 'carousel' }"
-      :empty-state="{ icon: 'i-heroicons-circle-stack', label: 'No items.' }">
+      :empty-state="{ icon: 'i-heroicons-circle-stack', label: 'No items.' }"
+      :ui="{ loadingState: { wrapper: 'py-0' } }">
       <template #created_at-data="{ row }">
         <div>
           {{ new Date(row.created_at).toLocaleString() }}
