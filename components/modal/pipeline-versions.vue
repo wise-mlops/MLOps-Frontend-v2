@@ -12,7 +12,7 @@
         </template>
         <template #action-data="{ row }">
           <UTooltip text="select">
-            <UButton @click="selectPipelineVersion(row.pipeline_version_id, row.display_name)"
+            <UButton @click="selectPipelineVersion(row.version_id, row.pipeline_name)"
               icon="i-heroicons-arrow-right-start-on-rectangle" variant="ghost" class="p-1 mx-2" />
           </UTooltip>
         </template>
@@ -50,6 +50,7 @@ const loadPipelineVersions = async () => {
 
   const response = await getPipelineVersions(pipeline.value.pipeline_id)
   data.value = response.result ? response.result.result : []
+  console.log(data.value)
   pending.value = false;
 }
 
@@ -68,7 +69,7 @@ onMounted(() => {
 
 const pipelineVersionColumns = ref([
   {
-    key: 'display_name',
+    key: 'pipeline_name',
     label: '이름'
   },
   {

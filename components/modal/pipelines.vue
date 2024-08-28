@@ -84,7 +84,7 @@ const pipelineColumns = ref([
     label: '최종갱신'
   },
   {
-    key: '선택',
+    key: 'action',
     label: '작업'
   },
 ])
