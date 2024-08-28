@@ -6,14 +6,29 @@
     <UTabs :items="tabItems"
       :ui="{ container: 'relative w-full grow', list: { width: 'w-96' }, base: 'focus:outline-none h-full' }"
       class="grow flex flex-col">
-      <template #info="{ item }">
-
-      </template>
       <template #pipeline="{ item }">
         <div class="w-full h-full border">
           <Workflow v-model="pipeline" :pannelOpen="false" />
         </div>
       </template>
+      <template #info="{ item }">
+        <UCard class="min-h-64">
+          <template #header>
+            <div>Run Details</div>
+          </template>
+          <div>
+            <ModuleLabelValue v-model="attribute" />
+          </div>
+        </UCard>
+      </template>
+      <template #detail="{ item }">
+        <UCard class="min-h-64">
+          <MonacoEditor v-model="detail" :options="{ readOnly: true, minimap: { enabled: false }, fontSize: 13 }"
+            class="w-full h-96" />
+
+        </UCard>
+      </template>
+
     </UTabs>
   </div>
 </template>
@@ -21,6 +36,45 @@
 <script setup lang="ts">
 const router = useRouter();
 const route = useRoute()
+
+
+const attribute = ref([
+  {
+    id: 'run_id',
+    label: 'Run ID',
+    value: ''
+  },
+  {
+    id: 'display_name',
+    label: 'Workflow name',
+    value: ''
+  },
+  {
+    id: 'state',
+    label: 'Status',
+    value: ''
+  },
+  {
+    id: 'description',
+    label: 'Description',
+    value: ''
+  },
+  {
+    id: 'created_at',
+    label: 'Created at',
+    value: ''
+  },
+  {
+    id: 'scheduled_at',
+    label: 'Started at',
+    value: ''
+  },
+  {
+    id: 'finished_at',
+    label: 'Finished at',
+    value: ''
+  }
+])
 
 const breadcrumbs = ref([
   {
@@ -36,11 +90,10 @@ const breadcrumbs = ref([
   },
 ])
 
-
-
 const pageTitle = ref('Run details')
 const pipeline = ref<Pipeline>()
 const runId = ref(route.params.id)
+const detail = ref<string>('')
 const runDetails = ref()
 
 const loadRunDetails = async () => {
@@ -48,6 +101,16 @@ const loadRunDetails = async () => {
   runDetails.value = response.result;
   let pipeline_id = runDetails.value.pipeline_version_reference.pipeline_id
   let pipeline_version = runDetails.value.pipeline_version_reference.pipeline_version_id
+  console.log(runDetails)
+  // information attribute 값 할당
+  attribute.value = attribute.value.map((item: any) => ({
+    ...item,
+    value: runDetails.value[item.id] !== undefined ? runDetails.value[item.id] : item.value
+  }));
+
+
+  detail.value = JSON.stringify(runDetails.value.run_details, null, 2)
+  // pipeline 정보 
   const response2 = await getPipelineDetails(pipeline_id, pipeline_version)
   pipeline.value = response2.result
 
