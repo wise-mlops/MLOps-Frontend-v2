@@ -101,15 +101,16 @@ const loadRunDetails = async () => {
   runDetails.value = response.result;
   let pipeline_id = runDetails.value.pipeline_version_reference.pipeline_id
   let pipeline_version = runDetails.value.pipeline_version_reference.pipeline_version_id
-  console.log(runDetails)
+
   // information attribute 값 할당
   attribute.value = attribute.value.map((item: any) => ({
     ...item,
     value: runDetails.value[item.id] !== undefined ? runDetails.value[item.id] : item.value
   }));
 
-
+  // 상세정보 표시
   detail.value = JSON.stringify(runDetails.value.run_details, null, 2)
+
   // pipeline 정보 
   const response2 = await getPipelineDetails(pipeline_id, pipeline_version)
   pipeline.value = response2.result

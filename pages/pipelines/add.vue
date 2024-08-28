@@ -76,7 +76,6 @@ const savePipeline = async () => {
   // pipeline.value.zoom = pipelineObject.zoom;
   pipeline.value.zoom = 1
   pipeline.value.viewport = pipelineObject.viewport;
-  console.log(JSON.stringify(pipeline.value))
 
   const response = await createPipeline(pipeline.value)
   if (response.code == 130200) {

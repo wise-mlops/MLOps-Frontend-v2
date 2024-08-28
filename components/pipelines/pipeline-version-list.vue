@@ -33,7 +33,6 @@ const loadPipelineVersion = async () => {
   pending.value = true;
   const response = await getPipelineVersions(pipelineId.value)
   pipelineVersions.value = response.result ? response.result.result : []
-  console.log(pipelineVersions.value)
   pending.value = false;
 }
 

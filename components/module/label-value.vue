@@ -16,16 +16,6 @@
 const items = defineModel({ default: [] })
 const isEditable = defineModel('isEditable', { default: false })
 
-const tableData = ref([])
-
-
-const convertTableData = () => {
-  console.log(items)
-}
-
-onMounted(() => {
-  convertTableData()
-})
 
 const columns = ref([
   {

@@ -72,7 +72,7 @@ const loadPipelineDetails = async () => {
 
   let pipelineVersionDetail = await getPipelineVersionDetails(pipelineId.value, pipelineVersion.value);
   pipelineInfo.value = pipelineVersionDetail.result ? pipelineVersionDetail.result : {}
-  console.log(pipelineInfo.value)
+
   let pipelineDetail = await getPipelineDetails(pipelineId.value, pipelineVersion.value)
   pipeline.value = pipelineDetail.result;
 }

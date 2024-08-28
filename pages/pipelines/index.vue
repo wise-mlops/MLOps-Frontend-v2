@@ -71,7 +71,6 @@ const data = ref([])
 const loadPipelies = async () => {
   const response = await getPipelines();
   data.value = response.result ? response.result.result : []
-  console.log(data.value)
   pending.value = false;
 }
 
@@ -101,11 +100,6 @@ const deletePipeline = async (pipelineId: string) => {
 onMounted(() => {
   loadPipelies();
 })
-
-const test = () => {
-  console.log('test');
-}
-
 
 // toolbar links  
 const toolbarLinks = ref([
