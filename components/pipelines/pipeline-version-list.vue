@@ -11,11 +11,11 @@
       </template>
       <template #action-data="{ row }">
         <UTooltip text="detail">
-          <UButton @click="pipelineVersionDetail(row.pipeline_id, row.pipeline_version_id)"
-            icon="i-heroicons-pencil-square" variant="ghost" class="px-2 py-0" />
+          <UButton @click="pipelineVersionDetail(row.pipeline_id, row.version_id)" icon="i-heroicons-pencil-square"
+            variant="ghost" class="px-2 py-0" />
         </UTooltip>
         <UTooltip text="delete">
-          <UButton @click="deletePipelineVersion(row.pipeline_id, row.pipeline_version_id)" icon="i-heroicons-trash"
+          <UButton @click="deletePipelineVersion(row.pipeline_id, row.version_id)" icon="i-heroicons-trash"
             variant="ghost" class="px-2 py-0" />
         </UTooltip>
 
