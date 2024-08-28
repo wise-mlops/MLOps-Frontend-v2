@@ -4,12 +4,37 @@ const config = useAppConfig()
 
 
 
+export function arrayToYaml(arr: any[], indent: string = ''): string {
+  return arr.map(item => valueToYaml(item, indent)).join('\n');
+}
+
+function objectToYaml(obj: Record<string, any>, indent: string = ''): string {
+  return Object.entries(obj)
+    .map(([key, value]) => `${indent}${key}: ${valueToYaml(value, indent + '  ')}`)
+    .join('\n');
+} 
+
+function valueToYaml(value: any, indent: string = ''): string {
+  if (value === null || value === undefined) {
+    return 'null';
+  } else if (typeof value === 'string') {
+    return value.includes('\n') ? `|\n${indent}  ${value.replace(/\n/g, `\n${indent}  `)}` : `"${value}"`;
+  } else if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  } else if (Array.isArray(value)) {
+    return value.length === 0 ? '[]' : '\n' + value.map(v => `${indent}- ${valueToYaml(v, indent + '  ')}`).join('\n');
+  } else if (typeof value === 'object') {
+    return '\n' + objectToYaml(value, indent + '  ');
+  }
+  
+  return String(value);
+}
+
 
 /* Convert Json to Yaml */
 export const jsonToYaml = (jsonData: string) => {
   // Parse the JSON string into a JavaScript object
-  const data = JSON.parse(jsonData);
-
+  const data = JSON.parse(jsonData);  
   // Helper function to convert a JavaScript object to a YAML string
   const convertToYaml = (obj: any, indent: number = 0) => {
     let yamlString = '';

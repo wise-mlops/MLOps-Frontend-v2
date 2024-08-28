@@ -21,8 +21,8 @@
       </template>
       <template #yaml="{ item }">
         <UCard class="min-h-20 mb-4">
-          <MonacoEditor v-model="yamlString" :options="{ readOnly: true, minimap: { enabled: false }, fontSize: 13 }"
-            class="w-full h-96" />
+          <MonacoEditor v-model="yamlString" lang="yaml"
+            :options="{ readOnly: true, minimap: { enabled: false }, fontSize: 13 }" class="w-full h-96" />
         </UCard>
       </template>
 
@@ -57,8 +57,8 @@ const loadNotebookDetails = async () => {
   const response = await getNotebookDetails('kubeflow-user-example-com', notebookName.value)
 
   yaml.value = response.result ? response.result.yaml : []
-
-  yamlString.value = jsonToYaml(JSON.stringify(yaml.value))
+  // yamlString.value = jsonToYaml(JSON.stringify(yaml.value))
+  yamlString.value = arrayToYaml(yaml.value).replaceAll("\"", "");
 
 
 }
