@@ -59,7 +59,7 @@ onMounted(() => {
 
 const pipelineVersionColumns = ref([
   {
-    key: 'display_name',
+    key: 'pipeline_name',
     label: '이름'
   },
   {
