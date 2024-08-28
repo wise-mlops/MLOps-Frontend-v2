@@ -15,7 +15,7 @@
     :empty-state="{ icon: 'i-heroicons-circle-stack', label: 'No items.' }"
     :ui="{ th: { padding: 'p-2', size: 'text-xs' }, td: { padding: 'p-2', size: 'text-xs' } }" class="w-full">
     <template v-if="isEditable" #action-data="{ row }">
-      <div class="1/6 ">
+      <div class="w-1/6">
         <UButton icon="i-heroicons-x-mark" size="xs" variant="ghost" @click="deleteParam(row.key)" class="p-0" />
       </div>
     </template>
