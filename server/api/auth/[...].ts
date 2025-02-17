@@ -32,4 +32,5 @@ export default NuxtAuthHandler({
       // httpOptions: { agent: httpsAgent }
     }
   ],
+  secret: process.env.NUXT_AUTH_SECRET || 'default_secret',  
 })
