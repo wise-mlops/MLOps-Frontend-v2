@@ -24,4 +24,7 @@ export default defineNuxtConfig({
       diffEditor: 'MonacoDiffEditor'
     }
   },
+  auth: {
+    baseURL: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/api-v2/'
+  },
 })
