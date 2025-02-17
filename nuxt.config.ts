@@ -14,14 +14,14 @@ export default defineNuxtConfig({
   },
   compatibilityDate: '2024-04-03',
   devtools: { enabled: true },
-  modules: ["@nuxt/ui", 'nuxt-monaco-editor'],
+  modules: ["@nuxt/ui", 'nuxt-monaco-editor', '@sidebase/nuxt-auth'],
   ssr: false,
   monacoEditor: {
-    dest: '_monaco',
+    // dest: '_monaco',
     locale: 'ko',
     componentName: {
       codeEditor: 'MonacoEditor',
       diffEditor: 'MonacoDiffEditor'
     }
-  }
+  },
 })
