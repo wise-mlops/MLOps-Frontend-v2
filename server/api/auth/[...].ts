@@ -26,8 +26,8 @@ export default NuxtAuthHandler({
           image: profile.picture,
         }
       },
-      clientId: 'kubeflow-oidc-authservice',      
-      clientSecret: 'pUBnBOY80SnXgjibTYM9ZWNzY2xreNGQok',
+      clientId: process.env.DEX_CLIENT_ID,
+      clientSecret: process.env.DEX_CLIENT_SECRET,
 
       // httpOptions: { agent: httpsAgent }
     }

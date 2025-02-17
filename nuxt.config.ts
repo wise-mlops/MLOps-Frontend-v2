@@ -25,6 +25,6 @@ export default defineNuxtConfig({
     }
   },
   auth: {
-    baseURL: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/api-v2/'
+    baseURL: process.env.NUXT_AUTH_ORIGIN || 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/api-v2/'
   },
 })
