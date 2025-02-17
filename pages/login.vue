@@ -35,7 +35,7 @@ const handleLogin = async () => {
   try {
     const data = await signIn('dex', {
       redirect: true,
-      callbackUrl: '/main'
+      callbackUrl: '/'
     })
     // 로그인 성공 처리
     console.log(data)

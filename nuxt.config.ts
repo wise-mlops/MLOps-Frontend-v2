@@ -25,6 +25,6 @@ export default defineNuxtConfig({
     }
   },
   auth: {
-    baseURL: process.env.NUXT_AUTH_ORIGIN || 'http://local.dashboard.kubeflow.labs.wisenut.com/dex/auth'
+    baseURL: process.env.NUXT_AUTH_ORIGIN || 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/web-v2/'
   },
 })
