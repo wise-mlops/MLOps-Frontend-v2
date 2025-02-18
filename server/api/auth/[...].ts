@@ -6,6 +6,7 @@ export default NuxtAuthHandler({
       id: 'dex',
       name: 'Dex',
       type: 'oauth',
+      issuer: 'http://local.dashboard.kubeflow.labs.wisenut.com/dex/',
       wellKnown: 'http://local.dashboard.kubeflow.labs.wisenut.com/dex/.well-known/openid-configuration',
       authorization: { 
         url: 'http://local.dashboard.kubeflow.labs.wisenut.com/dex/auth',
