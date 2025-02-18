@@ -1,4 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+
+
 export default defineNuxtConfig({
   appConfig: {
     head: {
@@ -25,7 +27,19 @@ export default defineNuxtConfig({
     }
   },
   auth: {
-    // baseURL: process.env.NUXT_AUTH_ORIGIN || 'http://dex.auth.svc.cluster.local:5556/dex/auth'
-    baseURL: 'http://dex.auth.svc.cluster.local:5556/dex/auth'
-  },
+    isEnabled: true,
+    disableServerSideAuth: false,
+    originEnvKey: 'AUTH_ORIGIN',
+    baseURL: 'http://localhost:3000/api/auth',
+    provider: {  
+      type:'authjs',
+      trustHost: false,
+      defaultProvider: 'dex',
+      addDefaultCallbackUrl: true
+    },
+    sessionRefresh: {
+      enablePeriodically: true,
+      enableOnWindowFocus: true,
+    }
+  }
 })
