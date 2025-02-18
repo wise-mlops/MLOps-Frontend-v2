@@ -6,7 +6,7 @@ export default NuxtAuthHandler({
       id: 'dex',
       name: 'Dex',
       type: 'oauth',
-      // issuer: 'http://local.dashboard.kubeflow.labs.wisenut.com/dex',
+      issuer: 'http://dex.auth.svc.cluster.local:5556/dex/auth',
       wellKnown: 'https://local.dashboard.kubeflow.labs.wisenut.com/dex/.well-known/openid-configuration',
       // wellKnown: 'http://dex.auth.svc.cluster.local:5556/dex/.well-known/openid-configuration',
       authorization: { 
@@ -31,11 +31,15 @@ export default NuxtAuthHandler({
           image: profile.picture,
         }
       },
+      
       clientId: process.env.DEX_CLIENT_ID,
       clientSecret: process.env.DEX_CLIENT_SECRET,
 
       // httpOptions: { agent: httpsAgent }
     }
   ],
+  pages: {  
+    signIn: '/login'
+  },
   secret: process.env.NUXT_AUTH_SECRET || 'default_secret', 
 })
