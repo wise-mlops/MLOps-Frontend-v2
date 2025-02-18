@@ -37,6 +37,8 @@ export default NuxtAuthHandler({
       // httpOptions: { agent: httpsAgent }
     }
   ],
+  signinUrl: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/web-v2/api/auth/signin/dex',
+  callbackUrl: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/web-v2/api/auth/callback/dex',
   secret: process.env.NUXT_AUTH_SECRET || 'default_secret', 
   debug: true,
 })
