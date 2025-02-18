@@ -38,4 +38,5 @@ export default NuxtAuthHandler({
     }
   ],
   secret: process.env.NUXT_AUTH_SECRET || 'default_secret', 
+  debug: true,
 })
