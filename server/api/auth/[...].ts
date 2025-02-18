@@ -33,8 +33,12 @@ export default NuxtAuthHandler({
       
       clientId: process.env.DEX_CLIENT_ID,
       clientSecret: process.env.DEX_CLIENT_SECRET,
-      signinUrl: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/web-v2/api/auth/signin/dex',
-      callbackUrl: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/web-v2/api/auth/callback/dex',
+
+      pages: {
+        signin: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/web-v2/api/auth/signin/',
+        callback: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/web-v2/api/auth/callback',  
+      }
+      
       // httpOptions: { agent: httpsAgent }
     }
   ],
