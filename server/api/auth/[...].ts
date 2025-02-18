@@ -1,7 +1,5 @@
 import { NuxtAuthHandler } from '#auth'
 
-import https from 'https'
-
 export default NuxtAuthHandler({
   providers: [
     {
@@ -10,13 +8,12 @@ export default NuxtAuthHandler({
       type: 'oauth',
       wellKnown: 'http://local.dashboard.kubeflow.labs.wisenut.com/dex/.well-known/openid-configuration',
       authorization: { 
-        // url: 'http://local.dashboard.kubeflow.labs.wisenut.com/dex/auth',
-        url: 'http://dex.auth.svc.cluster.local:5556/dex/auth',
+        url: 'http://local.dashboard.kubeflow.labs.wisenut.com/dex/auth',
+        // url: 'http://dex.auth.svc.cluster.local:5556/dex/auth',
         params: { 
           scope: 'openid email profile' ,
           // redirect_uri: 'http://localhost:3000/api/auth/callback/dex'
           redirect_uri: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/web-v2/api/auth/callback'
-          
         } 
       },
       

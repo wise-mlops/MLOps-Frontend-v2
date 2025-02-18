@@ -23,7 +23,6 @@ definePageMeta({
   layout: false,
 });
 
-import { useAuth } from '#imports'
 
 const email = ref('user@example.com')
 const password = ref('12341234')
@@ -37,6 +36,7 @@ const handleLogin = async () => {
       redirect: true,
       callbackUrl: '/'
     })
+    // const data = await signIn('dex')
     // 로그인 성공 처리
     console.log(data)
   } catch (error) {
