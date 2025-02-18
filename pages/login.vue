@@ -32,11 +32,11 @@ const { signIn } = useAuth()
 
 const handleLogin = async () => {
   try {
-    const data = await signIn('dex', {
-      redirect: true,
-      callbackUrl: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/web-v2/'
-    })
-    // const data = await signIn('dex')
+    // const data = await signIn('dex', {
+    //   redirect: true,
+    //   callbackUrl: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/web-v2'
+    // })
+    const data = await signIn('dex')
     // 로그인 성공 처리
     console.log(data)
   } catch (error) {
