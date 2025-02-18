@@ -1,4 +1,4 @@
-FROM node:18-alpine3.17
+FROM node:20.18.3-alpine3.17
 
 WORKDIR /app
 COPY . .
