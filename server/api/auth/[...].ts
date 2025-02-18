@@ -7,8 +7,8 @@ export default NuxtAuthHandler({
       name: 'Dex',
       type: 'oauth',
       issuer: 'http://dex.auth.svc.cluster.local:5556/dex/auth',
-      wellKnown: 'https://local.dashboard.kubeflow.labs.wisenut.com/dex/.well-known/openid-configuration',
-      // wellKnown: 'http://dex.auth.svc.cluster.local:5556/dex/.well-known/openid-configuration',
+      // wellKnown: 'https://local.dashboard.kubeflow.labs.wisenut.com/dex/.well-known/openid-configuration',
+      wellKnown: 'http://dex.auth.svc.cluster.local:5556/dex/.well-known/openid-configuration',
       authorization: { 
         url: 'https://local.dashboard.kubeflow.labs.wisenut.com/dex/auth',
         // url: 'http://dex.auth.svc.cluster.local:5556/dex/auth',
@@ -20,7 +20,6 @@ export default NuxtAuthHandler({
           // redirect_uri: 'http://localhost:3000/api/auth/callback/dex'
         } 
       },
-
       
       profile( profile:any ) {
         console.log('profile', profile)
@@ -38,8 +37,5 @@ export default NuxtAuthHandler({
       // httpOptions: { agent: httpsAgent }
     }
   ],
-  pages: {  
-    signIn: '/login'
-  },
   secret: process.env.NUXT_AUTH_SECRET || 'default_secret', 
 })
