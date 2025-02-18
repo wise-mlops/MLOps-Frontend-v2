@@ -6,7 +6,7 @@ export default NuxtAuthHandler({
       id: 'dex',
       name: 'Dex',
       type: 'oauth',
-      issuer: 'http://local.dashboard.kubeflow.labs.wisenut.com/dex/',
+      // issuer: 'http://local.dashboard.kubeflow.labs.wisenut.com/dex',
       wellKnown: 'http://local.dashboard.kubeflow.labs.wisenut.com/dex/.well-known/openid-configuration',
       authorization: { 
         // url: 'http://local.dashboard.kubeflow.labs.wisenut.com/dex/auth',
@@ -14,7 +14,8 @@ export default NuxtAuthHandler({
         params: { 
           scope: 'openid email profile' ,
           // redirect_uri: 'http://localhost:3000/api/auth/callback/dex'
-          redirect_uri: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/web-v2/api/auth/callback'
+          // redirect_uri: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/web-v2/api/auth/callback'
+          redirect_uri: 'http://localhost:3000/api/auth/callback/dex'
         } 
       },
       
