@@ -14,8 +14,8 @@ export default NuxtAuthHandler({
         params: { 
           scope: 'openid email profile' ,
           // redirect_uri: 'http://localhost:3000/api/auth/callback/dex'
-          // redirect_uri: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/web-v2/api/auth/callback'
-          redirect_uri: 'http://localhost:3000/api/auth/callback/dex'
+          redirect_uri: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/web-v2/api/auth/callback'
+          // redirect_uri: 'http://localhost:3000/api/auth/callback/dex'
         } 
       },
       
