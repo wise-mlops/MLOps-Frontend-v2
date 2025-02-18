@@ -29,7 +29,7 @@ export default defineNuxtConfig({
   auth: {
     isEnabled: true,
     disableServerSideAuth: false,
-    originEnvKey: 'AUTH_ORIGIN',
+    originEnvKey: 'NUXT_AUTH_ORIGIN',
     baseURL: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/web-v2/api/auth',
     provider: {  
       type:'authjs',
