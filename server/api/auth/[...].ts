@@ -6,18 +6,13 @@ export default NuxtAuthHandler({
       id: 'dex',
       name: 'Dex',
       type: 'oauth',
-      issuer: 'http://dex.auth.svc.cluster.local:5556/dex/auth',
-      // wellKnown: 'https://local.dashboard.kubeflow.labs.wisenut.com/dex/.well-known/openid-configuration',
-      wellKnown: 'http://dex.auth.svc.cluster.local:5556/dex/.well-known/openid-configuration',
+      issuer: process.env.DEX_ISSUER_URL || '' ,
+      wellKnown: process.env.DEX_WELL_KNOWN_URL || '',
       authorization: { 
-        url: 'https://local.dashboard.kubeflow.labs.wisenut.com/dex/auth',
-        // url: 'http://dex.auth.svc.cluster.local:5556/dex/auth',
+        url: process.env.DEX_AUTHORIZATION_URL || '',
         params: { 
           scope: 'openid email profile' ,
-          // redirect_uri: 'http://localhost:3000/api/auth/callback/dex'
-          redirect_uri: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/web-v2/api/auth/callback/dex'
-          // redirect_uri: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/web-v2/oauth2/callback',
-          // redirect_uri: 'http://localhost:3000/api/auth/callback/dex'
+          redirect_uri: process.env.DEX_REDIRECT_URI || ''
         } 
       },
       
@@ -34,10 +29,10 @@ export default NuxtAuthHandler({
       clientId: process.env.DEX_CLIENT_ID,
       clientSecret: process.env.DEX_CLIENT_SECRET,
 
-      pages: {
-        signin: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/web-v2/api/auth/signin/',
-        callback: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/web-v2/api/auth/callback',  
-      }
+      // pages: {
+      //   signin: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/web-v2/api/auth/signin/',
+      //   callback: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/web-v2/api/auth/callback',  
+      // }
       
       // httpOptions: { agent: httpsAgent }
     }
@@ -45,4 +40,27 @@ export default NuxtAuthHandler({
   
   secret: process.env.NUXT_AUTH_SECRET || 'default_secret', 
   debug: true,
+  callbacks: {
+    /* on before signin */
+    async signIn({ user, account, profile, email, credentials }) {
+      console.log('user :' + user)
+      return true
+    },
+    /* on redirect to another url */
+    async redirect({ url, baseUrl }) {
+      console.log('redirect url :' + url)
+      console.log('redirect baseUrl :' + baseUrl)
+      return baseUrl
+    },
+    /* on session retrival */
+    async session({ session, user, token }) {
+      console.log('session :' + session)
+      return session
+    },
+    /* on JWT token creation or mutation */
+    async jwt({ token, user, account, profile, isNewUser }) {
+      console.log('token :' + token)
+      return token
+    }
+  },
 })
