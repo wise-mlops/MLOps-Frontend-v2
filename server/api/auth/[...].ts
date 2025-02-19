@@ -33,7 +33,7 @@ export default NuxtAuthHandler({
       //   signin: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/web-v2/api/auth/signin/',
       //   callback: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/web-v2/api/auth/callback',  
       // }
-      
+      // signinUrl: 'http://naver.com'
       // httpOptions: { agent: httpsAgent }
     }
   ],
@@ -49,6 +49,7 @@ export default NuxtAuthHandler({
     /* on redirect to another url */
     async redirect({ url, baseUrl }) {
       console.log('redirect url :' + url)
+      baseUrl= process.env.DEX_REDIRECT_URI || baseUrl;
       console.log('redirect baseUrl :' + baseUrl)
       return baseUrl
     },
