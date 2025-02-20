@@ -6,10 +6,6 @@ export default defineNuxtConfig({
     head: {
       title: 'WISE MLOps'
     },
-    api: {
-      // url: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/api/'
-      url: '/'
-    }
   },
   colorMode: {
     preference: 'light'
@@ -30,7 +26,6 @@ export default defineNuxtConfig({
     isEnabled: true,
     disableServerSideAuth: false,
     originEnvKey: 'NUXT_AUTH_ORIGIN',
-    baseURL: process.env.NUXT_AUTH_ORIGIN || '/',
     provider: {  
       type:'authjs',
       trustHost: false,
