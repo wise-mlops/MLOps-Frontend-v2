@@ -30,16 +30,24 @@ export default defineNuxtConfig({
     isEnabled: true,
     disableServerSideAuth: false,
     originEnvKey: 'NUXT_AUTH_ORIGIN',
-    baseURL: process.env.NUXT_AUTH_ORIGIN || 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/web-v2/api/auth',
+    baseURL: process.env.NUXT_AUTH_ORIGIN || '',
     provider: {  
       type:'authjs',
       trustHost: false,
-      defaultProvider: 'dex',
-      addDefaultCallbackUrl: true
+      defaultProvider: 'keycloak',
+      addDefaultCallbackUrl: true,
     },
     sessionRefresh: {
       enablePeriodically: true,
       enableOnWindowFocus: true,
+    },
+  },
+  runtimeConfig: {
+    auth: {
+      keycloakUrl: process.env.KEYCLOAK_URL,
+      keycloakRealm: process.env.KEYCLOAK_REALM,
+      keycloakClientId: process.env.KEYCLOAK_CLIENT_ID,
+      keycloakClientSecret: process.env.KEYCLOAK_CLIENT_SECRET,
     }
   }
 })
