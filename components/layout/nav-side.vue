@@ -35,11 +35,6 @@ const links = [
     label: 'NOTEBOOKS',
     icon: 'i-heroicons-document-text',
     to: '/notebooks'
-  },
-  {
-    label: 'LOGOUT',
-    icon: 'i-heroicons-power',
-    to: '/logout'
   }
   // {
   //   label: 'ENDPOINTS',
