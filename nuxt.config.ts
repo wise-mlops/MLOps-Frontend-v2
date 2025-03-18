@@ -30,6 +30,7 @@ export default defineNuxtConfig({
     isEnabled: true,
     disableServerSideAuth: false,
     originEnvKey: 'NUXT_AUTH_ORIGIN',
+    origin: process.env.NUXT_AUTH_ORIGIN || '',
     baseURL: process.env.NUXT_AUTH_ORIGIN || '',
     provider: {  
       type:'authjs',
@@ -43,7 +44,7 @@ export default defineNuxtConfig({
     },
   },
   runtimeConfig: {
-    auth: {
+    auth: {      
       keycloakUrl: process.env.KEYCLOAK_URL,
       keycloakRealm: process.env.KEYCLOAK_REALM,
       keycloakClientId: process.env.KEYCLOAK_CLIENT_ID,
