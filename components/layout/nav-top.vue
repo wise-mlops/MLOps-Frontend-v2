@@ -18,7 +18,7 @@
         </div>
         <div class="flex items-center">
           <div class="flex items-center ms-3">
-            <div>
+            <div class="mx-2">
               <ClientOnly>
                 <UButton :icon="isDark ? 'i-heroicons-moon-20-solid' : 'i-heroicons-sun-20-solid'" color="gray"
                   variant="ghost" aria-label="Theme" @click="isDark = !isDark" />
@@ -27,20 +27,35 @@
                 </template>
               </ClientOnly>
             </div>
-            <div>
+            <div class="mx-2">
               <UAvatar icon="i-heroicons-user" size="sm" alt="Avatar" />
+            </div>
+            <div class="mx-2">
+              <UTooltip text="로그아웃">
+                <UButton icon="i-heroicons-power" color="gray" variant="ghost" size="sm" @click="logout" />
+              </UTooltip>
             </div>
           </div>
         </div>
       </div>
     </div>
   </nav>
+  <UModal v-model="isLoggingOut">
+    <ModalLogout v-model:isOpen="isLoggingOut" />
+  </UModal>
 </template>
 
 <script lang="ts" setup>
 
 const config = useAppConfig()
 const colorMode = useColorMode()
+
+const isLoggingOut = ref(false)
+
+const logout = () => {
+  isLoggingOut.value = true
+}
+
 
 const isDark = computed({
   get() {
