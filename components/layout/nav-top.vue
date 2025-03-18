@@ -27,12 +27,24 @@
                 </template>
               </ClientOnly>
             </div>
-            <div class="mx-2">
-              <UAvatar icon="i-heroicons-user" size="sm" alt="Avatar" />
+            <div class="mx-1">
+              <UTooltip text="사용자 정보">
+                <UButton variant="ghost" :ui="{ rounded: 'rounded-full' }" @click="navigateToProfile">
+                  <template #leading>
+                    <UAvatar icon="i-heroicons-user" alt="profiles" color="primary"
+                      :ui="{ background: 'bg-gray-200 dark:bg-gray-600' }" />
+                  </template>
+                </UButton>
+              </UTooltip>
             </div>
-            <div class="mx-2">
+            <div class="mx-1">
               <UTooltip text="로그아웃">
-                <UButton icon="i-heroicons-power" color="gray" variant="ghost" size="sm" @click="logout" />
+                <UButton variant="ghost" :ui="{ rounded: 'rounded-full' }" @click="logout">
+                  <template #leading>
+                    <UAvatar icon="i-heroicons-power" alt="logout"
+                      :ui="{ background: 'bg-gray-200 dark:bg-gray-600' }" />
+                  </template>
+                </UButton>
               </UTooltip>
             </div>
           </div>
@@ -46,16 +58,19 @@
 </template>
 
 <script lang="ts" setup>
+const router = useRouter()
 
 const config = useAppConfig()
 const colorMode = useColorMode()
 
 const isLoggingOut = ref(false)
 
+const navigateToProfile = () => {
+  router.push('/profiles')
+}
 const logout = () => {
   isLoggingOut.value = true
 }
-
 
 const isDark = computed({
   get() {
