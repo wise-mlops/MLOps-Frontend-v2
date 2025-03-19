@@ -66,7 +66,7 @@ const colorMode = useColorMode()
 const isLoggingOut = ref(false)
 
 const navigateToProfile = () => {
-  router.push('/profiles')
+  router.push('./profiles')
 }
 const logout = () => {
   isLoggingOut.value = true

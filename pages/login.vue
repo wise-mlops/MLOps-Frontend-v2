@@ -56,7 +56,7 @@ const loginWithKeycloak = async () => {
     loading.value = true
     error.value = null
     // Keycloak 로그인 시작
-    await signIn('keycloak', { callbackUrl: '/' })
+    await signIn('keycloak', { callbackUrl: './' })
     loading.value = false
   } catch (err) {
     console.error('로그인 오류:', err)

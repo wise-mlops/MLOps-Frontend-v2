@@ -30,11 +30,11 @@ const experiment = ref({
 const breadcrumbs = ref([
   {
     label: 'Home',
-    to: '/'
+    to: './'
   },
   {
     label: 'Experiments',
-    to: '/experiments/'
+    to: './experiments/'
   },
   {
     label: 'Add',

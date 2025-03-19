@@ -160,7 +160,7 @@ const notebook = ref({
 const breadcrumbs = ref([
   {
     label: 'Home',
-    to: '/'
+    to: './'
   },
   {
     label: 'Notebooks',
