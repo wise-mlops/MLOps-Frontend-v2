@@ -7,9 +7,9 @@ export default NuxtAuthHandler({
   // NextAuth.js 옵션
   secret: process.env.AUTH_SECRET || 'your-secret-key',
   pages: {
-    signIn: '/login',
-    signOut: '/logout',
-    error: '/auth/error',
+    signIn: './login',
+    signOut: './logout',
+    error: './auth/error',
   },
   // 세션 관리 설정
   session: {
@@ -22,8 +22,7 @@ export default NuxtAuthHandler({
       id: 'keycloak',
       name: 'Keycloak',
       type: 'oauth',
-      // wellKnown: `${useRuntimeConfig().auth.keycloakUrl}/realms/${useRuntimeConfig().auth.keycloakRealm}/.well-known/openid-configuration`,
-      wellKnown: 'http://local.keycloak.labs.wisenut.com/realms/master/.well-known/openid-configuration',
+      wellKnown: `${useRuntimeConfig().auth.keycloakUrl}/realms/${useRuntimeConfig().auth.keycloakRealm}/.well-known/openid-configuration`,      
       clientId: useRuntimeConfig().auth.keycloakClientId,
       clientSecret: useRuntimeConfig().auth.keycloakClientSecret,
       authorization: { params: { scope: 'openid email profile' } },
