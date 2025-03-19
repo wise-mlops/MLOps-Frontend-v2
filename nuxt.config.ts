@@ -3,13 +3,13 @@
 
 export default defineNuxtConfig({
   app: {
-    baseURL: process.env.APP_BASE_URL || '/',    
+    baseURL: process.env.APP_BASE_URL || '/clusters/local/namespaces/wise-mlops/services/web-v2',    
   },
   appConfig: {
     head: {
       title: 'WISE MLOps'
     },
-    baseURL: process.env.APP_BASE_URL || '/',    
+    baseURL: process.env.APP_BASE_URL || '/clusters/local/namespaces/wise-mlops/services/web-v2',    
     api: {
       // url : process.env.APP_BACKEND_URL || '',
       url: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/api-v2/'
@@ -52,6 +52,9 @@ export default defineNuxtConfig({
       keycloakRealm: process.env.KEYCLOAK_REALM,
       keycloakClientId: process.env.KEYCLOAK_CLIENT_ID,
       keycloakClientSecret: process.env.KEYCLOAK_CLIENT_SECRET,
-    }
+    },
+    public: {
+      baseURL: process.env.APP_BASE_URL || "/",
+    },
   }
 })
