@@ -7,9 +7,9 @@ export default NuxtAuthHandler({
   // NextAuth.js 옵션
   secret: process.env.AUTH_SECRET || 'your-secret-key',
   pages: {
-    signIn: './login',
-    signOut: './logout',
-    error: './auth/error',
+    signIn: '/login',
+    signOut: '/logout',
+    error: '/auth/error',
   },
   // 세션 관리 설정
   session: {

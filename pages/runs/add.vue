@@ -114,7 +114,7 @@ const router = useRouter();
 const breadcrumbs = ref([
   {
     label: 'Home',
-    to: './'
+    to: '/'
   },
   {
     label: 'Runs',

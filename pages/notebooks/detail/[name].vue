@@ -36,7 +36,7 @@ const route = useRoute()
 const breadcrumbs = ref([
   {
     label: 'Home',
-    to: './'
+    to: '/'
   },
   {
     label: 'Notebooks',
