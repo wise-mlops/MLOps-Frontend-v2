@@ -16,7 +16,7 @@ export default NuxtAuthHandler({
     strategy: 'jwt',
   },
   // Keycloak 제공자를 직접 정의
-  debug: true,
+  // debug: true,
   providers: [
     {
       id: 'keycloak',
