@@ -79,11 +79,11 @@ const attribute = ref([
 const breadcrumbs = ref([
   {
     label: 'Home',
-    to: './'
+    to: '/'
   },
   {
     label: 'Runs',
-    to: './runs/'
+    to: '/runs/'
   },
   {
     label: 'Details',

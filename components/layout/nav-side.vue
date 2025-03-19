@@ -14,17 +14,17 @@ const links = [
   {
     label: 'HOME',
     icon: 'i-heroicons-home',
-    to: './'
+    to: '/'
   },
   {
     label: 'EXPERIMENTS',
     icon: 'i-heroicons-beaker',
-    to: `./experiments`
+    to: `/experiments`
   },
   {
     label: 'PIPELINES',
     icon: 'i-heroicons-square-3-stack-3d',
-    to: './pipelines'
+    to: '/pipelines'
   },
   {
     label: 'RUNS',
@@ -34,7 +34,7 @@ const links = [
   {
     label: 'NOTEBOOKS',
     icon: 'i-heroicons-document-text',
-    to: './notebooks'
+    to: '/notebooks'
   }
   // {
   //   label: 'ENDPOINTS',
