@@ -2,6 +2,9 @@
 
 
 export default defineNuxtConfig({
+  app: {
+    baseURL: process.env.APP_BASE_URL || '/',    
+  },
   appConfig: {
     head: {
       title: 'WISE MLOps'
