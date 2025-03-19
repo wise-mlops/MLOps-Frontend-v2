@@ -55,7 +55,7 @@ const pipeline = ref<Pipeline>({
 const breadcrumbs = ref([
   {
     label: 'Home',
-    to: '/'
+    to: './'
   },
   {
     label: 'Pipelines',

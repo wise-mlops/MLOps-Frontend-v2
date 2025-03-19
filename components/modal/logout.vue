@@ -73,11 +73,11 @@ const cancelLogout = () => {
 }
 
 const goToHome = () => {
-  router.push('/')
+  router.push('./')
 }
 
 const goToLogin = () => {
-  router.push('/login')
+  router.push('./login')
 }
 
 // URL 파라미터에서 success 확인
