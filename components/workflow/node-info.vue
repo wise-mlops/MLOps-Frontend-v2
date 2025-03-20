@@ -13,21 +13,51 @@
         <UTabs :items="tabItems">
           <template #information="{ item }">
             <UFormGroup label="Node ID" name="node_id" class="py-2">
-              <UInput v-model="node.id" class="w-full" variant="none" readony />
+              <UInput :v-model="node?.id || ''" class="w-full" variant="none" readonly />
             </UFormGroup>
             <UFormGroup label="Node Type" name="node_type" class="py-2">
-              <UInput v-model="node.type" class="w-full" variant="none" readony />
+              <UInput :v-model="node?.type || ''" class="w-full" variant="none" readonly />
             </UFormGroup>
           </template>
           <template #settings="{ item }">
-            <UFormGroup label="componentType" name="component_type" class="py-2">
-              <USelectMenu v-model="componentType" :options="componentTypes" size="md" :disabled="!isEditable" />
-            </UFormGroup>
-            <UFormGroup label="Params" name="params" class="py-2">
-              <div class="h-[32rem] overflow-auto">
-                <ModuleKeyValue v-model="params" :isEditable="isEditable" />
-              </div>
-            </UFormGroup>
+            {{ node?.type }}
+            <div v-if="node?.type === 'NodeLoadData'">
+              <InfoLoadData />
+            </div>
+            <div v-else-if="node?.type === 'NodeLoadPreLLM'">
+              <InfoLoadPreLlm />
+            </div>
+            <div v-else-if="node?.type === 'NodeTrainMlModel'">
+              <InfoTrainMlModel />
+            </div>
+            <div v-else-if="node?.type === 'NodeTrainLLMFinetune'">
+              <InfoTrainLlmFinetune />
+            </div>
+            <div v-else-if="node?.type === 'NodeTrainLLMPrompttune'">
+              <InfoTrainLlmPrompttune />
+            </div>
+            <div v-else-if="node?.type === 'NodeValMlModel'">
+              <InfoValMlModel />
+            </div>
+            <div v-else-if="node?.type === 'NodeValLLM'">
+              <InfoValLlm />
+            </div>
+            <div v-else-if="node?.type === 'NodePickMlModel'">
+              <InfoPickMlModel />
+            </div>
+            <div v-else-if="node?.type === 'NodeServeMlModel'">
+              <InfoServeMlModel />
+            </div>
+            <div v-else>
+              <UFormGroup label="componentType" name="component_type" class="py-2">
+                <USelectMenu v-model="componentType" :options="componentTypes" size="md" :disabled="!isEditable" />
+              </UFormGroup>
+              <UFormGroup label="Params" name="params" class="py-2">
+                <div class="h-[32rem] overflow-auto">
+                  <ModuleKeyValue v-model="params" :isEditable="isEditable" />
+                </div>
+              </UFormGroup>
+            </div>
           </template>
         </UTabs>
         <template v-if="isEditable" #footer>
@@ -42,6 +72,19 @@
 
 <script setup lang="ts">
 import { useVueFlow, type Node } from '@vue-flow/core';
+import InfoLoadData from './nodes/info-load-data.vue';
+import InfoLoadPreLlm from './nodes/info-load-pre-llm.vue';
+import InfoTrainMlModel from './nodes/info-train-ml-model.vue';
+import InfoTrainLlmFinetune from './nodes/info-train-llm-finetune.vue';
+import InfoTrainLlmPrompttune from './nodes/info-train-llm-prompttune.vue';
+import InfoValMlModel from './nodes/info-val-ml-model.vue';
+import InfoValLlm from './nodes/info-val-llm.vue';
+import InfoPickMlModel from './nodes/info-pick-ml-model.vue';
+import InfoServeMlModel from './nodes/info-serve-ml-model.vue';
+
+
+
+
 const { updateNode } = useVueFlow();
 
 const isOpen = defineModel<boolean>('isOpen')
@@ -51,6 +94,8 @@ const label = ref('')
 const componentType = ref('')
 const params = ref([])
 const isEditable = defineModel('isEditable', { default: false })
+
+
 
 const saveAttribute = () => {
 
