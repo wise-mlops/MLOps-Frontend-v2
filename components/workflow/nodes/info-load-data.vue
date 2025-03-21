@@ -108,13 +108,9 @@ watch(items, (newItems) => {
 
 onMounted(() => {
   // 초기값 설정
-  console.log(params.value.value)
-  if (params.value) {
-    console.log('=-=')
+  if (params.value.value) {
     items.value = attributeToItems(params.value.value)
   }
-  console.log(items.value)
-
 
 })
 
