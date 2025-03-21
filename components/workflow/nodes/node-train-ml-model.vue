@@ -5,8 +5,8 @@
       <template #header>
         <div class="flex items-center justify-between">
           <h3 class="text-base font-bold leading-6 text-gray-900 dark:text-white  text-ellipsis overflow-hidden">
-            ML 학습
-            <!-- {{ node.node.label }} -->
+            <!-- ML 학습 -->
+            {{ node.node.label }}
           </h3>
           <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark-20-solid" @click="closeNode" />
         </div>
