@@ -53,11 +53,11 @@
               </div>
               <div v-else>
                 <UFormGroup label="componentType" name="component_type" class="py-2">
-                  <USelectMenu v-model="componentType" :options="componentTypes" size="md" :disabled="!isEditable" />
+                  <!-- <USelectMenu v-model="componentType" :options="componentTypes" size="md" :disabled="!isEditable" /> -->
                 </UFormGroup>
                 <UFormGroup label="Params" name="params" class="py-2">
                   <div class="h-[32rem] overflow-auto">
-                    <ModuleKeyValue v-model="params" :isEditable="isEditable" />
+                    <!-- <ModuleKeyValue v-model="params" :isEditable="isEditable" /> -->
                   </div>
                 </UFormGroup>
               </div>
@@ -104,23 +104,13 @@ const nodeType = computed(() => node.value?.type || '')
 const saveAttribute = () => {
 
   if (!node.value) return
-  node.value.data.attribute.value = JSON.parse(JSON.stringify(params.value));
+  console.log(params.value)
+  node.value.data.attribute.value = JSON.parse(JSON.stringify(params.value))
   node.value.label = JSON.parse(JSON.stringify(nodeLabel.value));
-
-  console.log(node.value)
-  /*
-  attributes.value = params.value
-  node.value.label = label.value
-  let attribute = {
-    type: componentType.value,
-    ...params.value
-  }
-  node.value.data.attribute = { ...attribute }
-
-  */
+  console.log(node.value.data.attribute.value)
   alert('saved')
 }
-
+/* 
 const componentTypes = ref([]);
 
 const getComponentTypes = async () => {
@@ -128,16 +118,18 @@ const getComponentTypes = async () => {
   componentTypes.value = response.result ? response.result : []
 
 }
-
+ */
 onMounted(() => {
-  // getComponentTypes();
+
 })
 
 watch(watchOpen, () => {
 
   // 사이드 창이 열릴 때
   if (watchOpen.value) {
-    params.value = JSON.parse(JSON.stringify(node.value?.data.attribute.value || []));
+
+    params.value = JSON.parse(JSON.stringify(node.value?.data.attribute || []));
+    console.log(params.value)
     nodeLabel.value = JSON.parse(JSON.stringify(node.value?.label || []));
   }
 

@@ -93,13 +93,12 @@ onConnect((params: Connection) => {
   addEdges(params)
 })
 
-const onAddNode = (nodeType: string) => {
+const onAddNode = (item: { type: string, label: string }) => {
   const newId = crypto.randomUUID().replaceAll('-', '');
-
   const newNode = ref<Node>({
     id: newId,
-    type: nodeType,
-    label: newId,
+    type: item.type,
+    label: item.label,
     position: {
       x: (Math.random() * dimensions.value.width) / 3,
       y: (Math.random() * dimensions.value.height) / 3
@@ -130,57 +129,66 @@ onMounted(() => {
 const pannelItems = ref([
   [
     {
+      type: 'NodeLoadData',
       label: '데이터 로딩',
       icon: 'i-heroicons-circle-stack',
-      click: () => { onAddNode('NodeLoadData') }
+      click: () => { onAddNode({ type: 'NodeLoadData', label: '데이터 로딩' }) }
     },
     {
+      type: 'NodeLoadPreLLM',
       label: '사전학습 모델 불러오기',
       icon: 'i-heroicons-circle-stack',
-      click: () => { onAddNode('NodeLoadPreLLM') }
+      click: () => { onAddNode({ type: 'NodeLoadPreLLM', label: '사전학습 모델 불러오기' }) }
     },
   ],
   [
     {
+      type: 'NodeTrainMlModel',
       label: 'ML 학습',
       icon: 'i-heroicons-rocket-launch',
-      click: () => { onAddNode('NodeTrainMlModel') }
+      click: () => { onAddNode({ type: 'NodeTrainMlModel', label: 'ML 학습' }) }
     },
     {
+      type: 'NodeTrainLLMFinetune',
       label: 'LLM 파인튜닝',
       icon: 'i-heroicons-rocket-launch',
-      click: () => { onAddNode('NodeTrainLLMFinetune') }
+      click: () => { onAddNode({ type: 'NodeTrainLLMFinetune', label: 'LLM 파인튜닝' }) }
     },
     {
+      type: 'NodeTrainLLMPrompttune',
       label: 'LLM 프롬프트 튜닝',
       icon: 'i-heroicons-rocket-launch',
-      click: () => { onAddNode('NodeTrainLLMPrompttune') }
+      click: () => { onAddNode({ type: 'NodeTrainLLMPrompttune', label: 'LLM 프롬프트 튜닝' }) }
     },
   ],
   [
     {
+      type: 'NodeValMlModel',
       label: 'ML모델 평가',
       icon: 'i-heroicons-chart-bar-square',
-      click: () => { onAddNode('NodeValMlModel') }
+      click: () => { onAddNode({ type: 'NodeValMlModel', label: 'ML모델 평가' }) }
     },
     {
+      type: 'NodeValLLM',
       label: 'LLM모델 평가',
       icon: 'i-heroicons-chart-bar-square',
-      click: () => { onAddNode('NodeValLLM') }
+      click: () => { onAddNode({ type: 'NodeValLLM', label: 'LLM모델 평가' }) }
     },
   ],
   [
     {
+      type: 'NodePickMlModel',
       label: 'ML 최적 모델 선택',
       icon: 'i-heroicons-numbered-list',
-      click: () => { onAddNode('NodePickMlModel') }
+      click: () => { onAddNode({ type: 'NodePickMlModel', label: 'ML 최적 모델 선택' }) }
     },
   ],
   [
     {
+      type: 'NodeServeMlModel',
       label: '모델 서빙',
       icon: 'i-heroicons-play-circle',
-      click: () => { onAddNode('NodeServeMlModel') }
+      click: () => { onAddNode({ type: 'NodeServeMlModel', label: '모델 서빙' }) }
     },
   ],
   [
