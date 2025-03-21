@@ -5,58 +5,62 @@
         :ui="{ body: { base: 'flex-1' }, ring: '', divide: 'divide-y divide-gray-100 dark:divide-gray-800' }">
         <template #header>
           <div class="flex items-center justify-between">
-            <UInput v-model="label" class="w-full border-b" variant="none"></UInput>
+            <!-- <h2 class="text-lg font-semibold">{{ node?.label }}</h2> -->
+            <UInput v-model="nodeLabel" class="w-full border-b" variant="none"></UInput>
             <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark-20-solid" class="my-1"
               @click="isOpen = false" />
           </div>
         </template>
         <UTabs :items="tabItems">
           <template #information="{ item }">
-            <UFormGroup label="Node ID" name="node_id" class="py-2">
-              <UInput :v-model="node?.id || ''" class="w-full" variant="none" readonly />
-            </UFormGroup>
-            <UFormGroup label="Node Type" name="node_type" class="py-2">
-              <UInput :v-model="node?.type || ''" class="w-full" variant="none" readonly />
-            </UFormGroup>
+            <div>
+              <UFormGroup label="Node ID" name="node_id" class="py-2">
+                <UInput v-model="nodeId" class=" w-full" variant="none" readonly />
+              </UFormGroup>
+              <UFormGroup label="Node Type" name="node_type" class="py-2">
+                <UInput v-model="nodeType" class="w-full" variant="none" readonly />
+              </UFormGroup>
+            </div>
           </template>
           <template #settings="{ item }">
-            {{ node?.type }}
-            <div v-if="node?.type === 'NodeLoadData'">
-              <InfoLoadData />
-            </div>
-            <div v-else-if="node?.type === 'NodeLoadPreLLM'">
-              <InfoLoadPreLlm />
-            </div>
-            <div v-else-if="node?.type === 'NodeTrainMlModel'">
-              <InfoTrainMlModel />
-            </div>
-            <div v-else-if="node?.type === 'NodeTrainLLMFinetune'">
-              <InfoTrainLlmFinetune />
-            </div>
-            <div v-else-if="node?.type === 'NodeTrainLLMPrompttune'">
-              <InfoTrainLlmPrompttune />
-            </div>
-            <div v-else-if="node?.type === 'NodeValMlModel'">
-              <InfoValMlModel />
-            </div>
-            <div v-else-if="node?.type === 'NodeValLLM'">
-              <InfoValLlm />
-            </div>
-            <div v-else-if="node?.type === 'NodePickMlModel'">
-              <InfoPickMlModel />
-            </div>
-            <div v-else-if="node?.type === 'NodeServeMlModel'">
-              <InfoServeMlModel />
-            </div>
-            <div v-else>
-              <UFormGroup label="componentType" name="component_type" class="py-2">
-                <USelectMenu v-model="componentType" :options="componentTypes" size="md" :disabled="!isEditable" />
-              </UFormGroup>
-              <UFormGroup label="Params" name="params" class="py-2">
-                <div class="h-[32rem] overflow-auto">
-                  <ModuleKeyValue v-model="params" :isEditable="isEditable" />
-                </div>
-              </UFormGroup>
+            <div>
+              <div v-if="node?.type === 'NodeLoadData'">
+                <InfoLoadData v-model="params" />
+              </div>
+              <div v-else-if="node?.type === 'NodeLoadPreLLM'">
+                <InfoLoadPreLlm />
+              </div>
+              <div v-else-if="node?.type === 'NodeTrainMlModel'">
+                <InfoTrainMlModel />
+              </div>
+              <div v-else-if="node?.type === 'NodeTrainLLMFinetune'">
+                <InfoTrainLlmFinetune />
+              </div>
+              <div v-else-if="node?.type === 'NodeTrainLLMPrompttune'">
+                <InfoTrainLlmPrompttune />
+              </div>
+              <div v-else-if="node?.type === 'NodeValMlModel'">
+                <InfoValMlModel />
+              </div>
+              <div v-else-if="node?.type === 'NodeValLLM'">
+                <InfoValLlm />
+              </div>
+              <div v-else-if="node?.type === 'NodePickMlModel'">
+                <InfoPickMlModel />
+              </div>
+              <div v-else-if="node?.type === 'NodeServeMlModel'">
+                <InfoServeMlModel />
+              </div>
+              <div v-else>
+                <UFormGroup label="componentType" name="component_type" class="py-2">
+                  <USelectMenu v-model="componentType" :options="componentTypes" size="md" :disabled="!isEditable" />
+                </UFormGroup>
+                <UFormGroup label="Params" name="params" class="py-2">
+                  <div class="h-[32rem] overflow-auto">
+                    <ModuleKeyValue v-model="params" :isEditable="isEditable" />
+                  </div>
+                </UFormGroup>
+              </div>
             </div>
           </template>
         </UTabs>
@@ -82,33 +86,40 @@ import InfoValLlm from './nodes/info-val-llm.vue';
 import InfoPickMlModel from './nodes/info-pick-ml-model.vue';
 import InfoServeMlModel from './nodes/info-serve-ml-model.vue';
 
-
-
-
 const { updateNode } = useVueFlow();
 
 const isOpen = defineModel<boolean>('isOpen')
 const node = defineModel<Node>('node')
 const watchOpen = ref(isOpen)
-const label = ref('')
 const componentType = ref('')
 const params = ref([])
+const nodeLabel = ref('')
+
 const isEditable = defineModel('isEditable', { default: false })
 
+const nodeId = computed(() => node.value?.id || '')
+const nodeType = computed(() => node.value?.type || '')
 
 
 const saveAttribute = () => {
 
+  if (!node.value) return
+  node.value.data.attribute.value = JSON.parse(JSON.stringify(params.value));
+  node.value.label = JSON.parse(JSON.stringify(nodeLabel.value));
+
+  console.log(node.value)
+  /*
+  attributes.value = params.value
   node.value.label = label.value
   let attribute = {
     type: componentType.value,
     ...params.value
   }
-
   node.value.data.attribute = { ...attribute }
+
+  */
   alert('saved')
 }
-
 
 const componentTypes = ref([]);
 
@@ -119,19 +130,28 @@ const getComponentTypes = async () => {
 }
 
 onMounted(() => {
-  getComponentTypes();
+  // getComponentTypes();
 })
 
 watch(watchOpen, () => {
 
+  // 사이드 창이 열릴 때
   if (watchOpen.value) {
-    label.value = node.value.label
-    const { type, ...param } = node.value.data.attribute;
-    componentType.value = type;
-    params.value = param;
+    params.value = JSON.parse(JSON.stringify(node.value?.data.attribute.value || []));
+    nodeLabel.value = JSON.parse(JSON.stringify(node.value?.label || []));
   }
-})
 
+  // if (watchOpen.value && node.value) {
+  //   if (node.value?.data.attribute) {
+  //     // attributes.value = node.value?.data.attribute.value
+  //     // params.value = node.value?.data.attribute
+  //   // label.value = node.value.label
+
+  //   // const { type, ...param } = node.value.data.attribute;
+  //   // componentType.value = type;
+  //   // params.value = param;
+  // }
+})
 
 const tabItems = ref([
   {
@@ -144,7 +164,4 @@ const tabItems = ref([
   }
 ])
 
-function defineProps<T>() {
-  throw new Error('Function not implemented.');
-}
 </script>
