@@ -129,7 +129,6 @@ watch(watchOpen, () => {
   if (watchOpen.value) {
 
     params.value = JSON.parse(JSON.stringify(node.value?.data.attribute || []));
-    console.log(params.value)
     nodeLabel.value = JSON.parse(JSON.stringify(node.value?.label || []));
   }
 
