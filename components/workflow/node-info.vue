@@ -11,61 +11,63 @@
               @click="isOpen = false" />
           </div>
         </template>
-        <UTabs :items="tabItems">
-          <template #information="{ item }">
-            <div>
-              <UFormGroup label="Node ID" name="node_id" class="py-2">
-                <UInput v-model="nodeId" class=" w-full" variant="none" readonly />
-              </UFormGroup>
-              <UFormGroup label="Node Type" name="node_type" class="py-2">
-                <UInput v-model="nodeType" class="w-full" variant="none" readonly />
-              </UFormGroup>
-            </div>
-          </template>
-          <template #settings="{ item }">
-            <div>
-              <div v-if="node?.type === 'NodeLoadData'">
-                <InfoLoadData v-model="params" />
-              </div>
-              <div v-else-if="node?.type === 'NodeLoadPreLLM'">
-                <InfoLoadPreLlm />
-              </div>
-              <div v-else-if="node?.type === 'NodeTrainMlModel'">
-                <InfoTrainMlModel />
-              </div>
-              <div v-else-if="node?.type === 'NodeTrainLLMFinetune'">
-                <InfoTrainLlmFinetune />
-              </div>
-              <div v-else-if="node?.type === 'NodeTrainLLMPrompttune'">
-                <InfoTrainLlmPrompttune />
-              </div>
-              <div v-else-if="node?.type === 'NodeValMlModel'">
-                <InfoValMlModel />
-              </div>
-              <div v-else-if="node?.type === 'NodeValLLM'">
-                <InfoValLlm />
-              </div>
-              <div v-else-if="node?.type === 'NodePickMlModel'">
-                <InfoPickMlModel />
-              </div>
-              <div v-else-if="node?.type === 'NodeServeMlModel'">
-                <InfoServeMlModel />
-              </div>
-              <div v-else>
-                <UFormGroup label="componentType" name="component_type" class="py-2">
-                  <!-- <USelectMenu v-model="componentType" :options="componentTypes" size="md" :disabled="!isEditable" /> -->
+        <div class="flex-1 overflow-y-auto px-2" style="height: calc(100vh - 180px);">
+          <UTabs :items="tabItems">
+            <template #information="{ item }">
+              <div>
+                <UFormGroup label="Node ID" name="node_id" class="py-2">
+                  <UInput v-model="nodeId" class=" w-full" variant="none" readonly />
                 </UFormGroup>
-                <UFormGroup label="Params" name="params" class="py-2">
-                  <div class="h-[32rem] overflow-auto">
-                    <!-- <ModuleKeyValue v-model="params" :isEditable="isEditable" /> -->
-                  </div>
+                <UFormGroup label="Node Type" name="node_type" class="py-2">
+                  <UInput v-model="nodeType" class="w-full" variant="none" readonly />
                 </UFormGroup>
               </div>
-            </div>
-          </template>
-        </UTabs>
+            </template>
+            <template #settings="{ item }">
+              <div class="">
+                <div v-if="node?.type === 'NodeLoadData'">
+                  <InfoLoadData v-model="params" />
+                </div>
+                <div v-else-if="node?.type === 'NodeLoadPreLLM'">
+                  <InfoLoadPreLlm />
+                </div>
+                <div v-else-if="node?.type === 'NodeTrainMlModel'">
+                  <InfoTrainMlModel v-model="params" />
+                </div>
+                <div v-else-if="node?.type === 'NodeTrainLLMFinetune'">
+                  <InfoTrainLlmFinetune />
+                </div>
+                <div v-else-if="node?.type === 'NodeTrainLLMPrompttune'">
+                  <InfoTrainLlmPrompttune />
+                </div>
+                <div v-else-if="node?.type === 'NodeValMlModel'">
+                  <InfoValMlModel />
+                </div>
+                <div v-else-if="node?.type === 'NodeValLLM'">
+                  <InfoValLlm />
+                </div>
+                <div v-else-if="node?.type === 'NodePickMlModel'">
+                  <InfoPickMlModel />
+                </div>
+                <div v-else-if="node?.type === 'NodeServeMlModel'">
+                  <InfoServeMlModel />
+                </div>
+                <div v-else>
+                  <UFormGroup label="componentType" name="component_type" class="py-2">
+                    <!-- <USelectMenu v-model="componentType" :options="componentTypes" size="md" :disabled="!isEditable" /> -->
+                  </UFormGroup>
+                  <UFormGroup label="Params" name="params" class="py-2">
+                    <div class="h-[32rem] overflow-auto">
+                      <!-- <ModuleKeyValue v-model="params" :isEditable="isEditable" /> -->
+                    </div>
+                  </UFormGroup>
+                </div>
+              </div>
+            </template>
+          </UTabs>
+        </div>
         <template v-if="isEditable" #footer>
-          <div>
+          <div class="absolute bottom-0 left-0 w-full bg-white p-4 border-t">
             <UButton label="SAVE" @click="saveAttribute"></UButton>
           </div>
         </template>
@@ -105,7 +107,7 @@ const nodeType = computed(() => node.value?.type || '')
 const saveAttribute = () => {
 
   if (!node.value) return
-
+  
   node.value.data.attribute = JSON.parse(JSON.stringify(params.value))
   node.value.label = JSON.parse(JSON.stringify(nodeLabel.value));
   console.log(node.value.data.attribute)
