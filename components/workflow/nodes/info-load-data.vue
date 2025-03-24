@@ -7,7 +7,7 @@
       </UFormGroup>
     </div>
     <div v-for="item in items" :key="item.id">
-      <div v-if="item.id == 'type'">
+      <div v-if="item.type == 'type'">
         <UInput type="hidden" v-model="item.value" placeholder="Value" variant="outline" size="md" autocomplete="off" />
       </div>
       <div v-else>
@@ -57,7 +57,7 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'type',
         label: 'Load Data From Storage',
-        type: 'string',
+        type: 'type',
         value: 'load_data_from_storage'
       },
       {
@@ -116,7 +116,7 @@ watch(items, (newItems) => {
   if (params.value['type'] === componentType.value) {
     params.value = newAttribute
   }
-  // }
+
 }, { deep: true })
 
 // componentType 변경 감지
