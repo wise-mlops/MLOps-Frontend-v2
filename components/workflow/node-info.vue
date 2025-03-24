@@ -91,7 +91,8 @@ const { updateNode } = useVueFlow();
 const isOpen = defineModel<boolean>('isOpen')
 const node = defineModel<Node>('node')
 const watchOpen = ref(isOpen)
-const componentType = ref('')
+
+
 const params = ref([])
 const nodeLabel = ref('')
 
@@ -104,21 +105,15 @@ const nodeType = computed(() => node.value?.type || '')
 const saveAttribute = () => {
 
   if (!node.value) return
-  console.log(params.value)
-  node.value.data.attribute.value = JSON.parse(JSON.stringify(params.value))
+
+  node.value.data.attribute = JSON.parse(JSON.stringify(params.value))
   node.value.label = JSON.parse(JSON.stringify(nodeLabel.value));
-  console.log(node.value.data.attribute.value)
+  console.log(node.value.data.attribute)
   alert('saved')
-}
-/* 
-const componentTypes = ref([]);
 
-const getComponentTypes = async () => {
-  const response = await getPipelineComponentTypes()
-  componentTypes.value = response.result ? response.result : []
-
+  watchOpen.value = false
 }
- */
+
 onMounted(() => {
 
 })
