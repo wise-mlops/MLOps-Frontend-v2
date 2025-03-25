@@ -17,7 +17,8 @@
       </div>
       <div v-else>
         <UFormGroup :label="item.label" :name="item.id" class="py-2">
-          <UInput type="text" v-model="item.value" placeholder="Value" variant="outline" size="md" autocomplete="off" />
+          <UInput type="text" v-model="item.value" placeholder="Value" variant="outline" size="md" autocomplete="off"
+            :disabled="!isEditable" />
         </UFormGroup>
       </div>
     </div>
@@ -47,8 +48,8 @@ interface ItemTemplate {
 }
 
 const params = defineModel<Attribute>({ default: [] })
-// const isEditable = defineModel('isEditable', { default: false })
-const isEditable = ref(true)
+const isEditable = defineModel('isEditable', { default: false })
+
 
 const items = ref<Item[]>()
 const componentType = ref('')
@@ -85,7 +86,6 @@ watch(componentTypeValue, (newType: any) => {
 
 onMounted(() => {
   // 초기값 설정
-  console.log(params.value)
   if (params.value['type']) {
     componentType.value = params.value['type']
     componentTypeValue.value = params.value['type']
@@ -151,7 +151,7 @@ const itemTemplate = ref<ItemTemplate>(
         id: 'model_format',
         label: 'Model Format',
         type: 'string',
-        value: ''
+        value: 'llm'
       },
       {
         id: 'model_name',
@@ -169,19 +169,19 @@ const itemTemplate = ref<ItemTemplate>(
         id: 'protocol_version',
         label: 'Protocol Version',
         type: 'string',
-        value: ''
+        value: 'v2'
       },
       {
         id: 'namespace',
         label: 'Namespace',
         type: 'string',
-        value: ''
+        value: 'kubeflow-user-example-com'
       },
       {
         id: 'service_account_name',
         label: 'Service Account Name',
         type: 'string',
-        value: ''
+        value: 'storage-system-minio-sa'
       },
       {
         id: 'vllm_options',

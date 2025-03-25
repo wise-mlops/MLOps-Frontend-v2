@@ -26,13 +26,13 @@
             <template #settings="{ item }">
               <div class="">
                 <div v-if="node?.type === 'NodeLoadData'">
-                  <InfoLoadData v-model="params" />
+                  <InfoLoadData v-model="params" :isEditable="isEditable" />
                 </div>
                 <div v-else-if="node?.type === 'NodeLoadPreLLM'">
                   <InfoLoadPreLlm />
                 </div>
                 <div v-else-if="node?.type === 'NodeTrainMlModel'">
-                  <InfoTrainMlModel v-model="params" />
+                  <InfoTrainMlModel v-model="params" :isEditable="isEditable" />
                 </div>
                 <div v-else-if="node?.type === 'NodeTrainLLMFinetune'">
                   <InfoTrainLlmFinetune />
@@ -50,10 +50,10 @@
                   <InfoPickMlModel />
                 </div>
                 <div v-else-if="node?.type === 'NodeServeMlModel'">
-                  <InfoServeMlModel v-model="params" />
+                  <InfoServeMlModel v-model="params" :isEditable="isEditable" />
                 </div>
                 <div v-else>
-                  <UFormGroup label="componentType" name="component_type" class="py-2">
+                  <UFormGroup label=" componentType" name="component_type" class="py-2">
                     <!-- <USelectMenu v-model="componentType" :options="componentTypes" size="md" :disabled="!isEditable" /> -->
                   </UFormGroup>
                   <UFormGroup label="Params" name="params" class="py-2">
@@ -99,7 +99,6 @@ const params = ref([])
 const nodeLabel = ref('')
 
 const isEditable = defineModel('isEditable', { default: false })
-
 const nodeId = computed(() => node.value?.id || '')
 const nodeType = computed(() => node.value?.type || '')
 

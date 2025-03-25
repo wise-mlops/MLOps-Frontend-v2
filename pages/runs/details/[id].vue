@@ -8,7 +8,7 @@
       class="grow flex flex-col">
       <template #pipeline="{ item }">
         <div class="w-full h-full border">
-          <Workflow v-model="pipeline" :pannelOpen="false" />
+          <Workflow v-model="pipeline" :pannelOpen="false" :v-model:isEditable="false" />
         </div>
       </template>
       <template #info="{ item }">

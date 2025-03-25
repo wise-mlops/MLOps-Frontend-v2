@@ -7,12 +7,13 @@
       </UFormGroup>
     </div>
     <div v-for="item in items" :key="item.id">
-      <div v-if="item.type == 'type'">
+      <div v-if="item.type === 'type'">
         <UInput type="hidden" v-model="item.value" placeholder="Value" variant="outline" size="md" autocomplete="off" />
       </div>
       <div v-else>
         <UFormGroup :label="item.label" :name="item.id" class="py-2">
-          <UInput type="text" v-model="item.value" placeholder="Value" variant="outline" size="md" autocomplete="off" />
+          <UInput type="text" v-model="item.value" placeholder="Value" variant="outline" size="md" autocomplete="off"
+            :disabled="!isEditable" />
         </UFormGroup>
       </div>
     </div>
@@ -38,8 +39,8 @@ interface ItemTemplate {
 }
 
 const params = defineModel<Attribute>({ default: [] })
-// const isEditable = defineModel('isEditable', { default: false })
-const isEditable = ref(true)
+const isEditable = defineModel('isEditable', { default: false })
+
 const items = ref<Item[]>()
 const componentType = ref('')
 const componentTypeValue = ref('')
@@ -126,10 +127,6 @@ const componentTypes = ref([
   {
     label: 'load_data_from_storage',
     value: 'load_data_from_storage'
-  },
-  {
-    label: 'test',
-    value: 'test'
   }
 ])
 
