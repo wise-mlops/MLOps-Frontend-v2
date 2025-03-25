@@ -6,7 +6,7 @@
         <template #header>
           <div class="flex items-center justify-between">
             <!-- <h2 class="text-lg font-semibold">{{ node?.label }}</h2> -->
-            <UInput v-model="nodeLabel" class="w-full border-b" variant="none"></UInput>
+            <UInput v-model="nodeLabel" class="w-full border-b" variant="none" :disabled="!isEditable" />
             <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark-20-solid" class="my-1"
               @click="isOpen = false" />
           </div>
