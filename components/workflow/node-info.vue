@@ -50,7 +50,7 @@
                   <InfoPickMlModel />
                 </div>
                 <div v-else-if="node?.type === 'NodeServeMlModel'">
-                  <InfoServeMlModel />
+                  <InfoServeMlModel v-model="params" />
                 </div>
                 <div v-else>
                   <UFormGroup label="componentType" name="component_type" class="py-2">
@@ -107,7 +107,7 @@ const nodeType = computed(() => node.value?.type || '')
 const saveAttribute = () => {
 
   if (!node.value) return
-  
+  console.log(params.value)
   node.value.data.attribute = JSON.parse(JSON.stringify(params.value))
   node.value.label = JSON.parse(JSON.stringify(nodeLabel.value));
   console.log(node.value.data.attribute)
