@@ -29,7 +29,7 @@
                   <InfoLoadData v-model="params" :isEditable="isEditable" />
                 </div>
                 <div v-else-if="node?.type === 'NodeLoadPreLLM'">
-                  <InfoLoadPreLlm />
+                  <InfoLoadPreLlm v-model="params" :isEditable="isEditable" />
                 </div>
                 <div v-else-if="node?.type === 'NodeTrainMlModel'">
                   <InfoTrainMlModel v-model="params" :isEditable="isEditable" />
@@ -106,7 +106,7 @@ const nodeType = computed(() => node.value?.type || '')
 const saveAttribute = () => {
 
   if (!node.value) return
-  console.log(params.value)
+
   node.value.data.attribute = JSON.parse(JSON.stringify(params.value))
   node.value.label = JSON.parse(JSON.stringify(nodeLabel.value));
   console.log(node.value.data.attribute)
