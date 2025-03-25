@@ -11,7 +11,12 @@
           <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark-20-solid" @click="closeNode" />
         </div>
       </template>
-      <div class="min-h-5">
+      <div v-if="node.node.data.attribute.type" class="text-sm mb-4">
+        <UBadge variant="outline">
+          {{ node.node.data.attribute.type || '' }}
+        </UBadge>
+      </div>
+      <div class="">
         <UChip v-if="node.node.data.state" size="md" inset :color="getColor(node.node.data.state)">
           <UAvatar icon="i-heroicons-document-text" size="md" />
         </UChip>
