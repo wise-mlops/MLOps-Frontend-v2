@@ -90,9 +90,8 @@ onMounted(() => {
   if (params.value['type']) {
     componentType.value = params.value['type']
     componentTypeValue.value = params.value['type']
-    items.value = attributeToItems(params.value)
+    items.value = attributeToItems(params.value, itemTemplate.value[componentTypeValue.value])
   }
-
 })
 
 // Attribute 객체를 items 배열로 변환하는 함수
@@ -125,7 +124,7 @@ const itemsToAttribute = (items: Item[]) => {
 
 const componentTypes = ref([
   {
-    label: 'load_data_from_storage',
+    label: 'Load Data from Storage',
     value: 'load_data_from_storage'
   }
 ])
