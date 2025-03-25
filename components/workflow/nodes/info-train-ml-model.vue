@@ -27,7 +27,8 @@
       </div>
       <div v-else>
         <UFormGroup :label="item.label" :name="item.id" class="py-2">
-          <UInput type="text" v-model="item.value" placeholder="Value" variant="outline" size="md" autocomplete="off" />
+          <UInput type="text" v-model="item.value" placeholder="Value" variant="outline" size="md" autocomplete="off"
+            :disabled="!isEditable" />
         </UFormGroup>
       </div>
     </div>
@@ -57,8 +58,7 @@ interface ItemTemplate {
 }
 
 const params = defineModel<Attribute>({ default: [] })
-// const isEditable = defineModel('isEditable', { default: false })
-const isEditable = ref(true)
+const isEditable = defineModel('isEditable', { default: false })
 
 const items = ref<Item[]>()
 const componentType = ref('')
