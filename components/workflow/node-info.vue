@@ -35,19 +35,19 @@
                   <InfoTrainMlModel v-model="params" :isEditable="isEditable" />
                 </div>
                 <div v-else-if="node?.type === 'NodeTrainLLMFinetune'">
-                  <InfoTrainLlmFinetune />
+                  <InfoTrainLlmFinetune v-model="params" :isEditable="isEditable" />
                 </div>
                 <div v-else-if="node?.type === 'NodeTrainLLMPrompttune'">
-                  <InfoTrainLlmPrompttune />
+                  <InfoTrainLlmPrompttune v-model="params" :isEditable="isEditable" />
                 </div>
                 <div v-else-if="node?.type === 'NodeValMlModel'">
-                  <InfoValMlModel />
+                  <InfoValMlModel v-model="params" :isEditable="isEditable" />
                 </div>
                 <div v-else-if="node?.type === 'NodeValLLM'">
-                  <InfoValLlm />
+                  <InfoValLlm v-model="params" :isEditable="isEditable" />
                 </div>
                 <div v-else-if="node?.type === 'NodePickMlModel'">
-                  <InfoPickMlModel />
+                  <InfoPickMlModel v-model="params" :isEditable="isEditable" />
                 </div>
                 <div v-else-if="node?.type === 'NodeServeMlModel'">
                   <InfoServeMlModel v-model="params" :isEditable="isEditable" />
