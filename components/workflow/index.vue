@@ -18,6 +18,7 @@
 </template>
 
 <script setup lang="ts">
+import { v4 as uuidv4 } from 'uuid'
 import { Background } from '@vue-flow/background';
 import { Controls } from '@vue-flow/controls';
 import { MiniMap } from '@vue-flow/minimap';
@@ -34,6 +35,7 @@ import NodeValMlModel from './nodes/node-val-ml-model.vue'
 import NodeValLLM from './nodes/node-val-llm.vue'
 import NodePickMlModel from './nodes/node-pick-ml-model.vue'
 import NodeServeMlModel from './nodes/node-serve-ml-model.vue'
+
 
 const { nodes, edges, addNodes, removeNodes, dimensions, onNodeClick, onConnect, onEdgeClick, addEdges } = useVueFlow();
 
@@ -94,7 +96,8 @@ onConnect((params: Connection) => {
 })
 
 const onAddNode = (item: { type: string, label: string }) => {
-  const newId = crypto.randomUUID().replaceAll('-', '');
+  // const newId = crypto.randomUUID().replaceAll('-', '');
+  const newId = uuidv4().replaceAll('-', '');
   const newNode = ref<Node>({
     id: newId,
     type: item.type,
