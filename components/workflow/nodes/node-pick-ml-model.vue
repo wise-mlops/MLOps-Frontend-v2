@@ -12,10 +12,18 @@
         </div>
       </template>
       <div class="min-h-5">
-        <UChip v-if="node.node.data.state" size="md" inset :color="getColor(node.node.data.state)">
-          <UAvatar icon="i-heroicons-document-text" size="md" />
-        </UChip>
+        <div v-if="node.node.data.attribute.type" class="text-sm mb-4">
+          <UBadge variant="outline">
+            {{ node.node.data.attribute.type || '' }}
+          </UBadge>
+        </div>
+        <div class="">
+          <UChip v-if="node.node.data.state" size="md" inset :color="getColor(node.node.data.state)">
+            <UAvatar icon="i-heroicons-document-text" size="md" />
+          </UChip>
+        </div>
       </div>
+
     </UCard>
     <Handle type="source" :position="Position.Bottom" />
     <Handle type="target" :position="Position.Top" />
