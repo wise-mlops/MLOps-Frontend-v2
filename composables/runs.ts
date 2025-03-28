@@ -2,7 +2,7 @@ const config = useAppConfig()
 
 export const getRuns = async ( experiment_id : string | string[] | null) => {
   let query: any = {
-    page_size: 0
+    page_size: 500
   };
   if (experiment_id) query.experiment_id = experiment_id;
 
