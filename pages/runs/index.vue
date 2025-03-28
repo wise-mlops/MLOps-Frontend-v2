@@ -40,7 +40,7 @@
       </template>
 
       <template #pipeline_spec-data="{ row }">
-        {{ row.pipeline_spec ? row.pipeline_spec.pipelineInfo.name : '' }}
+        {{ row.pipeline_spec ? row.pipeline_spec.pipelineInfo?.name : '' }}
       </template>
       <template #action-data="{ row }">
         <div>
