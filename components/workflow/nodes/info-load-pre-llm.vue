@@ -10,6 +10,12 @@
       <div v-if="item.type === 'type'">
         <UInput type="hidden" v-model="item.value" placeholder="Value" variant="outline" size="md" autocomplete="off" />
       </div>
+      <div v-else-if="item.type === 'bool'">
+        <UFormGroup :label="item.label" :name="item.id" class="py-2">
+          <!--Toggle-->
+          <UToggle v-model="item.value" size="md" :disabled="!isEditable" />
+        </UFormGroup>
+      </div>
       <div v-else>
         <UFormGroup :label="item.label" :name="item.id" class="py-2">
           <UInput type="text" v-model="item.value" placeholder="Value" variant="outline" size="md" autocomplete="off"
@@ -154,6 +160,30 @@ const itemTemplate = ref<ItemTemplate>(
         type: 'string',
         value: ''
       },
+      {
+        id: 'input_requirement',
+        label: 'Input Requirement',
+        type: 'bool',
+        value: false
+      },
+      {
+        id: 'output_requirement',
+        label: 'Output Requirement',
+        type: 'bool',
+        value: true
+      },
+      {
+        id: 'image_url',
+        label: 'Image URL',
+        type: 'string',
+        value: '',
+      },
+      {
+        id: 'secret_name',
+        label: 'Secret Name',
+        type: 'string',
+        value: '',
+      }
     ],
     load_model_from_storage: [
       {
