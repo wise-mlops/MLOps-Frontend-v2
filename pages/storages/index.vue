@@ -19,8 +19,8 @@
       <template #action-data="{ row }">
         <div>
           <UTooltip text="detail">
-            <UButton @click="detailBucket(row._name)" icon="i-heroicons-pencil-square" variant="ghost"
-              class="p-1 mx-2" />
+            <UButton @click="detailBucket(row._name)" icon="i-heroicons-arrow-right-on-rectangle" variant="ghost"
+              class="p-2 mx-2" />
           </UTooltip>
           <!-- <UTooltip text="delete">
             <UButton @click="deleteBucket(row._name)" icon="i-heroicons-trash" variant="ghost" class="px-2 py-0" />
@@ -61,7 +61,7 @@ const reloadBuckets = () => {
 }
 
 const detailBucket = async (bucketName: string) => {
-  navigateTo(`/storages/details/${bucketName}`)
+  navigateTo(`/storages/${bucketName}`)
 }
 
 const deleteBucket = async (bucketName: string) => {

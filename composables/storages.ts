@@ -17,3 +17,35 @@ export const removeBucket = async ( bucket_name: string | string[] ) => {
   })
   return response
 }
+
+export const getObjects = async ( bucket_name: string | string[], slug: string  ) => {
+  let url = encodeURI(`/storages/${bucket_name}/objects`)
+  const response = await $fetch<ResponseBody>(url, {
+    method: 'GET',
+    baseURL: config.api.url,
+    params: {
+      prefix: slug,
+      reverse: true
+    },
+  })  
+  return response
+}
+
+
+export const downloadObject = async (bucket_name: string | string[], object_names: string[]) => {
+  // object_names 배열을 직렬화
+  const serializedParams = object_names
+    .map((name) => `object_names=${encodeURIComponent(name)}`)
+    .join('&');
+    
+  // URL에 직렬화된 파라미터 추가
+  const url = encodeURI(`/storages/${bucket_name}/objects/download?${serializedParams}`);
+
+  const response = await $fetch<ResponseBody>(url, {
+    method: 'GET',
+    baseURL: config.api.url,
+  });
+
+  
+  return response;
+};
