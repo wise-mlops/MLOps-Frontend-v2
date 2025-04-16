@@ -1,6 +1,6 @@
 <template>
   <div>
-    <UTable :rows="rows" :columns="columns" :loading="pending"
+    <UTable :rows="rows" :columns="columns" :loading="pending" v-model="modelValue"
       :loading-state="{ icon: 'i-heroicons-arrow-path', label: 'Loading' }"
       :progress="{ color: 'primary', animation: 'carousel' }"
       :empty-state="{ icon: 'i-heroicons-circle-stack', label: 'No items.' }">
@@ -24,6 +24,8 @@ const pending = defineModel<any>("pending", { default: false })
 
 const page = ref(1)
 const pageCount = 10
+
+const modelValue = defineModel<any>("modelValue", { default: [] })
 
 const rows = computed(() => {
   return data.value.slice((page.value - 1) * pageCount, (page.value) * pageCount)
