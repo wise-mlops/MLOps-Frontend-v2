@@ -96,7 +96,24 @@ const getDName = (name: string): string => {
 
 const handleDownload = async (objectName: string) => {
 
-  // downloadObject(bucketName, [objectName])
+  const blob = await downloadObject(bucketName, [objectName])
+
+
+
+
+  const filename = getFName(objectName)
+  // TODO: 
+  // 파일 1개일때는 파일명으로 다운로드
+  // 파일 여러개일때는 zip파일로 다운로드(랜덤생성 파일명.zip)
+
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = decodeURIComponent(filename)
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
 }
 
 const handleCopyUrl = (objectName: string) => {
