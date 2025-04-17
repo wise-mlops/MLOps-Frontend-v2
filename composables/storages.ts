@@ -9,6 +9,22 @@ export const getBuckets = async () => {
   return response
 }
 
+export const createBucket = async ( bucket_name: string ) => {
+  let url = encodeURI(`/storages/${bucket_name}`)
+  const options = {
+    headers: { "Content-type": "application/json" },
+    method: 'POST',
+    baseURL: config.api.url,
+    body: {
+      location: bucket_name,
+      object_loack: false
+    }
+  }
+  const response = await $fetch<ResponseBody>(url, options as object)
+  return response
+}
+
+
 export const removeBucket = async ( bucket_name: string | string[] ) => {
   let url = encodeURI(`/storages/${bucket_name}`)
   const response = await $fetch<ResponseBody>(url, {

@@ -39,10 +39,10 @@ const breadcrumbs = ref([
     to: '/'
   },
   {
-    label: 'Storage',
+    label: 'Storages',
   },
 ])
-const pageTitle = ref('Storage')
+const pageTitle = ref('Storages')
 const pending = ref(true)
 const data = ref([])
 
@@ -64,19 +64,7 @@ const detailBucket = async (bucketName: string) => {
   navigateTo(`/storages/${bucketName}`)
 }
 
-const deleteBucket = async (bucketName: string) => {
-  if (confirm('delete?')) {
 
-    const response = await removeBucket(bucketName);
-    if (response.code == 130200) {
-      alert('deleted')
-      reloadBuckets()
-    } else {
-      alert("오류[" + response.code + "]: " + response.message + ' ' + JSON.stringify(response.result))
-    }
-  }
-
-}
 
 onMounted(() => {
   loadBuckets()
@@ -93,7 +81,7 @@ const toolbarLinks = ref([
     {
       label: '등록',
       icon: 'i-heroicons-pencil-square-solid',
-      to: '/runs/add'
+      to: '/storages/add'
     }]
 ])
 
