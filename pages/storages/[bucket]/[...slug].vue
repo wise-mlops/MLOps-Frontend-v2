@@ -103,9 +103,6 @@ const handleDownload = async (objectName: string) => {
 
   const blob = await downloadObject(bucketName, [objectName])
 
-
-
-
   const filename = getFName(objectName)
   // TODO: 
   // 파일 1개일때는 파일명으로 다운로드
@@ -155,7 +152,7 @@ const toolbarLinks = ref([
     {
       label: '업로드',
       icon: 'i-heroicons-pencil-square-solid',
-      to: '/runs/add'
+      to: `/storages/${bucketName}/add`
     },
     {
       label: '다운로드',

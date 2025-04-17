@@ -47,6 +47,26 @@ export const getObjects = async ( bucket_name: string | string[], slug: string  
   return response
 }
 
+export const createObjects = async ( bucket_name: string | string[], folder_path: string, files: File[] ) => {
+  let url = encodeURI(`/storages/${bucket_name}/objects/upload`)
+  const formData = new FormData()
+  files.forEach((file) => {
+    formData.append('files', file)
+  })
+  
+  
+  const response = await $fetch<ResponseBody>(url, {
+    method: 'POST',
+    baseURL: config.api.url,
+    params: {
+      folder_path: folder_path
+    },
+    body: formData
+  })
+  
+  return response
+  
+}
 
 export const downloadObject = async (bucket_name: string | string[], object_names: string[]) => {
   
