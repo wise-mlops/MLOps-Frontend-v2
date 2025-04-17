@@ -11,6 +11,11 @@
         <UIcon name="i-heroicons-folder" class="w-6 h-5" /><span>{{ getDName(row._object_name) }}</span>
       </div>
     </template>
+    <template #_last_modified-data="{ row }">
+      <div>
+        {{ new Date(row._last_modified).toLocaleString() }}
+      </div>
+    </template>
     <template #action-data="{ row }">
       <!-- 파일인 경우 -->
       <div v-if="row._etag">
