@@ -5,6 +5,12 @@
     <LayoutPageToolbar :links="toolbarLinks" />
     <UCard class="min-h-10">
       <div class="space-y-4 w-full">
+        <UFormGroup label="New Path" name="newPath" class="py-0">
+          <UInput v-model="newPath" placeholder="Input Path(비어있는 경우 현재 경로)" variant="outline" size="md"
+            autocomplete="false">
+          </UInput>
+        </UFormGroup>
+
         <div class="flex items-center justify-center w-full">
           <ModuleFileUpload @files-selected="handleFiles" />
         </div>
@@ -36,13 +42,15 @@ const breadcrumbs = ref([
 
 
 const pageTitle = ref('Add Object')
+const newPath = ref('');
 const uploadObjects = ref<File[]>([])
 
 const addObject = async () => {
   console.log(uploadObjects.value)
-  const response = await createObjects(bucketName, slug.value.join('/'), uploadObjects.value)
+  console.log(`${slug.value.join('/')}${newPath.value}`)
+  const response = await createObjects(bucketName, `${slug.value.join('/')}${newPath.value}`, uploadObjects.value)
   if (response.code == 130200) {
-    navigateTo(`/storages/${bucketName}/${slug.value.join('/')}`, {
+    navigateTo(`/storages/${bucketName}/${slug.value.join('/')}${newPath.value}/`, {
       replace: true,
       redirectCode: 301,
       external: true

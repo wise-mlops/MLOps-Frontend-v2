@@ -12,7 +12,7 @@
       </div>
     </template>
     <template #_last_modified-data="{ row }">
-      <div>
+      <div v-if="row._etag">
         {{ new Date(row._last_modified).toLocaleString() }}
       </div>
     </template>
