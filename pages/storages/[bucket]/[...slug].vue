@@ -2,7 +2,8 @@
   <LayoutPageBreadcrumb :breadcrumbs="breadcrumbs" />
   <LayoutPageHeader :title="pageTitle" />
   <LayoutPageToolbar :links="toolbarLinks" />
-  <ModuleDataTable v-model:columns="storageColumns" v-model="selected" v-model:data="data" v-model:pending="pending">
+  <ModuleDataTable v-model:columns="storageColumns" v-model="selected" v-model:data="data" v-model:pending="pending"
+    @select="handleSelect">
     <template #_object_name-data="{ row }">
       <div v-if="row._etag">
         <UIcon name="i-heroicons-document" class="w-6 h-5" /><span>{{ getFName(row._object_name) }}</span>
@@ -25,6 +26,9 @@
         </UTooltip>
         <UTooltip text="share">
           <UButton @click="handleCopyUrl(row._object_name)" icon="i-heroicons-share" variant="ghost" class="p-2 mx-2" />
+        </UTooltip>
+        <UTooltip text="share">
+          <UButton @click="handleDelete(row._object_name)" icon="i-heroicons-trash" variant="ghost" class="p-2 mx-2" />
         </UTooltip>
       </div>
       <!-- 폴더인 경우-->
@@ -61,6 +65,9 @@ const pageTitle = ref(`Bucket: ${bucketName}`)
 const pending = ref(true)
 const data = ref([])
 const selected = ref([])
+
+const disableDownload = ref(true)
+const disableDelete = ref(true)
 
 const loadObjects = async () => {
   const response = await getObjects(bucketName, slug.value.join('/'));
@@ -99,9 +106,13 @@ const getDName = (name: string): string => {
   return nameSplit.at(-2) || '';
 }
 
+const handleSelect = (row: any) => {
+
+}
+
 const handleDownload = async (objectName: string) => {
 
-  const blob = await downloadObject(bucketName, [objectName])
+  const blob = await downloadObjects(bucketName, [objectName])
 
   const filename = getFName(objectName)
   // TODO: 
@@ -118,6 +129,27 @@ const handleDownload = async (objectName: string) => {
   URL.revokeObjectURL(url)
 }
 
+const handleMultiDownload = async (objectName: string[]) => {
+
+}
+
+const handleDelete = async (objectName: string) => {
+
+  if (confirm('delete?')) {
+    const response = await deleteObjects(bucketName, [objectName])
+    if (response.code == 130200) {
+      reloadObjects()
+    } else {
+      alert("오류[" + response.code + "]: " + response.message)
+    }
+  }
+}
+
+const handleMultiDelete = async (objectName: string[]) => {
+
+}
+
+
 const handleCopyUrl = (objectName: string) => {
 
   // const url = `${window.location.origin}/storages/${bucketName}/${objectName}`
@@ -133,7 +165,7 @@ const handleFolderClick = (row: any) => {
 }
 
 
-const toolbarLinks = ref([
+const toolbarLinks = computed(() => [
   [
     {
       label: '이전',
@@ -154,14 +186,16 @@ const toolbarLinks = ref([
       icon: 'i-heroicons-pencil-square-solid',
       to: `/storages/${bucketName}/add`
     },
-    {
-      label: '다운로드',
-      icon: 'i-heroicons-pencil-square-solid',
-    },
-    {
-      label: '삭제',
-      icon: 'i-heroicons-pencil-square-solid',
-    }
+    // {
+    //   label: '다운로드',
+    //   icon: 'i-heroicons-arrow-down-tray',
+    //   disabled: disableDownload.value
+    // },
+    // {
+    //   label: '삭제',
+    //   icon: 'i-heroicons-trash',
+    //   disabled: disableDelete.value
+    // }
   ]
 ])
 

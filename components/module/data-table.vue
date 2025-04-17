@@ -3,7 +3,7 @@
     <UTable :rows="rows" :columns="columns" :loading="pending" v-model="modelValue"
       :loading-state="{ icon: 'i-heroicons-arrow-path', label: 'Loading' }"
       :progress="{ color: 'primary', animation: 'carousel' }"
-      :empty-state="{ icon: 'i-heroicons-circle-stack', label: 'No items.' }">
+      :empty-state="{ icon: 'i-heroicons-circle-stack', label: 'No items.' }" @select="$emit('select', $event)">
       <template v-for="(_, slot) of $slots" #[slot]="scope">
         <slot :name="slot" v-bind="scope" />
       </template>
