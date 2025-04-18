@@ -32,14 +32,20 @@ const links = [
     to: '/runs'
   },
   {
+    label: 'ENDPOINTS',
+    icon: 'i-heroicons-share',
+    to: '/endpoints'
+  },
+  {
     label: 'NOTEBOOKS',
     icon: 'i-heroicons-document-text',
     to: '/notebooks'
+  },
+
+  {
+    label: 'STORAGES',
+    icon: 'i-heroicons-circle-stack',
+    to: '/storages'
   }
-  // {
-  //   label: 'ENDPOINTS',
-  //   icon: 'i-heroicons-share',
-  //   to: '/notebooks'
-  // }
 ]
 </script>
