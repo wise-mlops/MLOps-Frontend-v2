@@ -46,11 +46,18 @@ const newPath = ref('');
 const uploadObjects = ref<File[]>([])
 
 const addObject = async () => {
-  console.log(uploadObjects.value)
-  console.log(`${slug.value.join('/')}${newPath.value}`)
+
   const response = await createObjects(bucketName, `${slug.value.join('/')}${newPath.value}`, uploadObjects.value)
   if (response.code == 130200) {
-    navigateTo(`/storages/${bucketName}/${slug.value.join('/')}${newPath.value}/`, {
+    let navUrl = "";
+
+    if (newPath.value) {
+      navUrl = `/storages/${bucketName}/${slug.value.join('/')}${newPath.value}/`
+    } else {
+      navUrl = `/storages/${bucketName}/${slug.value.join('/')}`
+    }
+
+    navigateTo(navUrl, {
       replace: true,
       redirectCode: 301,
       external: true
