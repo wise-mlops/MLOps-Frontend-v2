@@ -47,8 +47,8 @@ const breadcrumbs = ref([
     to: '/'
   },
   {
-    label: 'Experiments',
-    to: '/experiments/'
+    label: 'Endpoints',
+    to: '/endpoints/'
   },
   {
     label: 'Details',
