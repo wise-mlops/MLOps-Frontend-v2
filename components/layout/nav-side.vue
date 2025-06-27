@@ -41,11 +41,15 @@ const links = [
     icon: 'i-heroicons-document-text',
     to: '/notebooks'
   },
-
   {
     label: 'STORAGES',
     icon: 'i-heroicons-circle-stack',
     to: '/storages'
+  },
+  {
+    label: 'SIMPLE ML',
+    icon: 'i-heroicons-cpu-chip',
+    to: '/simple-ml'
   }
 ]
 </script>
