@@ -17,7 +17,7 @@
               <h3 class="text-lg font-semibold">실험 정보</h3>
               <UButton
                 v-if="nasStatus === 'finished' && finalArchitecture"
-                @click="showFinalArchitectureModal = true"
+                @click="openFinalArchitectureModal"
                 color="green"
                 size="sm"
                 variant="outline"
@@ -79,7 +79,6 @@
           </UCard>
         </div>
       </template>
-
       <!-- 재학습 탭 -->
       <template #retrain="{ item }">
         <div class="p-4 space-y-6">
@@ -87,7 +86,7 @@
             <template #header>
               <div class="flex justify-between items-center">
                 <h3 class="text-lg font-semibold">재학습 실험 목록</h3>
-                <UButton @click="showRetrainModal = true" icon="i-heroicons-plus" color="primary">
+                <UButton @click="openRetrainModal" icon="i-heroicons-plus" color="primary">
                   재학습
                 </UButton>
               </div>
@@ -131,7 +130,6 @@
           </UCard>
         </div>
       </template>
-
       <!-- 하이퍼파라미터 최적화 탭 -->
       <template #hpo="{ item }">
         <div class="p-4 space-y-6">
@@ -139,7 +137,7 @@
             <template #header>
               <div class="flex justify-between items-center">
                 <h3 class="text-lg font-semibold">하이퍼파라미터 최적화 실험 목록</h3>
-                <UButton @click="showHyperparameterModal = true" icon="i-heroicons-plus" color="green">
+                <UButton @click="openHyperparameterModal" icon="i-heroicons-plus" color="green">
                   최적화
                 </UButton>
               </div>
@@ -186,7 +184,7 @@
     </UTabs>
 
     <!-- NAS 차트 모달 -->
-    <UModal v-model="showChartModal" :ui="{ width: 'sm:max-w-6xl' }">
+    <UModal v-model="showChartModal" :ui="{ width: 'sm:max-w-6xl' }" prevent-close>
       <UCard>
         <template #header>
           <div class="flex justify-between items-center">
@@ -252,14 +250,14 @@
         </div>
         <template #footer>
           <div class="flex justify-end">
-            <UButton @click="showChartModal = false" variant="ghost">닫기</UButton>
+            <UButton @click="closeChartModal" variant="ghost">닫기</UButton>
           </div>
         </template>
       </UCard>
     </UModal>
 
     <!-- 최종 아키텍처 모달 -->
-    <UModal v-model="showFinalArchitectureModal" :ui="{ width: 'sm:max-w-4xl' }">
+    <UModal v-model="showFinalArchitectureModal" :ui="{ width: 'sm:max-w-4xl' }" prevent-close>
       <UCard>
         <template #header>
           <div class="flex items-center gap-2">
@@ -283,14 +281,14 @@
             <UButton @click="copyArchitecture" color="green" variant="outline" icon="i-heroicons-clipboard">
               복사
             </UButton>
-            <UButton @click="showFinalArchitectureModal = false" variant="ghost">닫기</UButton>
+            <UButton @click="closeFinalArchitectureModal" variant="ghost">닫기</UButton>
           </div>
         </template>
       </UCard>
     </UModal>
 
     <!-- 재학습 상세 모달 -->
-    <UModal v-model="showRetrainDetailModal" :ui="{ width: 'sm:max-w-6xl' }">
+    <UModal v-model="showRetrainDetailModal" :ui="{ width: 'sm:max-w-6xl' }" prevent-close>
       <UCard>
         <template #header>
           <div class="flex items-center gap-2">
@@ -304,7 +302,7 @@
               <h4 class="text-lg font-semibold">실험 정보</h4>
               <UButton
                 v-if="selectedRetrainExperiment?.auto_ml_config?.arch"
-                @click="showRetrainArchitectureModal = true"
+                @click="openRetrainArchitectureModal"
                 color="green"
                 size="sm"
                 variant="outline"
@@ -366,14 +364,14 @@
         </div>
         <template #footer>
           <div class="flex justify-end">
-            <UButton @click="showRetrainDetailModal = false" variant="ghost">닫기</UButton>
+            <UButton @click="closeRetrainDetailModal" variant="ghost">닫기</UButton>
           </div>
         </template>
       </UCard>
     </UModal>
 
     <!-- 재학습 아키텍처 모달 -->
-    <UModal v-model="showRetrainArchitectureModal" :ui="{ width: 'sm:max-w-4xl' }">
+    <UModal v-model="showRetrainArchitectureModal" :ui="{ width: 'sm:max-w-4xl' }" prevent-close>
       <UCard>
         <template #header>
           <div class="flex items-center gap-2">
@@ -397,14 +395,14 @@
             <UButton @click="copyRetrainArchitecture" color="green" variant="outline" icon="i-heroicons-clipboard">
               복사
             </UButton>
-            <UButton @click="showRetrainArchitectureModal = false" variant="ghost">닫기</UButton>
+            <UButton @click="closeRetrainArchitectureModal" variant="ghost">닫기</UButton>
           </div>
         </template>
       </UCard>
     </UModal>
 
     <!-- 재학습 차트 모달 -->
-    <UModal v-model="showRetrainChartModal" :ui="{ width: 'sm:max-w-6xl' }">
+    <UModal v-model="showRetrainChartModal" :ui="{ width: 'sm:max-w-6xl' }" prevent-close>
       <UCard>
         <template #header>
           <div class="flex justify-between items-center">
@@ -470,14 +468,14 @@
         </div>
         <template #footer>
           <div class="flex justify-end">
-            <UButton @click="showRetrainChartModal = false" variant="ghost">닫기</UButton>
+            <UButton @click="closeRetrainChartModal" variant="ghost">닫기</UButton>
           </div>
         </template>
       </UCard>
     </UModal>
 
     <!-- 하이퍼파라미터 최적화 상세 모달 -->
-    <UModal v-model="showHPODetailModal" :ui="{ width: 'sm:max-w-6xl' }">
+    <UModal v-model="showHPODetailModal" :ui="{ width: 'sm:max-w-6xl' }" prevent-close>
       <UCard>
         <template #header>
           <div class="flex items-center gap-2">
@@ -491,7 +489,7 @@
               <h4 class="text-lg font-semibold">실험 정보</h4>
               <UButton
                 v-if="selectedHPOExperiment?.auto_ml_config?.search_space"
-                @click="showHPOConfigModal = true"
+                @click="openHPOConfigModal"
                 color="green"
                 size="sm"
                 variant="outline"
@@ -573,14 +571,14 @@
         </div>
         <template #footer>
           <div class="flex justify-end">
-            <UButton @click="showHPODetailModal = false" variant="ghost">닫기</UButton>
+            <UButton @click="closeHPODetailModal" variant="ghost">닫기</UButton>
           </div>
         </template>
       </UCard>
     </UModal>
 
     <!-- 하이퍼파라미터 설정 보기 모달 -->
-    <UModal v-model="showHPOConfigModal" :ui="{ width: 'sm:max-w-4xl' }">
+    <UModal v-model="showHPOConfigModal" :ui="{ width: 'sm:max-w-4xl' }" prevent-close>
       <UCard>
         <template #header>
           <div class="flex items-center gap-2">
@@ -604,14 +602,14 @@
             <UButton @click="copyHPOConfig" color="green" variant="outline" icon="i-heroicons-clipboard">
               복사
             </UButton>
-            <UButton @click="showHPOConfigModal = false" variant="ghost">닫기</UButton>
+            <UButton @click="closeHPOConfigModal" variant="ghost">닫기</UButton>
           </div>
         </template>
       </UCard>
     </UModal>
 
     <!-- 하이퍼파라미터 최적화 차트 모달 -->
-    <UModal v-model="showHPOChartModal" :ui="{ width: 'sm:max-w-6xl' }">
+    <UModal v-model="showHPOChartModal" :ui="{ width: 'sm:max-w-6xl' }" prevent-close>
       <UCard>
         <template #header>
           <div class="flex justify-between items-center">
@@ -634,7 +632,6 @@
               </div>
             </div>
           </UCard>
-
           <!-- 차트 영역 - Accuracy만 표시 -->
           <div class="grid grid-cols-1 gap-6">
             <div class="bg-white border rounded-lg">
@@ -667,14 +664,14 @@
         </div>
         <template #footer>
           <div class="flex justify-end">
-            <UButton @click="showHPOChartModal = false" variant="ghost">닫기</UButton>
+            <UButton @click="closeHPOChartModal" variant="ghost">닫기</UButton>
           </div>
         </template>
       </UCard>
     </UModal>
 
     <!-- 재학습 모달 -->
-    <UModal v-model="showRetrainModal" :ui="{ width: 'sm:max-w-4xl' }">
+    <UModal v-model="showRetrainModal" :ui="{ width: 'sm:max-w-4xl' }" prevent-close>
       <UCard>
         <template #header>
           <h3 class="text-lg font-semibold">재학습</h3>
@@ -780,7 +777,7 @@
         </div>
         <template #footer>
           <div class="flex justify-end gap-3">
-            <UButton @click="showRetrainModal = false" variant="ghost">취소</UButton>
+            <UButton @click="closeRetrainModal" variant="ghost">취소</UButton>
             <UButton @click="submitRetrain" color="primary" :loading="submittingRetrain">재학습 시작</UButton>
           </div>
         </template>
@@ -788,7 +785,7 @@
     </UModal>
 
     <!-- 하이퍼파라미터 최적화 모달 -->
-    <UModal v-model="showHyperparameterModal" :ui="{ width: 'sm:max-w-5xl' }">
+    <UModal v-model="showHyperparameterModal" :ui="{ width: 'sm:max-w-5xl' }" prevent-close>
       <UCard>
         <template #header>
           <h3 class="text-lg font-semibold">하이퍼파라미터 최적화</h3>
@@ -953,7 +950,7 @@
         </div>
         <template #footer>
           <div class="flex justify-end gap-3">
-            <UButton @click="showHyperparameterModal = false" variant="ghost">취소</UButton>
+            <UButton @click="closeHyperparameterModal" variant="ghost">취소</UButton>
             <UButton @click="submitHPO" color="green" :loading="submittingHPO">최적화 시작</UButton>
           </div>
         </template>
@@ -963,7 +960,7 @@
 </template>
 
 <script setup lang="ts">
-import { getNASExperimentDetails, getNASExperimentStatus, getRetrainExperiments, getHPOExperiments, startRetrain, startHPO, getRetrainExperimentStatus, getHPOExperimentStatus } from "~/composables/auto-ml";
+import { getNASExperimentDetails, getNASExperimentStatus, getRetrainExperiments, getHPOExperiments, startRetrain, startHPO, getRetrainExperimentStatus, getHPOExperimentStatus, removeAutoMLExperiments } from "~/composables/auto-ml";
 
 const router = useRouter();
 const route = useRoute();
@@ -980,6 +977,7 @@ const nasStatus = ref('pending');
 const retrainStatus = ref('pending');
 const hpoStatus = ref('pending');
 const finalArchitecture = ref(null);
+
 const submittingRetrain = ref(false);
 const submittingHPO = ref(false);
 
@@ -1017,7 +1015,7 @@ const nasExperimentStatus = ref([]);
 const retrainExperiments = ref([]);
 const hpoExperiments = ref([]);
 
-// 모달 상태
+// 모달 상태 - 각 모달에 고유한 함수 사용
 const showRetrainModal = ref(false);
 const showHyperparameterModal = ref(false);
 const showChartModal = ref(false);
@@ -1137,6 +1135,7 @@ const breadcrumbs = ref([
   { label: 'Auto ML', to: '/auto-ml/' },
   { label: 'Details' }
 ]);
+
 const pageTitle = ref('Auto ML Experiment Details');
 
 // 탭 설정
@@ -1152,6 +1151,7 @@ const tunerOptions = [
   { label: 'TPE', value: 'tpe' },
   { label: 'Grid Search', value: 'gridsearch' }
 ];
+
 const parameterTypeOptions = [
   { label: 'Choice', value: 'choice' },
   { label: 'Uniform', value: 'uniform' },
@@ -1168,6 +1168,67 @@ const toolbarLinks = ref([
     { label: '새로고침', icon: 'i-heroicons-arrow-path', click: refreshAllData }
   ]
 ]);
+
+// 모달 열기/닫기 함수들
+function openRetrainModal() {
+  showRetrainModal.value = true;
+}
+
+function closeRetrainModal() {
+  showRetrainModal.value = false;
+}
+
+function openHyperparameterModal() {
+  showHyperparameterModal.value = true;
+}
+
+function closeHyperparameterModal() {
+  showHyperparameterModal.value = false;
+}
+
+function openFinalArchitectureModal() {
+  showFinalArchitectureModal.value = true;
+}
+
+function closeFinalArchitectureModal() {
+  showFinalArchitectureModal.value = false;
+}
+
+function closeChartModal() {
+  showChartModal.value = false;
+}
+
+function closeRetrainDetailModal() {
+  showRetrainDetailModal.value = false;
+}
+
+function openRetrainArchitectureModal() {
+  showRetrainArchitectureModal.value = true;
+}
+
+function closeRetrainArchitectureModal() {
+  showRetrainArchitectureModal.value = false;
+}
+
+function closeRetrainChartModal() {
+  showRetrainChartModal.value = false;
+}
+
+function closeHPODetailModal() {
+  showHPODetailModal.value = false;
+}
+
+function openHPOConfigModal() {
+  showHPOConfigModal.value = true;
+}
+
+function closeHPOConfigModal() {
+  showHPOConfigModal.value = false;
+}
+
+function closeHPOChartModal() {
+  showHPOChartModal.value = false;
+}
 
 // 유틸리티 함수들
 const formatNumber = (value) => value ? value.toFixed(6) : '-';
@@ -1201,77 +1262,7 @@ function getSearchMethodText(method: string) {
   return methodMap[method] || method;
 }
 
-// 차트 관련 함수들
-function openChartModal(row: any) {
-  selectedEpoch.value = row.epoch;
-  const accData = row.train_acc_data || [];
-  const lossData = row.train_loss_data || [];
-  selectedChartData.value = {
-    totalSteps: accData.length,
-    maxAcc: accData.length ? Math.max(...accData.map(d => d.y)) : 0,
-    minAcc: accData.length ? Math.min(...accData.map(d => d.y)) : 0,
-    avgAcc: row.avg_accuracy,
-    finalAcc: accData.length ? accData[accData.length - 1].y : 0,
-    maxLoss: lossData.length ? Math.max(...lossData.map(d => d.y)) : 0,
-    minLoss: lossData.length ? Math.min(...lossData.map(d => d.y)) : 0,
-    avgLoss: row.avg_loss,
-    finalLoss: lossData.length ? lossData[lossData.length - 1].y : 0
-  };
-  showChartModal.value = true;
-  nextTick(() => {
-    renderChart(nasAccuracyChartRef.value, row.train_acc_data, 'Training Accuracy', '#3b82f6');
-    renderChart(nasLossChartRef.value, row.train_loss_data, 'Training Loss', '#ef4444');
-  });
-}
-
-function openRetrainChartModal(row: any) {
-  selectedRetrainEpoch.value = row.epoch;
-  const accData = row.train_acc_data || [];
-  const lossData = row.train_loss_data || [];
-  selectedRetrainChartData.value = {
-    totalSteps: accData.length,
-    maxAcc: accData.length ? Math.max(...accData.map(d => d.y)) : 0,
-    minAcc: accData.length ? Math.min(...accData.map(d => d.y)) : 0,
-    avgAcc: row.avg_accuracy,
-    finalAcc: accData.length ? accData[accData.length - 1].y : 0,
-    maxLoss: lossData.length ? Math.max(...lossData.map(d => d.y)) : 0,
-    minLoss: lossData.length ? Math.min(...lossData.map(d => d.y)) : 0,
-    avgLoss: row.avg_loss,
-    finalLoss: lossData.length ? lossData[lossData.length - 1].y : 0
-  };
-  showRetrainChartModal.value = true;
-  nextTick(() => {
-    renderChart(retrainAccuracyChartRef.value, row.train_acc_data, 'Training Accuracy', '#3b82f6');
-    renderChart(retrainLossChartRef.value, row.train_loss_data, 'Training Loss', '#ef4444');
-  });
-}
-
-function openHPOChartModal(row: any) {
-  selectedHPOEpoch.value = row.job_id;
-  const metricData = row.train_acc_data || [];
-  selectedHPOChartData.value = {
-    totalSteps: metricData.length,
-    maxAcc: metricData.length ? Math.max(...metricData.map(d => d.y)) : 0,
-    minAcc: metricData.length ? Math.min(...metricData.map(d => d.y)) : 0,
-    avgAcc: metricData.length ? metricData.reduce((sum, d) => sum + d.y, 0) / metricData.length : 0,
-    finalAcc: row.final_metric_data || 0,
-    // Loss 데이터는 없으므로 0으로 설정
-    maxLoss: 0,
-    minLoss: 0,
-    avgLoss: 0,
-    finalLoss: 0,
-    // 파라미터 정보 추가
-    parameters: row.parameters
-  };
-  showHPOChartModal.value = true;
-  nextTick(() => {
-    if (metricData.length > 0) {
-      renderChart(hpoAccuracyChartRef.value, row.train_acc_data, 'Accuracy Progress', '#8b5cf6');
-    }
-  });
-}
-
-// 지속시간 포맷 함수 추가
+// 지속시간 포맷 함수
 const formatDuration = (duration) => {
   if (duration <= 0) return '-';
   const seconds = Math.floor(duration / 1000);
@@ -1287,12 +1278,89 @@ const formatDuration = (duration) => {
   }
 };
 
-// 파라미터 표시 함수 추가
+// 파라미터 표시 함수
 const formatParameters = (params) => {
   if (!params) return '-';
-  const key = Object.keys(params)[0]; // 첫 번째 파라미터만 표시
+  const key = Object.keys(params)[0];
   return `${key}: ${params[key]}`;
 };
+
+// 차트 관련 함수들
+function openChartModal(row: any) {
+  selectedEpoch.value = row.epoch;
+  const accData = row.train_acc_data || [];
+  const lossData = row.train_loss_data || [];
+
+  selectedChartData.value = {
+    totalSteps: accData.length,
+    maxAcc: accData.length ? Math.max(...accData.map(d => d.y)) : 0,
+    minAcc: accData.length ? Math.min(...accData.map(d => d.y)) : 0,
+    avgAcc: row.avg_accuracy,
+    finalAcc: accData.length ? accData[accData.length - 1].y : 0,
+    maxLoss: lossData.length ? Math.max(...lossData.map(d => d.y)) : 0,
+    minLoss: lossData.length ? Math.min(...lossData.map(d => d.y)) : 0,
+    avgLoss: row.avg_loss,
+    finalLoss: lossData.length ? lossData[lossData.length - 1].y : 0
+  };
+
+  showChartModal.value = true;
+
+  nextTick(() => {
+    renderChart(nasAccuracyChartRef.value, row.train_acc_data, 'Training Accuracy', '#3b82f6');
+    renderChart(nasLossChartRef.value, row.train_loss_data, 'Training Loss', '#ef4444');
+  });
+}
+
+function openRetrainChartModal(row: any) {
+  selectedRetrainEpoch.value = row.epoch;
+  const accData = row.train_acc_data || [];
+  const lossData = row.train_loss_data || [];
+
+  selectedRetrainChartData.value = {
+    totalSteps: accData.length,
+    maxAcc: accData.length ? Math.max(...accData.map(d => d.y)) : 0,
+    minAcc: accData.length ? Math.min(...accData.map(d => d.y)) : 0,
+    avgAcc: row.avg_accuracy,
+    finalAcc: accData.length ? accData[accData.length - 1].y : 0,
+    maxLoss: lossData.length ? Math.max(...lossData.map(d => d.y)) : 0,
+    minLoss: lossData.length ? Math.min(...lossData.map(d => d.y)) : 0,
+    avgLoss: row.avg_loss,
+    finalLoss: lossData.length ? lossData[lossData.length - 1].y : 0
+  };
+
+  showRetrainChartModal.value = true;
+
+  nextTick(() => {
+    renderChart(retrainAccuracyChartRef.value, row.train_acc_data, 'Training Accuracy', '#3b82f6');
+    renderChart(retrainLossChartRef.value, row.train_loss_data, 'Training Loss', '#ef4444');
+  });
+}
+
+function openHPOChartModal(row: any) {
+  selectedHPOEpoch.value = row.job_id;
+  const metricData = row.train_acc_data || [];
+
+  selectedHPOChartData.value = {
+    totalSteps: metricData.length,
+    maxAcc: metricData.length ? Math.max(...metricData.map(d => d.y)) : 0,
+    minAcc: metricData.length ? Math.min(...metricData.map(d => d.y)) : 0,
+    avgAcc: metricData.length ? metricData.reduce((sum, d) => sum + d.y, 0) / metricData.length : 0,
+    finalAcc: row.final_metric_data || 0,
+    maxLoss: 0,
+    minLoss: 0,
+    avgLoss: 0,
+    finalLoss: 0,
+    parameters: row.parameters
+  };
+
+  showHPOChartModal.value = true;
+
+  nextTick(() => {
+    if (metricData.length > 0) {
+      renderChart(hpoAccuracyChartRef.value, row.train_acc_data, 'Accuracy Progress', '#8b5cf6');
+    }
+  });
+}
 
 // 차트 렌더링 함수
 function renderChart(container: any, data: any[], label: string, color: string) {
@@ -1365,16 +1433,18 @@ function renderChart(container: any, data: any[], label: string, color: string) 
       const d = data[0];
       const x = padding + ((d.x - minX) / xRange) * chartWidth;
       const y = padding + chartHeight - ((d.y - extendedMinY) / range) * chartHeight;
+      const isMax = d.y === maxY;
+      const labelY = isMax ? y - 5 : y + 12;
 
       chartHTML += `
         <circle cx="${x}" cy="${y}" r="6" fill="white" stroke="${color}" stroke-width="2"/>
-        <text x="${x}" y="${y - 8}" text-anchor="middle" font-size="10" fill="#374151" font-weight="600">${d.y.toFixed(4)}</text>
+        <text x="${x + 2}" y="${labelY}" text-anchor="start" font-size="10" fill="#374151" font-weight="600">${d.y.toFixed(4)}</text>
       `;
     } else if (shouldShowPoints.showAll) {
       // 모든 점 표시하면서 극값에는 레이블도 표시
       const extremePoints = findExtremePointsWithoutOverlap(data, maxY, minY, minX, xRange, chartWidth, padding, chartHeight, extendedMinY, range);
 
-      data.forEach((d, index) => {
+      data.forEach((d) => {
         const x = padding + ((d.x - minX) / xRange) * chartWidth;
         const y = padding + chartHeight - ((d.y - extendedMinY) / range) * chartHeight;
         const isExtreme = d.y === maxY || d.y === minY;
@@ -1383,12 +1453,12 @@ function renderChart(container: any, data: any[], label: string, color: string) 
           <circle cx="${x}" cy="${y}" r="${getPointSize(data.length)}" fill="white" stroke="${color}" stroke-width="2"/>
         `;
 
-        // 극값에는 레이블 표시 (겹치지 않는 것만)
+        // 극값에는 레이블 표시
         if (isExtreme) {
           const extremePoint = extremePoints.find(ep => ep.x === d.x && ep.y === d.y);
           if (extremePoint) {
             chartHTML += `
-              <text x="${x}" y="${extremePoint.labelY}" text-anchor="middle" font-size="9" fill="#374151" font-weight="600">${d.y.toFixed(4)}</text>
+              <text x="${extremePoint.labelX}" y="${extremePoint.labelY}" text-anchor="start" font-size="9" fill="#374151" font-weight="600">${d.y.toFixed(4)}</text>
             `;
           }
         }
@@ -1403,7 +1473,7 @@ function renderChart(container: any, data: any[], label: string, color: string) 
 
         chartHTML += `
           <circle cx="${x}" cy="${y}" r="${getPointSize(data.length) + 1}" fill="white" stroke="${color}" stroke-width="2"/>
-          <text x="${x}" y="${point.labelY}" text-anchor="middle" font-size="9" fill="#374151" font-weight="600">${point.y.toFixed(4)}</text>
+          <text x="${point.labelX}" y="${point.labelY}" text-anchor="start" font-size="9" fill="#374151" font-weight="600">${point.y.toFixed(4)}</text>
         `;
       });
     }
@@ -1417,89 +1487,14 @@ function renderChart(container: any, data: any[], label: string, color: string) 
   container.innerHTML = chartHTML;
 }
 
-// 겹치지 않는 극값 포인트들 찾기 (수정된 버전)
-function findExtremePointsWithoutOverlap(data: any[], maxY: number, minY: number, minX: number, xRange: number, chartWidth: number, padding: number, chartHeight: number, extendedMinY: number, range: number): any[] {
-  const extremeIndices = [];
-
-  // 모든 극값 인덱스 찾기
-  data.forEach((d, index) => {
-    if (d.y === maxY || d.y === minY) {
-      extremeIndices.push(index);
-    }
-  });
-
-  if (extremeIndices.length === 0) return [];
-
-  // 화면 좌표로 변환하고 겹침 체크
-  const points = extremeIndices.map(index => {
-    const d = data[index];
-    const screenX = ((d.x - minX) / xRange) * chartWidth;
-    const screenY = padding + chartHeight - ((d.y - extendedMinY) / range) * chartHeight;
-    return {
-      index,
-      x: d.x,
-      y: d.y,
-      screenX,
-      screenY,
-      isMax: d.y === maxY
-    };
-  });
-
-  // X 위치로 정렬
-  points.sort((a, b) => a.screenX - b.screenX);
-
-  // 겹치는 점들 필터링 (최소 30px 간격으로 줄임)
-  const minDistance = 30;
-  const filteredPoints = [];
-
-  for (let i = 0; i < points.length; i++) {
-    const current = points[i];
-
-    // 이미 추가된 점들과 거리 체크
-    const tooClose = filteredPoints.some(existing =>
-      Math.abs(existing.screenX - current.screenX) < minDistance
-    );
-
-    if (!tooClose) {
-      // 레이블 위치 계산 (점에 더 가깝게)
-      const labelY = current.isMax ? current.screenY - 8 : current.screenY + 12;
-
-      filteredPoints.push({
-        ...current,
-        labelY
-      });
-    } else {
-      // 겹치는 경우, 더 극단적인 값 우선
-      const existingIndex = filteredPoints.findIndex(existing =>
-        Math.abs(existing.screenX - current.screenX) < minDistance
-      );
-
-      if (existingIndex >= 0) {
-        const existing = filteredPoints[existingIndex];
-        // 최대값이면 더 큰 값, 최소값이면 더 작은 값 선택
-        if ((current.isMax && current.y > existing.y) ||
-            (!current.isMax && current.y < existing.y)) {
-          const labelY = current.isMax ? current.screenY - 8 : current.screenY + 12;
-          filteredPoints[existingIndex] = {
-            ...current,
-            labelY
-          };
-        }
-      }
-    }
-  }
-
-  return filteredPoints;
-}
-
-// getShouldShowPoints 함수 수정
+// 차트 관련 헬퍼 함수들
 function getShouldShowPoints(dataLength: number): { show: boolean, showAll: boolean, maxPoints: number } {
   if (dataLength === 1) {
     return { show: true, showAll: true, maxPoints: 1 };
-  } else if (dataLength <= 30) { // 30개까지는 모든 점 표시
+  } else if (dataLength <= 30) {
     return { show: true, showAll: true, maxPoints: dataLength };
   } else {
-    return { show: true, showAll: false, maxPoints: 0 }; // 극값만
+    return { show: true, showAll: false, maxPoints: 0 };
   }
 }
 
@@ -1509,41 +1504,28 @@ function getPointSize(dataLength: number): number {
   return 2;
 }
 
-// X축 최적 tick 개수를 결정하는 함수
 function getOptimalXTickCount(minX: number, maxX: number, chartWidth: number): number {
   const xRange = maxX - minX;
+  const maxTicksByWidth = Math.floor(chartWidth / 80);
 
-  // 차트 너비 기반 최대 tick 개수 (너무 많으면 겹침)
-  const maxTicksByWidth = Math.floor(chartWidth / 80); // 80px 간격
-
-  // 데이터 범위 기반 적절한 tick 개수
   let optimalTicks;
-
   if (xRange <= 10) {
-    // 범위가 작으면 모든 값 또는 2씩 건너뛰기
     optimalTicks = Math.min(xRange + 1, 6);
   } else if (xRange <= 50) {
-    // 중간 범위: 10씩 또는 5씩 나누기
     optimalTicks = 6;
   } else if (xRange <= 100) {
-    // 100 이하: 10~20 간격
     optimalTicks = 7;
   } else if (xRange <= 500) {
-    // 500 이하: 50~100 간격
     optimalTicks = 8;
   } else if (xRange <= 1000) {
-    // 1000 이하: 100~200 간격
     optimalTicks = 8;
   } else if (xRange <= 5000) {
-    // 5000 이하: 500~1000 간격
     optimalTicks = 10;
   } else {
-    // 매우 큰 범위: 더 많은 구간
     optimalTicks = 12;
   }
 
-  // 차트 너비 제한과 비교해서 최종 결정
-  return Math.min(optimalTicks, maxTicksByWidth, 15); // 최대 15개로 제한
+  return Math.min(optimalTicks, maxTicksByWidth, 15);
 }
 
 function calculateTicks(min: number, max: number, maxTicks: number = 5): number[] {
@@ -1551,57 +1533,67 @@ function calculateTicks(min: number, max: number, maxTicks: number = 5): number[
     return [min];
   }
 
-  const range = max - min;
-
-  // 적절한 간격 계산
-  const rawStep = range / (maxTicks - 1);
-  let step = getNiceStep(rawStep);
-
   const ticks = [];
+  ticks.push(min);
 
-  // 시작점을 step의 배수로 조정 (더 깔끔한 숫자로)
-  let start = Math.floor(min / step) * step;
-  if (start < min) start += step;
-
-  // min이 시작점과 다르면 min을 먼저 추가
-  if (Math.abs(start - min) > step * 0.1) {
-    ticks.push(min);
-  }
-
-  // 중간 값들 추가
-  let current = start;
-  while (current < max && ticks.length < maxTicks - 1) {
-    if (Math.abs(current - min) > step * 0.1) { // min과 너무 가깝지 않으면
-      ticks.push(current);
-    }
-    current += step;
-  }
-
-  // max 추가 (중복되지 않으면)
-  if (ticks.length === 0 || Math.abs(ticks[ticks.length - 1] - max) > step * 0.1) {
+  if (maxTicks > 1) {
     ticks.push(max);
   }
 
-  return ticks;
-}
-
-// 깔끔한 step 크기를 계산하는 함수
-function getNiceStep(rawStep: number): number {
-  const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
-  const normalizedStep = rawStep / magnitude;
-
-  let niceStep;
-  if (normalizedStep <= 1) {
-    niceStep = 1;
-  } else if (normalizedStep <= 2) {
-    niceStep = 2;
-  } else if (normalizedStep <= 5) {
-    niceStep = 5;
-  } else {
-    niceStep = 10;
+  if (maxTicks > 2) {
+    const middleCount = maxTicks - 2;
+    for (let i = 1; i <= middleCount; i++) {
+      const ratio = i / (middleCount + 1);
+      const tick = min + (max - min) * ratio;
+      ticks.splice(-1, 0, tick);
+    }
   }
 
-  return niceStep * magnitude;
+  return [...new Set(ticks)].sort((a, b) => a - b);
+}
+
+function findExtremePointsWithoutOverlap(data: any[], maxY: number, minY: number, minX: number, xRange: number, chartWidth: number, padding: number, chartHeight: number, extendedMinY: number, range: number): any[] {
+  const result = [];
+
+  const maxIndex = data.findIndex(d => d.y === maxY);
+  if (maxIndex !== -1) {
+    const d = data[maxIndex];
+    const screenX = ((d.x - minX) / xRange) * chartWidth;
+    const screenY = padding + chartHeight - ((d.y - extendedMinY) / range) * chartHeight;
+
+    result.push({
+      index: maxIndex,
+      x: d.x,
+      y: d.y,
+      screenX,
+      screenY,
+      isMax: true,
+      labelX: padding + screenX + 2,
+      labelY: screenY - 5
+    });
+  }
+
+  if (maxY !== minY) {
+    const minIndex = data.findIndex(d => d.y === minY);
+    if (minIndex !== -1) {
+      const d = data[minIndex];
+      const screenX = ((d.x - minX) / xRange) * chartWidth;
+      const screenY = padding + chartHeight - ((d.y - extendedMinY) / range) * chartHeight;
+
+      result.push({
+        index: minIndex,
+        x: d.x,
+        y: d.y,
+        screenX,
+        screenY,
+        isMax: false,
+        labelX: padding + screenX + 2,
+        labelY: screenY + 12
+      });
+    }
+  }
+
+  return result;
 }
 
 // 복사 함수들
@@ -1629,8 +1621,6 @@ function copyHPOConfig() {
 // 상세보기 함수들
 async function showRetrainDetail(retrainExperiment: any) {
   selectedRetrainExperiment.value = retrainExperiment;
-
-  // 이전 데이터 초기화
   retrainExperimentStatus.value = [];
   retrainStatus.value = 'pending';
 
@@ -1649,14 +1639,13 @@ async function showRetrainDetail(retrainExperiment: any) {
     { id: 'auxiliary_loss_weight', label: 'Auxiliary Loss Weight', value: retrainExperiment.auto_ml_config?.auxiliary_loss_weight || '-' },
     { id: 'drop_path_prob', label: 'Drop Path Probability', value: retrainExperiment.auto_ml_config?.drop_path_prob || '-' }
   ];
+
   showRetrainDetailModal.value = true;
   await loadRetrainExperimentStatus(retrainExperiment.exp_key);
 }
 
 async function showHPODetail(hpoExperiment: any) {
   selectedHPOExperiment.value = hpoExperiment;
-
-  // 이전 데이터 초기화
   hpoExperimentStatus.value = [];
   hpoStatus.value = 'pending';
 
@@ -1667,18 +1656,16 @@ async function showHPODetail(hpoExperiment: any) {
     { id: 'dataset_name', label: 'Dataset Name', value: hpoExperiment.auto_ml_config?.dataset_name || '-' },
     { id: 'tuner', label: 'Tuner', value: hpoExperiment.auto_ml_config?.tuner || '-' },
     { id: 'trial_number', label: 'Trial Number', value: hpoExperiment.auto_ml_config?.trial_number || '-' },
-    { id: 'total_jobs', label: 'Total Jobs', value: hpoExperimentStatus.value.length },
-    { id: 'completed_jobs', label: 'Completed Jobs', value: hpoExperimentStatus.value.filter(r => r.status === 'SUCCEEDED').length },
-    { id: 'best_accuracy', label: 'Best Accuracy', value: formatNumber(Math.max(...hpoExperimentStatus.value.map(r => r.final_metric_data || 0))) }
+    { id: 'total_jobs', label: 'Total Jobs', value: '-' },
+    { id: 'completed_jobs', label: 'Completed Jobs', value: '-' },
+    { id: 'best_accuracy', label: 'Best Accuracy', value: '-' }
   ];
+
   showHPODetailModal.value = true;
   await loadHPOExperimentStatus(hpoExperiment.exp_key);
-
-  // 통계 정보 업데이트
   updateHPOExperimentInfo();
 }
 
-// HPO 실험 정보 업데이트 함수 추가
 function updateHPOExperimentInfo() {
   const totalJobs = hpoExperimentStatus.value.length;
   const completedJobs = hpoExperimentStatus.value.filter(r => r.status === 'SUCCEEDED').length;
@@ -1686,7 +1673,6 @@ function updateHPOExperimentInfo() {
     ? Math.max(...hpoExperimentStatus.value.map(r => r.final_metric_data || 0))
     : 0;
 
-  // 통계 정보 업데이트
   const totalJobsInfo = hpoExperimentInfo.value.find(item => item.id === 'total_jobs');
   const completedJobsInfo = hpoExperimentInfo.value.find(item => item.id === 'completed_jobs');
   const bestAccuracyInfo = hpoExperimentInfo.value.find(item => item.id === 'best_accuracy');
@@ -1699,14 +1685,19 @@ function updateHPOExperimentInfo() {
 // 데이터 처리 함수들
 function processNASExperimentStatus(data: any) {
   if (!data?.result?.content?.log) return [];
+
   const log = data.result.content.log;
   const results = [];
+
   nasStatus.value = data.result.content.status || 'pending';
+
   if (nasStatus.value === 'finished' && log.arch) {
     finalArchitecture.value = log.arch;
   }
+
   const steps = Object.keys(log.step || {});
   const epochGroups = {};
+
   for (const key of steps) {
     const epoch = log.epoch[key];
     if (!epochGroups[epoch]) {
@@ -1716,10 +1707,12 @@ function processNASExperimentStatus(data: any) {
     epochGroups[epoch].train_loss.push({ x: parseInt(key), y: parseFloat(log.train_loss[key]) });
     epochGroups[epoch].steps.push(log.step[key]);
   }
+
   Object.keys(epochGroups).forEach(epoch => {
     const group = epochGroups[epoch];
     const avgAcc = group.train_acc.reduce((sum, item) => sum + item.y, 0) / group.train_acc.length;
     const avgLoss = group.train_loss.reduce((sum, item) => sum + item.y, 0) / group.train_loss.length;
+
     results.push({
       epoch: parseInt(epoch),
       totalSteps: group.steps.length,
@@ -1730,16 +1723,21 @@ function processNASExperimentStatus(data: any) {
       arch: log.arch
     });
   });
+
   return results.sort((a, b) => a.epoch - b.epoch);
 }
 
 function processRetrainExperimentStatus(data: any) {
   if (!data?.result?.content?.log) return [];
+
   const log = data.result.content.log;
   const results = [];
+
   retrainStatus.value = data.result.content.status || 'pending';
+
   const steps = Object.keys(log.step || {});
   const epochGroups = {};
+
   for (const key of steps) {
     const epoch = log.epoch[key];
     if (!epochGroups[epoch]) {
@@ -1749,10 +1747,12 @@ function processRetrainExperimentStatus(data: any) {
     epochGroups[epoch].train_loss.push({ x: parseInt(key), y: parseFloat(log.train_loss[key]) });
     epochGroups[epoch].steps.push(log.step[key]);
   }
+
   Object.keys(epochGroups).forEach(epoch => {
     const group = epochGroups[epoch];
     const avgAcc = group.train_acc.reduce((sum, item) => sum + item.y, 0) / group.train_acc.length;
     const avgLoss = group.train_loss.reduce((sum, item) => sum + item.y, 0) / group.train_loss.length;
+
     results.push({
       epoch: parseInt(epoch),
       totalSteps: group.steps.length,
@@ -1762,6 +1762,7 @@ function processRetrainExperimentStatus(data: any) {
       train_loss_data: group.train_loss
     });
   });
+
   return results.sort((a, b) => a.epoch - b.epoch);
 }
 
@@ -1780,7 +1781,6 @@ function processHPOExperimentStatus(data: any) {
     final_metric_data: job.final_metric_data,
     metric: job.metric || [],
     duration: job.end_time > 0 ? job.end_time - job.start_time : 0,
-    // 차트용 데이터 생성
     train_acc_data: job.metric ? job.metric.map((value, index) => ({ x: index, y: value })) : []
   }));
 }
@@ -1791,11 +1791,13 @@ async function loadNASExperimentInfo() {
     const response = await getNASExperimentDetails(expKey.value);
     if (response.code === 130200 && response.result) {
       const data = response.result;
+
       nasExperimentInfo.value.forEach(item => {
         if (data[item.id] !== undefined) {
           item.value = item.id === 'created_at' ? formatDateTime(data[item.id]) : data[item.id];
         }
       });
+
       if (data.auto_ml_config) {
         Object.keys(data.auto_ml_config).forEach(key => {
           if (!nasExperimentInfo.value.find(item => item.id === key)) {
@@ -1884,28 +1886,27 @@ async function loadHPOExperimentStatus(hyperparameterExpKey: string) {
   }
 }
 
+// 삭제 함수들
 async function deleteRetrainExperiment(exp_key: string) {
   if (confirm('delete?')) {
-    const response = await removeAutoMLExperiments(exp_key)
-
+    const response = await removeAutoMLExperiments(exp_key);
     if (response.code == 130200) {
-      alert(`deleted`)
-      reloadRetrainExperiments();
+      alert('deleted');
+      loadRetrainExperiments();
     } else {
-      alert("오류[" + response.code + "]: " + response.message + ' ' + JSON.stringify(response.result))
+      alert("오류[" + response.code + "]: " + response.message + ' ' + JSON.stringify(response.result));
     }
   }
 }
 
 async function deleteHPOExperiment(exp_key: string) {
   if (confirm('delete?')) {
-    const response = await removeAutoMLExperiments(exp_key)
-
+    const response = await removeAutoMLExperiments(exp_key);
     if (response.code == 130200) {
-      alert(`deleted`)
-      reloadHPOExperiments();
+      alert('deleted');
+      loadHPOExperiments();
     } else {
-      alert("오류[" + response.code + "]: " + response.message + ' ' + JSON.stringify(response.result))
+      alert("오류[" + response.code + "]: " + response.message + ' ' + JSON.stringify(response.result));
     }
   }
 }
@@ -1915,20 +1916,10 @@ function refreshNASExperimentStatus() {
   loadNASExperimentStatus();
 }
 
-function reloadRetrainExperiments() {
-  retrainExperiments.value = [];
-  loadRetrainExperiments()
-}
-
 function refreshRetrainExperimentStatus() {
   if (selectedRetrainExperiment.value) {
     loadRetrainExperimentStatus(selectedRetrainExperiment.value.exp_key);
   }
-}
-
-function reloadHPOExperiments() {
-  hpoExperiments.value = [];
-  loadHPOExperiments()
 }
 
 function refreshHPOExperimentStatus() {
@@ -1953,35 +1944,27 @@ function validateRetrainConfig() {
   if (!retrainConfig.value.max_epochs || retrainConfig.value.max_epochs < 1) {
     errors.max_epochs = 'Max Epochs는 1 이상이어야 합니다.';
   }
-
   if (!retrainConfig.value.batch_size || retrainConfig.value.batch_size < 1) {
     errors.batch_size = 'Batch Size는 1 이상이어야 합니다.';
   }
-
   if (!retrainConfig.value.learning_rate || retrainConfig.value.learning_rate < 0.0001) {
     errors.learning_rate = 'Learning Rate는 0.0001 이상이어야 합니다.';
   }
-
   if (retrainConfig.value.momentum < 0 || retrainConfig.value.momentum > 1) {
     errors.momentum = 'Momentum은 0과 1 사이여야 합니다.';
   }
-
   if (retrainConfig.value.weight_decay < 0) {
     errors.weight_decay = 'Weight Decay는 0 이상이어야 합니다.';
   }
-
   if (retrainConfig.value.auxiliary_loss_weight < 0 || retrainConfig.value.auxiliary_loss_weight > 1) {
     errors.auxiliary_loss_weight = 'Auxiliary Loss Weight는 0과 1 사이여야 합니다.';
   }
-
   if (retrainConfig.value.drop_path_prob < 0 || retrainConfig.value.drop_path_prob > 1) {
     errors.drop_path_prob = 'Drop Path Probability는 0과 1 사이여야 합니다.';
   }
-
   if (!retrainConfig.value.width || retrainConfig.value.width < 4) {
     errors.width = 'Width는 4 이상이어야 합니다.';
   }
-
   if (!retrainConfig.value.num_cells || retrainConfig.value.num_cells < 3) {
     errors.num_cells = 'Number of Cells는 3 이상이어야 합니다.';
   }
@@ -1996,12 +1979,11 @@ function validateHPOConfig() {
   if (!hpoConfig.value.trial_number || hpoConfig.value.trial_number < 1) {
     errors.trial_number = 'Trial Number는 1 이상이어야 합니다.';
   }
-
   if (hpoConfig.value.trial_number > 1000) {
     errors.trial_number = 'Trial Number는 1000 이하여야 합니다.';
   }
 
-  // Choice 타입에서 width 값 검증
+  // Width 검증
   if (hpoConfig.value.width_type === 'choice') {
     const choices = hpoConfig.value.width_choices.split(',').map(v => parseInt(v.trim()));
     if (choices.some(choice => choice < 4)) {
@@ -2016,7 +1998,7 @@ function validateHPOConfig() {
     }
   }
 
-  // Choice 타입에서 num_cells 값 검증
+  // Num Cells 검증
   if (hpoConfig.value.num_cells_type === 'choice') {
     const choices = hpoConfig.value.num_cells_choices.split(',').map(v => parseInt(v.trim()));
     if (choices.some(choice => choice < 3)) {
@@ -2035,14 +2017,13 @@ function validateHPOConfig() {
   return Object.keys(errors).length === 0;
 }
 
-// 모달 제출 함수들
+// 제출 함수들
 async function submitRetrain() {
-  if (!validateRetrainConfig()) {
-    return;
-  }
+  if (!validateRetrainConfig()) return;
 
   try {
     submittingRetrain.value = true;
+
     const datasetInfo = nasExperimentInfo.value.find(item => item.id === 'dataset_name');
     const datasetName = datasetInfo?.value || 'beans';
 
@@ -2053,9 +2034,9 @@ async function submitRetrain() {
     };
 
     const response = await startRetrain(config);
+
     if (response.code === 130200) {
-      showRetrainModal.value = false;
-      // 입력값 초기화
+      closeRetrainModal();
       retrainValidationErrors.value = {};
       await loadRetrainExperiments();
     } else {
@@ -2073,7 +2054,6 @@ function buildSearchSpace() {
   const config = hpoConfig.value;
   const searchSpace = {};
 
-  // Helper function to build parameter object
   const buildParam = (type, choices, min, max) => {
     if (type === 'choice') {
       const values = choices.split(',').map(v => {
@@ -2086,7 +2066,6 @@ function buildSearchSpace() {
     }
   };
 
-  // Build search space for each parameter
   searchSpace.max_epochs = buildParam(config.max_epochs_type, config.max_epochs_choices, config.max_epochs_min, config.max_epochs_max);
   searchSpace.batch_size = buildParam(config.batch_size_type, config.batch_size_choices, config.batch_size_min, config.batch_size_max);
   searchSpace.learning_rate = buildParam(config.learning_rate_type, config.learning_rate_choices, config.learning_rate_min, config.learning_rate_max);
@@ -2101,12 +2080,11 @@ function buildSearchSpace() {
 }
 
 async function submitHPO() {
-  if (!validateHPOConfig()) {
-    return;
-  }
+  if (!validateHPOConfig()) return;
 
   try {
     submittingHPO.value = true;
+
     const datasetInfo = nasExperimentInfo.value.find(item => item.id === 'dataset_name');
     const datasetName = datasetInfo?.value || 'beans';
 
@@ -2119,9 +2097,9 @@ async function submitHPO() {
     };
 
     const response = await startHPO(requestData);
+
     if (response.code === 130200) {
-      showHyperparameterModal.value = false;
-      // 입력값 초기화
+      closeHyperparameterModal();
       hpoValidationErrors.value = {};
       await loadHPOExperiments();
     } else {
@@ -2135,7 +2113,7 @@ async function submitHPO() {
   }
 }
 
-// 모달이 열릴 때 에러 초기화
+// 모달 상태 관리
 watch(showRetrainModal, (newValue) => {
   if (newValue) {
     retrainValidationErrors.value = {};
@@ -2170,7 +2148,6 @@ onMounted(() => {
   .grid-cols-2 {
     grid-template-columns: repeat(1, minmax(0, 1fr));
   }
-
   .grid-cols-4 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
