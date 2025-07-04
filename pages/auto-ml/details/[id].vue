@@ -1437,7 +1437,7 @@ function renderChart(container: any, data: any[], label: string, color: string) 
       const labelY = isMax ? y - 5 : y + 12;
 
       chartHTML += `
-        <circle cx="${x}" cy="${y}" r="6" fill="white" stroke="${color}" stroke-width="2"/>
+        <circle cx="${x}" cy="${y}" r="3" fill="white" stroke="${color}" stroke-width="2"/>
         <text x="${x + 2}" y="${labelY}" text-anchor="start" font-size="10" fill="#374151" font-weight="600">${d.y.toFixed(4)}</text>
       `;
     } else if (shouldShowPoints.showAll) {
@@ -1499,7 +1499,6 @@ function getShouldShowPoints(dataLength: number): { show: boolean, showAll: bool
 }
 
 function getPointSize(dataLength: number): number {
-  if (dataLength === 1) return 6;
   if (dataLength <= 30) return 3;
   return 2;
 }
