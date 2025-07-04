@@ -122,6 +122,9 @@
                       size="sm"
                     />
                   </UTooltip>
+                  <UTooltip text="delete">
+                    <UButton @click="deleteRetrainExperiment(row.exp_key)" icon="i-heroicons-trash" variant="ghost" class="px-2 py-0" />
+                  </UTooltip>
                 </div>
               </template>
             </ModuleDataTable>
@@ -170,6 +173,9 @@
                       variant="ghost"
                       size="sm"
                     />
+                  </UTooltip>
+                  <UTooltip text="delete">
+                    <UButton @click="deleteHPOExperiment(row.exp_key)" icon="i-heroicons-trash" variant="ghost" class="px-2 py-0" />
                   </UTooltip>
                 </div>
               </template>
@@ -680,32 +686,94 @@
           <div class="space-y-4">
             <h4 class="font-medium text-lg border-b pb-2">하이퍼파라미터</h4>
             <div class="grid grid-cols-2 gap-4">
-              <UFormGroup label="Max Epochs" name="max_epochs">
-                <USelect v-model.number="retrainConfig.max_epochs" :options="epochOptions" variant="outline" />
+              <UFormGroup label="Max Epochs" name="max_epochs" :error="retrainValidationErrors.max_epochs">
+                <UInput
+                  v-model.number="retrainConfig.max_epochs"
+                  type="number"
+                  min="1"
+                  placeholder="예: 800"
+                  variant="outline"
+                />
               </UFormGroup>
-              <UFormGroup label="Batch Size" name="batch_size">
-                <USelect v-model.number="retrainConfig.batch_size" :options="batchSizeOptions" variant="outline" />
+              <UFormGroup label="Batch Size" name="batch_size" :error="retrainValidationErrors.batch_size">
+                <UInput
+                  v-model.number="retrainConfig.batch_size"
+                  type="number"
+                  min="1"
+                  placeholder="예: 128"
+                  variant="outline"
+                />
               </UFormGroup>
-              <UFormGroup label="Learning Rate" name="learning_rate">
-                <UInput v-model.number="retrainConfig.learning_rate" type="number" step="0.0001" placeholder="0.001" variant="outline" />
+              <UFormGroup label="Learning Rate" name="learning_rate" :error="retrainValidationErrors.learning_rate">
+                <UInput
+                  v-model.number="retrainConfig.learning_rate"
+                  type="number"
+                  step="0.0001"
+                  min="0.0001"
+                  placeholder="예: 0.001"
+                  variant="outline"
+                />
               </UFormGroup>
-              <UFormGroup label="Momentum" name="momentum">
-                <UInput v-model.number="retrainConfig.momentum" type="number" step="0.1" placeholder="0.9" variant="outline" />
+              <UFormGroup label="Momentum" name="momentum" :error="retrainValidationErrors.momentum">
+                <UInput
+                  v-model.number="retrainConfig.momentum"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="1"
+                  placeholder="예: 0.9"
+                  variant="outline"
+                />
               </UFormGroup>
-              <UFormGroup label="Weight Decay" name="weight_decay">
-                <UInput v-model.number="retrainConfig.weight_decay" type="number" step="0.0001" placeholder="0.0001" variant="outline" />
+              <UFormGroup label="Weight Decay" name="weight_decay" :error="retrainValidationErrors.weight_decay">
+                <UInput
+                  v-model.number="retrainConfig.weight_decay"
+                  type="number"
+                  step="0.0001"
+                  min="0"
+                  placeholder="예: 0.0001"
+                  variant="outline"
+                />
               </UFormGroup>
-              <UFormGroup label="Auxiliary Loss Weight" name="auxiliary_loss_weight">
-                <UInput v-model.number="retrainConfig.auxiliary_loss_weight" type="number" step="0.1" placeholder="0.4" variant="outline" />
+              <UFormGroup label="Auxiliary Loss Weight" name="auxiliary_loss_weight" :error="retrainValidationErrors.auxiliary_loss_weight">
+                <UInput
+                  v-model.number="retrainConfig.auxiliary_loss_weight"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="1"
+                  placeholder="예: 0.4"
+                  variant="outline"
+                />
               </UFormGroup>
-              <UFormGroup label="Drop Path Probability" name="drop_path_prob">
-                <UInput v-model.number="retrainConfig.drop_path_prob" type="number" step="0.1" placeholder="0.2" variant="outline" />
+              <UFormGroup label="Drop Path Probability" name="drop_path_prob" :error="retrainValidationErrors.drop_path_prob">
+                <UInput
+                  v-model.number="retrainConfig.drop_path_prob"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="1"
+                  placeholder="예: 0.2"
+                  variant="outline"
+                />
               </UFormGroup>
-              <UFormGroup label="Width" name="width">
-                <USelect v-model.number="retrainConfig.width" :options="widthOptions" variant="outline" />
+              <UFormGroup label="Width (≥4)" name="width" :error="retrainValidationErrors.width">
+                <UInput
+                  v-model.number="retrainConfig.width"
+                  type="number"
+                  min="4"
+                  placeholder="예: 64"
+                  variant="outline"
+                />
               </UFormGroup>
-              <UFormGroup label="Number of Cells" name="num_cells">
-                <USelect v-model.number="retrainConfig.num_cells" :options="numCellsOptions" variant="outline" />
+              <UFormGroup label="Number of Cells (≥3)" name="num_cells" :error="retrainValidationErrors.num_cells">
+                <UInput
+                  v-model.number="retrainConfig.num_cells"
+                  type="number"
+                  min="3"
+                  placeholder="예: 20"
+                  variant="outline"
+                />
               </UFormGroup>
             </div>
           </div>
@@ -730,11 +798,18 @@
             탐색된 최적의 신경망 구조를 바탕으로 최고 성능을 달성하는 하이퍼파라미터 조합을 자동으로 탐색합니다.
           </div>
           <div class="grid grid-cols-2 gap-6">
-            <UFormGroup label="Tuner" name="tuner">
+            <UFormGroup label="Tuner" name="tuner" :error="hpoValidationErrors.tuner">
               <USelect v-model="hpoConfig.tuner" :options="tunerOptions" variant="outline" />
             </UFormGroup>
-            <UFormGroup label="Trial Number" name="trial_number">
-              <USelect v-model.number="hpoConfig.trial_number" :options="trialNumberOptions" variant="outline" />
+            <UFormGroup label="Trial Number" name="trial_number" :error="hpoValidationErrors.trial_number">
+              <UInput
+                v-model.number="hpoConfig.trial_number"
+                type="number"
+                min="1"
+                max="1000"
+                placeholder="예: 50"
+                variant="outline"
+              />
             </UFormGroup>
           </div>
           <div class="space-y-6">
@@ -748,10 +823,10 @@
                 <UInput v-model="hpoConfig.max_epochs_choices" placeholder="1, 800" />
               </UFormGroup>
               <UFormGroup v-if="hpoConfig.max_epochs_type !== 'choice'" label="최소값">
-                <UInput v-model.number="hpoConfig.max_epochs_min" type="number" step="1" />
+                <UInput v-model.number="hpoConfig.max_epochs_min" type="number" step="1" min="1" />
               </UFormGroup>
               <UFormGroup v-if="hpoConfig.max_epochs_type !== 'choice'" label="최대값">
-                <UInput v-model.number="hpoConfig.max_epochs_max" type="number" step="1" />
+                <UInput v-model.number="hpoConfig.max_epochs_max" type="number" step="1" min="1" />
               </UFormGroup>
             </div>
             <!-- Batch Size -->
@@ -763,10 +838,10 @@
                 <UInput v-model="hpoConfig.batch_size_choices" placeholder="64, 128" />
               </UFormGroup>
               <UFormGroup v-if="hpoConfig.batch_size_type !== 'choice'" label="최소값">
-                <UInput v-model.number="hpoConfig.batch_size_min" type="number" step="1" />
+                <UInput v-model.number="hpoConfig.batch_size_min" type="number" step="1" min="1" />
               </UFormGroup>
               <UFormGroup v-if="hpoConfig.batch_size_type !== 'choice'" label="최대값">
-                <UInput v-model.number="hpoConfig.batch_size_max" type="number" step="1" />
+                <UInput v-model.number="hpoConfig.batch_size_max" type="number" step="1" min="1" />
               </UFormGroup>
             </div>
             <!-- Learning Rate -->
@@ -778,10 +853,10 @@
                 <UInput v-model="hpoConfig.learning_rate_choices" placeholder="0.025, 0.035" />
               </UFormGroup>
               <UFormGroup v-if="hpoConfig.learning_rate_type !== 'choice'" label="최소값">
-                <UInput v-model.number="hpoConfig.learning_rate_min" type="number" step="0.0001" />
+                <UInput v-model.number="hpoConfig.learning_rate_min" type="number" step="0.0001" min="0.0001" />
               </UFormGroup>
               <UFormGroup v-if="hpoConfig.learning_rate_type !== 'choice'" label="최대값">
-                <UInput v-model.number="hpoConfig.learning_rate_max" type="number" step="0.001" />
+                <UInput v-model.number="hpoConfig.learning_rate_max" type="number" step="0.001" min="0.0001" />
               </UFormGroup>
             </div>
             <!-- Momentum -->
@@ -793,10 +868,10 @@
                 <UInput v-model="hpoConfig.momentum_choices" placeholder="0.9" />
               </UFormGroup>
               <UFormGroup v-if="hpoConfig.momentum_type !== 'choice'" label="최소값">
-                <UInput v-model.number="hpoConfig.momentum_min" type="number" step="0.1" />
+                <UInput v-model.number="hpoConfig.momentum_min" type="number" step="0.01" min="0" max="1" />
               </UFormGroup>
               <UFormGroup v-if="hpoConfig.momentum_type !== 'choice'" label="최대값">
-                <UInput v-model.number="hpoConfig.momentum_max" type="number" step="0.1" />
+                <UInput v-model.number="hpoConfig.momentum_max" type="number" step="0.01" min="0" max="1" />
               </UFormGroup>
             </div>
             <!-- Weight Decay -->
@@ -808,10 +883,10 @@
                 <UInput v-model="hpoConfig.weight_decay_choices" placeholder="0.0002, 0.0003" />
               </UFormGroup>
               <UFormGroup v-if="hpoConfig.weight_decay_type !== 'choice'" label="최소값">
-                <UInput v-model.number="hpoConfig.weight_decay_min" type="number" step="0.0001" />
+                <UInput v-model.number="hpoConfig.weight_decay_min" type="number" step="0.0001" min="0" />
               </UFormGroup>
               <UFormGroup v-if="hpoConfig.weight_decay_type !== 'choice'" label="최대값">
-                <UInput v-model.number="hpoConfig.weight_decay_max" type="number" step="0.0001" />
+                <UInput v-model.number="hpoConfig.weight_decay_max" type="number" step="0.0001" min="0" />
               </UFormGroup>
             </div>
             <!-- Auxiliary Loss Weight -->
@@ -823,40 +898,40 @@
                 <UInput v-model="hpoConfig.auxiliary_loss_weight_choices" placeholder="0.3, 0.4, 0.5" />
               </UFormGroup>
               <UFormGroup v-if="hpoConfig.auxiliary_loss_weight_type !== 'choice'" label="최소값">
-                <UInput v-model.number="hpoConfig.auxiliary_loss_weight_min" type="number" step="0.1" />
+                <UInput v-model.number="hpoConfig.auxiliary_loss_weight_min" type="number" step="0.01" min="0" max="1" />
               </UFormGroup>
               <UFormGroup v-if="hpoConfig.auxiliary_loss_weight_type !== 'choice'" label="최대값">
-                <UInput v-model.number="hpoConfig.auxiliary_loss_weight_max" type="number" step="0.1" />
+                <UInput v-model.number="hpoConfig.auxiliary_loss_weight_max" type="number" step="0.01" min="0" max="1" />
               </UFormGroup>
             </div>
             <!-- Width -->
             <div class="grid grid-cols-4 gap-4 items-end">
-              <UFormGroup label="Width">
+              <UFormGroup label="Width (≥4)">
                 <USelect v-model="hpoConfig.width_type" :options="parameterTypeOptions" />
               </UFormGroup>
               <UFormGroup v-if="hpoConfig.width_type === 'choice'" label="후보값 (쉼표로 구분)">
-                <UInput v-model="hpoConfig.width_choices" placeholder="32" />
+                <UInput v-model="hpoConfig.width_choices" placeholder="32, 64" />
               </UFormGroup>
               <UFormGroup v-if="hpoConfig.width_type !== 'choice'" label="최소값">
-                <UInput v-model.number="hpoConfig.width_min" type="number" step="1" />
+                <UInput v-model.number="hpoConfig.width_min" type="number" step="1" min="4" />
               </UFormGroup>
               <UFormGroup v-if="hpoConfig.width_type !== 'choice'" label="최대값">
-                <UInput v-model.number="hpoConfig.width_max" type="number" step="1" />
+                <UInput v-model.number="hpoConfig.width_max" type="number" step="1" min="4" />
               </UFormGroup>
             </div>
             <!-- Num Cells -->
             <div class="grid grid-cols-4 gap-4 items-end">
-              <UFormGroup label="Num Cells">
+              <UFormGroup label="Num Cells (≥3)">
                 <USelect v-model="hpoConfig.num_cells_type" :options="parameterTypeOptions" />
               </UFormGroup>
               <UFormGroup v-if="hpoConfig.num_cells_type === 'choice'" label="후보값 (쉼표로 구분)">
                 <UInput v-model="hpoConfig.num_cells_choices" placeholder="14, 20" />
               </UFormGroup>
               <UFormGroup v-if="hpoConfig.num_cells_type !== 'choice'" label="최소값">
-                <UInput v-model.number="hpoConfig.num_cells_min" type="number" step="1" />
+                <UInput v-model.number="hpoConfig.num_cells_min" type="number" step="1" min="3" />
               </UFormGroup>
               <UFormGroup v-if="hpoConfig.num_cells_type !== 'choice'" label="최대값">
-                <UInput v-model.number="hpoConfig.num_cells_max" type="number" step="1" />
+                <UInput v-model.number="hpoConfig.num_cells_max" type="number" step="1" min="3" />
               </UFormGroup>
             </div>
             <!-- Drop Path Prob -->
@@ -868,10 +943,10 @@
                 <UInput v-model="hpoConfig.drop_path_prob_choices" placeholder="0.2, 0.3" />
               </UFormGroup>
               <UFormGroup v-if="hpoConfig.drop_path_prob_type !== 'choice'" label="최소값">
-                <UInput v-model.number="hpoConfig.drop_path_prob_min" type="number" step="0.1" />
+                <UInput v-model.number="hpoConfig.drop_path_prob_min" type="number" step="0.01" min="0" max="1" />
               </UFormGroup>
               <UFormGroup v-if="hpoConfig.drop_path_prob_type !== 'choice'" label="최대값">
-                <UInput v-model.number="hpoConfig.drop_path_prob_max" type="number" step="0.1" />
+                <UInput v-model.number="hpoConfig.drop_path_prob_max" type="number" step="0.01" min="0" max="1" />
               </UFormGroup>
             </div>
           </div>
@@ -954,6 +1029,10 @@ const showHPODetailModal = ref(false);
 const showHPOConfigModal = ref(false);
 const showHPOChartModal = ref(false);
 
+// 검증 에러 상태
+const retrainValidationErrors = ref({});
+const hpoValidationErrors = ref({});
+
 // 테이블 컬럼 설정
 const nasResultColumns = ref([
   { key: 'epoch', label: 'Epoch', sortable: true },
@@ -1000,11 +1079,11 @@ const hpoResultColumns = ref([
 
 // 설정 객체
 const retrainConfig = ref({
-  max_epochs: 1,
+  max_epochs: 50,
   batch_size: 32,
   learning_rate: 0.001,
   width: 64,
-  num_cells: 3,
+  num_cells: 20,
   momentum: 0.9,
   weight_decay: 0.0001,
   auxiliary_loss_weight: 0.4,
@@ -1068,17 +1147,11 @@ const tabItems = ref([
 ]);
 
 // 옵션들
-const createOptions = (values) => values.map(value => ({ label: value.toString(), value }));
-const epochOptions = createOptions([1, 50, 100, 600, 800]);
-const batchSizeOptions = createOptions([32, 48, 64, 96, 128]);
-const widthOptions = createOptions([16, 32, 64, 128]);
-const numCellsOptions = createOptions([2, 3, 4, 5, 6]);
 const tunerOptions = [
   { label: 'Random', value: 'random' },
   { label: 'TPE', value: 'tpe' },
   { label: 'Grid Search', value: 'gridsearch' }
 ];
-const trialNumberOptions = createOptions([1, 5, 10, 20, 50]);
 const parameterTypeOptions = [
   { label: 'Choice', value: 'choice' },
   { label: 'Uniform', value: 'uniform' },
@@ -1123,8 +1196,7 @@ function getStatusText(status: string) {
 
 function getSearchMethodText(method: string) {
   const methodMap = {
-    'random': 'Random Search', 'Random': 'Random Search', 'grid': 'Grid Search',
-    'GridSearch': 'Grid Search', 'bayesian': 'Bayesian Opt.', 'Tpe': 'TPE'
+    'random': 'Random', 'tpe': 'TPE', 'gridsearch': 'Grid Search'
   };
   return methodMap[method] || method;
 }
@@ -1225,19 +1297,29 @@ const formatParameters = (params) => {
 // 차트 렌더링 함수
 function renderChart(container: any, data: any[], label: string, color: string) {
   if (!container || !data.length) return;
+
   const padding = 80;
   const width = container.clientWidth;
   const height = container.clientHeight;
   const chartWidth = width - 2 * padding;
   const chartHeight = height - 2 * padding;
+
   const maxY = Math.max(...data.map(d => d.y));
   const minY = Math.min(...data.map(d => d.y));
-  const range = maxY - minY || 1;
+
+  // Y축 범위를 여유있게 확장 (10% 패딩)
+  const yPadding = (maxY - minY) * 0.1 || (Math.abs(maxY) * 0.1) || 0.1;
+  const extendedMaxY = maxY + yPadding;
+  const extendedMinY = minY - yPadding;
+  const range = extendedMaxY - extendedMinY;
+
   const maxX = Math.max(...data.map(d => d.x));
   const minX = Math.min(...data.map(d => d.x));
   const xRange = maxX - minX || 1;
-  const yTicks = calculateTicks(minY, maxY, 5);
-  const xTicks = calculateTicks(minX, maxX, 4);
+
+  const yTicks = calculateTicks(extendedMinY, extendedMaxY, 5);
+  const xTickCount = getOptimalXTickCount(minX, maxX, chartWidth);
+  const xTicks = calculateTicks(minX, maxX, xTickCount);
 
   let chartHTML = `
     <svg width="100%" height="100%" style="background: white;">
@@ -1246,7 +1328,7 @@ function renderChart(container: any, data: any[], label: string, color: string) 
 
   // Grid lines and labels
   yTicks.forEach(tick => {
-    const y = padding + chartHeight - ((tick - minY) / range) * chartHeight;
+    const y = padding + chartHeight - ((tick - extendedMinY) / range) * chartHeight;
     chartHTML += `
       <line x1="${padding}" y1="${y}" x2="${padding + chartWidth}" y2="${y}" stroke="#f1f5f9" stroke-width="1" stroke-dasharray="2,2"/>
       <text x="${padding - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="#6b7280" font-family="monospace">${tick.toFixed(4)}</text>
@@ -1261,25 +1343,71 @@ function renderChart(container: any, data: any[], label: string, color: string) 
     `;
   });
 
-  // Draw line
-  const pathData = data.map((d, i) => {
-    const x = padding + ((d.x - minX) / xRange) * chartWidth;
-    const y = padding + chartHeight - ((d.y - minY) / range) * chartHeight;
-    return i === 0 ? `M${x},${y}` : `L${x},${y}`;
-  }).join(' ');
+  // 데이터가 2개 이상일 때만 선 그리기
+  if (data.length > 1) {
+    const pathData = data.map((d, i) => {
+      const x = padding + ((d.x - minX) / xRange) * chartWidth;
+      const y = padding + chartHeight - ((d.y - extendedMinY) / range) * chartHeight;
+      return i === 0 ? `M${x},${y}` : `L${x},${y}`;
+    }).join(' ');
 
-  chartHTML += `
-    <path d="${pathData}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round"/>
-  `;
+    chartHTML += `
+      <path d="${pathData}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round"/>
+    `;
+  }
 
-  // // Draw points
-  // data.forEach((d) => {
-  //   const x = padding + ((d.x - minX) / xRange) * chartWidth;
-  //   const y = padding + chartHeight - ((d.y - minY) / range) * chartHeight;
-  //   chartHTML += `
-  //     <circle cx="${x}" cy="${y}" r="3" fill="white" stroke="${color}" stroke-width="2"/>
-  //   `;
-  // });
+  const shouldShowPoints = getShouldShowPoints(data.length);
+
+  // 점 표시
+  if (shouldShowPoints.show) {
+    if (data.length === 1) {
+      // 단일 데이터 포인트
+      const d = data[0];
+      const x = padding + ((d.x - minX) / xRange) * chartWidth;
+      const y = padding + chartHeight - ((d.y - extendedMinY) / range) * chartHeight;
+
+      chartHTML += `
+        <circle cx="${x}" cy="${y}" r="6" fill="white" stroke="${color}" stroke-width="2"/>
+        <text x="${x}" y="${y - 8}" text-anchor="middle" font-size="10" fill="#374151" font-weight="600">${d.y.toFixed(4)}</text>
+      `;
+    } else if (shouldShowPoints.showAll) {
+      // 모든 점 표시하면서 극값에는 레이블도 표시
+      const extremePoints = findExtremePointsWithoutOverlap(data, maxY, minY, minX, xRange, chartWidth, padding, chartHeight, extendedMinY, range);
+
+      data.forEach((d, index) => {
+        const x = padding + ((d.x - minX) / xRange) * chartWidth;
+        const y = padding + chartHeight - ((d.y - extendedMinY) / range) * chartHeight;
+        const isExtreme = d.y === maxY || d.y === minY;
+
+        chartHTML += `
+          <circle cx="${x}" cy="${y}" r="${getPointSize(data.length)}" fill="white" stroke="${color}" stroke-width="2"/>
+        `;
+
+        // 극값에는 레이블 표시 (겹치지 않는 것만)
+        if (isExtreme) {
+          const extremePoint = extremePoints.find(ep => ep.x === d.x && ep.y === d.y);
+          if (extremePoint) {
+            chartHTML += `
+              <text x="${x}" y="${extremePoint.labelY}" text-anchor="middle" font-size="9" fill="#374151" font-weight="600">${d.y.toFixed(4)}</text>
+            `;
+          }
+        }
+      });
+    } else {
+      // 극값만 표시 (많은 데이터)
+      const extremePoints = findExtremePointsWithoutOverlap(data, maxY, minY, minX, xRange, chartWidth, padding, chartHeight, extendedMinY, range);
+
+      extremePoints.forEach(point => {
+        const x = padding + ((point.x - minX) / xRange) * chartWidth;
+        const y = padding + chartHeight - ((point.y - extendedMinY) / range) * chartHeight;
+
+        chartHTML += `
+          <circle cx="${x}" cy="${y}" r="${getPointSize(data.length) + 1}" fill="white" stroke="${color}" stroke-width="2"/>
+          <text x="${x}" y="${point.labelY}" text-anchor="middle" font-size="9" fill="#374151" font-weight="600">${point.y.toFixed(4)}</text>
+        `;
+      });
+    }
+  }
 
   chartHTML += `
     <text x="${width/2}" y="${height - 10}" text-anchor="middle" font-size="12" font-weight="600" fill="#374151">Steps</text>
@@ -1289,15 +1417,191 @@ function renderChart(container: any, data: any[], label: string, color: string) 
   container.innerHTML = chartHTML;
 }
 
-function calculateTicks(min: number, max: number, maxTicks: number = 5): number[] {
-  const range = max - min;
-  const step = Math.ceil(range / maxTicks * 10000) / 10000;
-  const ticks = [];
-  for (let i = 0; i <= maxTicks; i++) {
-    const tick = min + (step * i);
-    if (tick <= max) ticks.push(tick);
+// 겹치지 않는 극값 포인트들 찾기 (수정된 버전)
+function findExtremePointsWithoutOverlap(data: any[], maxY: number, minY: number, minX: number, xRange: number, chartWidth: number, padding: number, chartHeight: number, extendedMinY: number, range: number): any[] {
+  const extremeIndices = [];
+
+  // 모든 극값 인덱스 찾기
+  data.forEach((d, index) => {
+    if (d.y === maxY || d.y === minY) {
+      extremeIndices.push(index);
+    }
+  });
+
+  if (extremeIndices.length === 0) return [];
+
+  // 화면 좌표로 변환하고 겹침 체크
+  const points = extremeIndices.map(index => {
+    const d = data[index];
+    const screenX = ((d.x - minX) / xRange) * chartWidth;
+    const screenY = padding + chartHeight - ((d.y - extendedMinY) / range) * chartHeight;
+    return {
+      index,
+      x: d.x,
+      y: d.y,
+      screenX,
+      screenY,
+      isMax: d.y === maxY
+    };
+  });
+
+  // X 위치로 정렬
+  points.sort((a, b) => a.screenX - b.screenX);
+
+  // 겹치는 점들 필터링 (최소 30px 간격으로 줄임)
+  const minDistance = 30;
+  const filteredPoints = [];
+
+  for (let i = 0; i < points.length; i++) {
+    const current = points[i];
+
+    // 이미 추가된 점들과 거리 체크
+    const tooClose = filteredPoints.some(existing =>
+      Math.abs(existing.screenX - current.screenX) < minDistance
+    );
+
+    if (!tooClose) {
+      // 레이블 위치 계산 (점에 더 가깝게)
+      const labelY = current.isMax ? current.screenY - 8 : current.screenY + 12;
+
+      filteredPoints.push({
+        ...current,
+        labelY
+      });
+    } else {
+      // 겹치는 경우, 더 극단적인 값 우선
+      const existingIndex = filteredPoints.findIndex(existing =>
+        Math.abs(existing.screenX - current.screenX) < minDistance
+      );
+
+      if (existingIndex >= 0) {
+        const existing = filteredPoints[existingIndex];
+        // 최대값이면 더 큰 값, 최소값이면 더 작은 값 선택
+        if ((current.isMax && current.y > existing.y) ||
+            (!current.isMax && current.y < existing.y)) {
+          const labelY = current.isMax ? current.screenY - 8 : current.screenY + 12;
+          filteredPoints[existingIndex] = {
+            ...current,
+            labelY
+          };
+        }
+      }
+    }
   }
+
+  return filteredPoints;
+}
+
+// getShouldShowPoints 함수 수정
+function getShouldShowPoints(dataLength: number): { show: boolean, showAll: boolean, maxPoints: number } {
+  if (dataLength === 1) {
+    return { show: true, showAll: true, maxPoints: 1 };
+  } else if (dataLength <= 30) { // 30개까지는 모든 점 표시
+    return { show: true, showAll: true, maxPoints: dataLength };
+  } else {
+    return { show: true, showAll: false, maxPoints: 0 }; // 극값만
+  }
+}
+
+function getPointSize(dataLength: number): number {
+  if (dataLength === 1) return 6;
+  if (dataLength <= 30) return 3;
+  return 2;
+}
+
+// X축 최적 tick 개수를 결정하는 함수
+function getOptimalXTickCount(minX: number, maxX: number, chartWidth: number): number {
+  const xRange = maxX - minX;
+
+  // 차트 너비 기반 최대 tick 개수 (너무 많으면 겹침)
+  const maxTicksByWidth = Math.floor(chartWidth / 80); // 80px 간격
+
+  // 데이터 범위 기반 적절한 tick 개수
+  let optimalTicks;
+
+  if (xRange <= 10) {
+    // 범위가 작으면 모든 값 또는 2씩 건너뛰기
+    optimalTicks = Math.min(xRange + 1, 6);
+  } else if (xRange <= 50) {
+    // 중간 범위: 10씩 또는 5씩 나누기
+    optimalTicks = 6;
+  } else if (xRange <= 100) {
+    // 100 이하: 10~20 간격
+    optimalTicks = 7;
+  } else if (xRange <= 500) {
+    // 500 이하: 50~100 간격
+    optimalTicks = 8;
+  } else if (xRange <= 1000) {
+    // 1000 이하: 100~200 간격
+    optimalTicks = 8;
+  } else if (xRange <= 5000) {
+    // 5000 이하: 500~1000 간격
+    optimalTicks = 10;
+  } else {
+    // 매우 큰 범위: 더 많은 구간
+    optimalTicks = 12;
+  }
+
+  // 차트 너비 제한과 비교해서 최종 결정
+  return Math.min(optimalTicks, maxTicksByWidth, 15); // 최대 15개로 제한
+}
+
+function calculateTicks(min: number, max: number, maxTicks: number = 5): number[] {
+  if (min === max) {
+    return [min];
+  }
+
+  const range = max - min;
+
+  // 적절한 간격 계산
+  const rawStep = range / (maxTicks - 1);
+  let step = getNiceStep(rawStep);
+
+  const ticks = [];
+
+  // 시작점을 step의 배수로 조정 (더 깔끔한 숫자로)
+  let start = Math.floor(min / step) * step;
+  if (start < min) start += step;
+
+  // min이 시작점과 다르면 min을 먼저 추가
+  if (Math.abs(start - min) > step * 0.1) {
+    ticks.push(min);
+  }
+
+  // 중간 값들 추가
+  let current = start;
+  while (current < max && ticks.length < maxTicks - 1) {
+    if (Math.abs(current - min) > step * 0.1) { // min과 너무 가깝지 않으면
+      ticks.push(current);
+    }
+    current += step;
+  }
+
+  // max 추가 (중복되지 않으면)
+  if (ticks.length === 0 || Math.abs(ticks[ticks.length - 1] - max) > step * 0.1) {
+    ticks.push(max);
+  }
+
   return ticks;
+}
+
+// 깔끔한 step 크기를 계산하는 함수
+function getNiceStep(rawStep: number): number {
+  const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const normalizedStep = rawStep / magnitude;
+
+  let niceStep;
+  if (normalizedStep <= 1) {
+    niceStep = 1;
+  } else if (normalizedStep <= 2) {
+    niceStep = 2;
+  } else if (normalizedStep <= 5) {
+    niceStep = 5;
+  } else {
+    niceStep = 10;
+  }
+
+  return niceStep * magnitude;
 }
 
 // 복사 함수들
@@ -1325,6 +1629,11 @@ function copyHPOConfig() {
 // 상세보기 함수들
 async function showRetrainDetail(retrainExperiment: any) {
   selectedRetrainExperiment.value = retrainExperiment;
+
+  // 이전 데이터 초기화
+  retrainExperimentStatus.value = [];
+  retrainStatus.value = 'pending';
+
   retrainExperimentInfo.value = [
     { id: 'exp_key', label: 'Experiment Key', value: retrainExperiment.exp_key },
     { id: 'task', label: 'Task', value: retrainExperiment.task },
@@ -1346,6 +1655,11 @@ async function showRetrainDetail(retrainExperiment: any) {
 
 async function showHPODetail(hpoExperiment: any) {
   selectedHPOExperiment.value = hpoExperiment;
+
+  // 이전 데이터 초기화
+  hpoExperimentStatus.value = [];
+  hpoStatus.value = 'pending';
+
   hpoExperimentInfo.value = [
     { id: 'exp_key', label: 'Experiment Key', value: hpoExperiment.exp_key },
     { id: 'task', label: 'Task', value: hpoExperiment.task },
@@ -1359,6 +1673,27 @@ async function showHPODetail(hpoExperiment: any) {
   ];
   showHPODetailModal.value = true;
   await loadHPOExperimentStatus(hpoExperiment.exp_key);
+
+  // 통계 정보 업데이트
+  updateHPOExperimentInfo();
+}
+
+// HPO 실험 정보 업데이트 함수 추가
+function updateHPOExperimentInfo() {
+  const totalJobs = hpoExperimentStatus.value.length;
+  const completedJobs = hpoExperimentStatus.value.filter(r => r.status === 'SUCCEEDED').length;
+  const bestAccuracy = hpoExperimentStatus.value.length > 0
+    ? Math.max(...hpoExperimentStatus.value.map(r => r.final_metric_data || 0))
+    : 0;
+
+  // 통계 정보 업데이트
+  const totalJobsInfo = hpoExperimentInfo.value.find(item => item.id === 'total_jobs');
+  const completedJobsInfo = hpoExperimentInfo.value.find(item => item.id === 'completed_jobs');
+  const bestAccuracyInfo = hpoExperimentInfo.value.find(item => item.id === 'best_accuracy');
+
+  if (totalJobsInfo) totalJobsInfo.value = totalJobs;
+  if (completedJobsInfo) completedJobsInfo.value = completedJobs;
+  if (bestAccuracyInfo) bestAccuracyInfo.value = formatNumber(bestAccuracy);
 }
 
 // 데이터 처리 함수들
@@ -1549,9 +1884,40 @@ async function loadHPOExperimentStatus(hyperparameterExpKey: string) {
   }
 }
 
+async function deleteRetrainExperiment(exp_key: string) {
+  if (confirm('delete?')) {
+    const response = await removeAutoMLExperiments(exp_key)
+
+    if (response.code == 130200) {
+      alert(`deleted`)
+      reloadRetrainExperiments();
+    } else {
+      alert("오류[" + response.code + "]: " + response.message + ' ' + JSON.stringify(response.result))
+    }
+  }
+}
+
+async function deleteHPOExperiment(exp_key: string) {
+  if (confirm('delete?')) {
+    const response = await removeAutoMLExperiments(exp_key)
+
+    if (response.code == 130200) {
+      alert(`deleted`)
+      reloadHPOExperiments();
+    } else {
+      alert("오류[" + response.code + "]: " + response.message + ' ' + JSON.stringify(response.result))
+    }
+  }
+}
+
 // 새로고침 함수들
 function refreshNASExperimentStatus() {
   loadNASExperimentStatus();
+}
+
+function reloadRetrainExperiments() {
+  retrainExperiments.value = [];
+  loadRetrainExperiments()
 }
 
 function refreshRetrainExperimentStatus() {
@@ -1560,9 +1926,16 @@ function refreshRetrainExperimentStatus() {
   }
 }
 
+function reloadHPOExperiments() {
+  hpoExperiments.value = [];
+  loadHPOExperiments()
+}
+
 function refreshHPOExperimentStatus() {
   if (selectedHPOExperiment.value) {
-    loadHPOExperimentStatus(selectedHPOExperiment.value.exp_key);
+    loadHPOExperimentStatus(selectedHPOExperiment.value.exp_key).then(() => {
+      updateHPOExperimentInfo();
+    });
   }
 }
 
@@ -1573,20 +1946,117 @@ function refreshAllData() {
   loadHPOExperiments();
 }
 
+// 검증 함수들
+function validateRetrainConfig() {
+  const errors = {};
+
+  if (!retrainConfig.value.max_epochs || retrainConfig.value.max_epochs < 1) {
+    errors.max_epochs = 'Max Epochs는 1 이상이어야 합니다.';
+  }
+
+  if (!retrainConfig.value.batch_size || retrainConfig.value.batch_size < 1) {
+    errors.batch_size = 'Batch Size는 1 이상이어야 합니다.';
+  }
+
+  if (!retrainConfig.value.learning_rate || retrainConfig.value.learning_rate < 0.0001) {
+    errors.learning_rate = 'Learning Rate는 0.0001 이상이어야 합니다.';
+  }
+
+  if (retrainConfig.value.momentum < 0 || retrainConfig.value.momentum > 1) {
+    errors.momentum = 'Momentum은 0과 1 사이여야 합니다.';
+  }
+
+  if (retrainConfig.value.weight_decay < 0) {
+    errors.weight_decay = 'Weight Decay는 0 이상이어야 합니다.';
+  }
+
+  if (retrainConfig.value.auxiliary_loss_weight < 0 || retrainConfig.value.auxiliary_loss_weight > 1) {
+    errors.auxiliary_loss_weight = 'Auxiliary Loss Weight는 0과 1 사이여야 합니다.';
+  }
+
+  if (retrainConfig.value.drop_path_prob < 0 || retrainConfig.value.drop_path_prob > 1) {
+    errors.drop_path_prob = 'Drop Path Probability는 0과 1 사이여야 합니다.';
+  }
+
+  if (!retrainConfig.value.width || retrainConfig.value.width < 4) {
+    errors.width = 'Width는 4 이상이어야 합니다.';
+  }
+
+  if (!retrainConfig.value.num_cells || retrainConfig.value.num_cells < 3) {
+    errors.num_cells = 'Number of Cells는 3 이상이어야 합니다.';
+  }
+
+  retrainValidationErrors.value = errors;
+  return Object.keys(errors).length === 0;
+}
+
+function validateHPOConfig() {
+  const errors = {};
+
+  if (!hpoConfig.value.trial_number || hpoConfig.value.trial_number < 1) {
+    errors.trial_number = 'Trial Number는 1 이상이어야 합니다.';
+  }
+
+  if (hpoConfig.value.trial_number > 1000) {
+    errors.trial_number = 'Trial Number는 1000 이하여야 합니다.';
+  }
+
+  // Choice 타입에서 width 값 검증
+  if (hpoConfig.value.width_type === 'choice') {
+    const choices = hpoConfig.value.width_choices.split(',').map(v => parseInt(v.trim()));
+    if (choices.some(choice => choice < 4)) {
+      errors.width_choices = 'Width 선택값은 모두 4 이상이어야 합니다.';
+    }
+  } else {
+    if (hpoConfig.value.width_min < 4) {
+      errors.width_min = 'Width 최소값은 4 이상이어야 합니다.';
+    }
+    if (hpoConfig.value.width_max < 4) {
+      errors.width_max = 'Width 최대값은 4 이상이어야 합니다.';
+    }
+  }
+
+  // Choice 타입에서 num_cells 값 검증
+  if (hpoConfig.value.num_cells_type === 'choice') {
+    const choices = hpoConfig.value.num_cells_choices.split(',').map(v => parseInt(v.trim()));
+    if (choices.some(choice => choice < 3)) {
+      errors.num_cells_choices = 'Num Cells 선택값은 모두 3 이상이어야 합니다.';
+    }
+  } else {
+    if (hpoConfig.value.num_cells_min < 3) {
+      errors.num_cells_min = 'Num Cells 최소값은 3 이상이어야 합니다.';
+    }
+    if (hpoConfig.value.num_cells_max < 3) {
+      errors.num_cells_max = 'Num Cells 최대값은 3 이상이어야 합니다.';
+    }
+  }
+
+  hpoValidationErrors.value = errors;
+  return Object.keys(errors).length === 0;
+}
+
 // 모달 제출 함수들
 async function submitRetrain() {
+  if (!validateRetrainConfig()) {
+    return;
+  }
+
   try {
     submittingRetrain.value = true;
     const datasetInfo = nasExperimentInfo.value.find(item => item.id === 'dataset_name');
     const datasetName = datasetInfo?.value || 'beans';
+
     const config = {
       ...retrainConfig.value,
       dataset_name: datasetName,
       nas_exp: expKey.value
     };
+
     const response = await startRetrain(config);
     if (response.code === 130200) {
       showRetrainModal.value = false;
+      // 입력값 초기화
+      retrainValidationErrors.value = {};
       await loadRetrainExperiments();
     } else {
       alert(`오류[${response.code}]: ${response.message}`);
@@ -1631,6 +2101,10 @@ function buildSearchSpace() {
 }
 
 async function submitHPO() {
+  if (!validateHPOConfig()) {
+    return;
+  }
+
   try {
     submittingHPO.value = true;
     const datasetInfo = nasExperimentInfo.value.find(item => item.id === 'dataset_name');
@@ -1647,6 +2121,8 @@ async function submitHPO() {
     const response = await startHPO(requestData);
     if (response.code === 130200) {
       showHyperparameterModal.value = false;
+      // 입력값 초기화
+      hpoValidationErrors.value = {};
       await loadHPOExperiments();
     } else {
       alert(`오류[${response.code}]: ${response.message}`);
@@ -1659,6 +2135,19 @@ async function submitHPO() {
   }
 }
 
+// 모달이 열릴 때 에러 초기화
+watch(showRetrainModal, (newValue) => {
+  if (newValue) {
+    retrainValidationErrors.value = {};
+  }
+});
+
+watch(showHyperparameterModal, (newValue) => {
+  if (newValue) {
+    hpoValidationErrors.value = {};
+  }
+});
+
 // 라이프사이클
 onMounted(() => {
   loadNASExperimentInfo();
@@ -1669,12 +2158,25 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* 기존 스타일 + 에러 상태 스타일 */
 .truncate {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
+/* 반응형 그리드 */
+@media (max-width: 768px) {
+  .grid-cols-2 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+
+  .grid-cols-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* 애니메이션 */
 @keyframes spin {
   0% {
     transform: rotate(0deg);
@@ -1688,6 +2190,7 @@ onMounted(() => {
   animation: spin 1s linear infinite;
 }
 
+/* 숫자 입력 스타일 */
 input[type="number"] {
   -moz-appearance: textfield;
 }
