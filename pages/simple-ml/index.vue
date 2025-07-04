@@ -16,7 +16,13 @@
           </template>
         </UPopover>
       </template>
-      <template #model-type-data="{ row }">
+      <template #status-data="{ row }">
+        <UBadge
+          :color="row.status === 'COMPLETED' ? 'green' : row.status === 'TRAINING' ? 'yellow' : 'gray'"
+          :label="row.status"
+        />
+      </template>
+      <template #model_type-data="{ row }">
         <UPopover mode="hover">
           <div class="truncate max-w-64">
             {{ row.model_type ? row.model_type : '' }}
@@ -36,6 +42,18 @@
           <template #panel>
             <div class="text-wrap p-4">
               {{ row.algorithm ? row.algorithm : '' }}
+            </div>
+          </template>
+        </UPopover>
+      </template>
+      <template #val_acc-data="{ row }">
+        <UPopover mode="hover">
+          <div class="truncate max-w-64">
+            {{ row.val_acc ? row.val_acc : '' }}
+          </div>
+          <template #panel>
+            <div class="text-wrap p-4">
+              {{ row.val_acc ? row.val_acc : '' }}
             </div>
           </template>
         </UPopover>
@@ -141,12 +159,12 @@ const simpleMLModelColumns = ref([
     label: '학습 알고리즘'
   },
   {
-    key: 'created_at',
-    label: '생성일시'
-  },
-  {
     key: 'val_acc',
     label: '모델 예측 정확도'
+  },
+  {
+    key: 'created_at',
+    label: '생성일시'
   },
   {
     key: 'action',
