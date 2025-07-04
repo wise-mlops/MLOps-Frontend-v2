@@ -80,13 +80,13 @@
             <h4 class="text-md font-semibold mb-3">하이퍼파라미터</h4>
             <div class="grid grid-cols-2 gap-4">
               <!-- Max Epochs -->
-              <UFormGroup label="Max Epochs *" name="max_epochs" class="py-2">
+              <UFormGroup label="Max Epochs" name="max_epochs" class="py-2">
                 <UInput
                   v-model.number="nasConfig.max_epochs"
                   type="number"
                   :min="1"
                   :max="999"
-                  placeholder="50"
+                  placeholder="5"
                   variant="outline"
                   :disabled="isStartingNAS"
                 />
@@ -220,7 +220,7 @@ const layerOptions = ref([
 const selectedAlgorithm = ref('darts')
 const nasConfig = ref({
   dataset_name: '',
-  max_epochs: 50,
+  max_epochs: 5,
   batch_size: 64,
   learning_rate: null as number | null,
   momentum: null as number | null,
@@ -285,7 +285,7 @@ async function fetchDatasetOptions() {
       { label: 'MNIST', value: 'mnist' },
       { label: 'FASHION-MNIST', value: 'fashion-mnist' }
     ]
-    nasConfig.value.dataset_name = 'mnist'
+    nasConfig.value.dataset_name = 'beans'
   } finally {
     loadingDatasets.value = false
   }

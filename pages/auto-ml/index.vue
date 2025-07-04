@@ -53,7 +53,7 @@
 </template>
 
 <script lang="ts" setup>
-import {getNASExperiments, removeAutoMLExperiments} from "~/composables/auto-ml";
+import {getNASExperiments, removeAutoMLExperiments, getRetrainExperiments, getHPOExperiments} from "~/composables/auto-ml";
 
 const breadcrumbs = ref([
   {
@@ -86,7 +86,21 @@ const detailNASExperiment = (exp_key: string) => {
 
 const deleteNASExperiment = async (exp_key: string) => {
   if (confirm('delete?')) {
-    const response = await removeAutoMLExperiments(exp_key)
+    const retrainExpKeys = []
+    const hpoExpKeys = []
+
+    const retrainExperiments = await getRetrainExperiments(exp_key);
+    if (retrainExperiments?.result?.result) {
+      retrainExpKeys.push(...retrainExperiments.result.result.map(item => item.exp_key));
+    }
+    const hpoExperiments = await getHPOExperiments(exp_key);
+    if (hpoExperiments?.result?.result) {
+      hpoExpKeys.push(...hpoExperiments.result.result.map(item => item.exp_key));
+    }
+
+    const allExpKeys = [exp_key, ...retrainExpKeys, ...hpoExpKeys];
+    const expKeysString = allExpKeys.join(',');
+    const response = await removeAutoMLExperiments(expKeysString)
 
     if (response.code == 130200) {
       alert(`deleted`)
