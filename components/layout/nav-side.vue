@@ -50,6 +50,11 @@ const links = [
     label: 'SIMPLE ML',
     icon: 'i-heroicons-cpu-chip',
     to: '/simple-ml'
+  },
+  {
+    label: 'AUTO ML',
+    icon: 'i-heroicons-cog',
+    to: '/auto-ml'
   }
 ]
 </script>

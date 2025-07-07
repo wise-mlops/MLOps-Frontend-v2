@@ -27,7 +27,7 @@
         <UTooltip text="share">
           <UButton @click="handleCopyUrl(row._object_name)" icon="i-heroicons-share" variant="ghost" class="p-2 mx-2" />
         </UTooltip>
-        <UTooltip text="share">
+        <UTooltip text="delete">
           <UButton @click="handleDelete(row._object_name)" icon="i-heroicons-trash" variant="ghost" class="p-2 mx-2" />
         </UTooltip>
       </div>
