@@ -53,8 +53,6 @@
 </template>
 
 <script lang="ts" setup>
-import {getNASExperiments, removeAutoMLExperiments, getRetrainExperiments, getHPOExperiments} from "~/composables/auto-ml";
-
 const breadcrumbs = ref([
   {
     label: 'Home',

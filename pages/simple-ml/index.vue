@@ -78,8 +78,6 @@
 </template>
 
 <script lang="ts" setup>
-import {getSimpleMLModels, removeSimpleMLModel} from "~/composables/simple-ml";
-
 const breadcrumbs = ref([
   {
     label: 'Home',

@@ -189,7 +189,6 @@
 </template>
 
 <script setup lang="ts">
-import {getAvailableDataset, startNAS} from "~/composables/auto-ml";
 const router = useRouter()
 
 // Loading states

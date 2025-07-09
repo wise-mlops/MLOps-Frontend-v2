@@ -223,8 +223,6 @@
 </template>
 
 <script setup lang="ts">
-import { trainSimpleMLModel } from "~/composables/simple-ml"
-
 const router = useRouter()
 
 // 기본 페이지 정보
