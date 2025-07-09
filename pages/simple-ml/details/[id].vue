@@ -26,8 +26,6 @@
 </template>
 
 <script setup lang="ts">
-import {getSimpleMLModelDetails, predictSimpleMLModel} from "~/composables/simple-ml";
-
 const router = useRouter();
 const route = useRoute()
 
