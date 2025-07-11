@@ -38,3 +38,45 @@ export const removeExperiment = async ( experiment_id: string ) => {
   
   return response;
 }
+
+export const getExperimentDetails = async (exp_key: string) => {
+  // let url = encodeURI(`/kfp/experiments`)
+  let url = encodeURI(`/workflows/experiments/${exp_key}`)
+
+  const response  = await $fetch<ResponseBody>(url, {
+    method: 'GET',
+    baseURL: config.api.url,
+  })
+
+  return response;
+}
+
+export const getRunsByExperimentKey = async (experiment_id : string | string[] | null) => {
+  let query: any = {
+    page_size: 500
+  };
+  if (experiment_id) query.experiment_id = experiment_id;
+
+  let url = encodeURI(`/workflows/runs`)
+  const response  = await $fetch<ResponseBody>(url, {
+    method: 'GET',
+    params: query,
+    baseURL: config.api.url,
+  })
+  return response;
+}
+
+export const getRecurringRunsByExperimentKey = async (experiment_id : string | string[] | null) => {
+  let query: any = {
+    page_size: 500
+  };
+  if (experiment_id) query.experiment_id = experiment_id;
+
+  let url = encodeURI(`/workflows/recurring-runs`)
+  const response  = await $fetch<ResponseBody>(url, {
+    method: 'GET',
+    params: query,
+    baseURL: config.api.url,
+  })
+  return response;
+}
