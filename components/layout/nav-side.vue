@@ -32,6 +32,11 @@ const links = [
     to: '/runs'
   },
   {
+    label: 'RECURRING RUNS',
+    icon: 'i-heroicons-clock',
+    to: '/recurring-runs'
+  },
+  {
     label: 'ENDPOINTS',
     icon: 'i-heroicons-share',
     to: '/endpoints'
