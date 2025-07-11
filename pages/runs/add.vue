@@ -4,21 +4,21 @@
     <LayoutPageHeader :title="pageTitle" />
     <LayoutPageToolbar :links="toolbarLinks" />
     <UCard class="min-h-10">
-      <div class="space-y-4 w-full sm:w-3/5">
-        <UFormGroup label="Pipeline" name="pipeline_name" class="py-2">
-          <UButtonGroup size="md" orientation="horizontal">
+      <div class="w-1/2 space-y-6">
+        <UFormGroup label="Pipeline" name="pipeline_name">
+          <UButtonGroup size="md" orientation="horizontal" class="w-full">
             <UInput v-model="runForm.pipeline.display_name" placeholder="Pipeline name" size="md" autocomplete="off"
-              class="w-96" disabled />
+              class="flex-1" disabled />
             <UButton icon="i-heroicons-magnifying-glass" autocomplete="off" @click="pipelineModalOpen = true" />
           </UButtonGroup>
           <UModal v-model="pipelineModalOpen" :ui="{ width: 'max-w-4xl sm:max-w-4xl' }">
             <ModalPipelines v-model:pipeline="runForm.pipeline" v-model:isOpen="pipelineModalOpen" />
           </UModal>
         </UFormGroup>
-        <UFormGroup label="Pipeline version" name="pipeline_version" class="py-2">
-          <UButtonGroup size="md" orientation="horizontal">
+        <UFormGroup label="Pipeline version" name="pipeline_version">
+          <UButtonGroup size="md" orientation="horizontal" class="w-full">
             <UInput v-model="runForm.pipeline_version.display_name" placeholder="Pipeline version" size="md"
-              autocomplete="off" class="w-96" disabled />
+              autocomplete="off" class="flex-1" disabled />
             <UButton icon="i-heroicons-magnifying-glass" autocomplete="off" @click="pipelineVersionModal" />
           </UButtonGroup>
           <UModal v-model="pipelineVersionModalOpen" :ui="{ width: 'max-w-4xl sm:max-w-4xl' }">
@@ -26,18 +26,18 @@
               v-model:pipelineVersion="runForm.pipeline_version" v-model:isOpen="pipelineVersionModalOpen" />
           </UModal>
         </UFormGroup>
-        <UFormGroup label="experiment" name="experiment_name" class="py-2">
-          <UButtonGroup size="md" orientation="horizontal">
-            <UInput v-model="runForm.experiment.display_name" placeholder="experiment" size="md" autocomplete="off"
-              class="w-96" disabled />
+        <UFormGroup label="Experiment" name="experiment_name">
+          <UButtonGroup size="md" orientation="horizontal" class="w-full">
+            <UInput v-model="runForm.experiment.display_name" placeholder="Experiment" size="md" autocomplete="off"
+              class="flex-1" disabled />
             <UButton icon="i-heroicons-magnifying-glass" autocomplete="off" @click="experimentModalOpen = true" />
           </UButtonGroup>
           <UModal v-model="experimentModalOpen" :ui="{ width: 'max-w-4xl sm:max-w-4xl' }">
             <ModalExperiments v-model:experiment="runForm.experiment" v-model:isOpen="experimentModalOpen" />
           </UModal>
         </UFormGroup>
-        <UFormGroup label="Run name" name="run_name" class="py-2">
-          <UInput v-model="runForm.name" placeholder="Run name" size="md" autocomplete="off" />
+        <UFormGroup label="Run name" name="run_name">
+          <UInput v-model="runForm.name" placeholder="Run name" size="md" autocomplete="off" class="w-full" />
         </UFormGroup>
         <!-- backend에서 runtype 설정이 구현되지 않아 막아둠 -->
         <!-- <URadioGroup v-model="runForm.runType" legend="Run type" :options="runTypes" class="py-2" /> -->

@@ -73,6 +73,21 @@ const attribute = ref([
     id: 'finished_at',
     label: 'Finished at',
     value: ''
+  },
+  {
+    id: 'experiment_id',
+    label: 'Experiment ID',
+    value: ''
+  },
+  {
+    id: 'pipeline_id',
+    label: 'Pipeline ID',
+    value: ''
+  },
+  {
+    id: 'pipeline_version',
+    label: 'Pipeline Version',
+    value: ''
   }
 ])
 
@@ -103,10 +118,20 @@ const loadRunDetails = async () => {
   let pipeline_version = runDetails.value.pipeline_version_reference.pipeline_version_id
 
   // information attribute 값 할당
-  attribute.value = attribute.value.map((item: any) => ({
-    ...item,
-    value: runDetails.value[item.id] !== undefined ? runDetails.value[item.id] : item.value
-  }));
+  attribute.value = attribute.value.map((item: any) => {
+    let value = item.value;
+    if (item.id === 'pipeline_id') {
+      value = pipeline_id
+    } else if (item.id === 'pipeline_version') {
+      value = pipeline_version
+    } else {
+      value = runDetails.value[item.id] !== undefined ? runDetails.value[item.id] : item.value
+    }
+    return {
+      ...item,
+      value: value
+    }
+  });
 
   // 상세정보 표시
   detail.value = JSON.stringify(runDetails.value.run_details, null, 2)

@@ -16,15 +16,11 @@
           </template>
         </UPopover>
       </template>
-      <template #created_at-data="{ row }">
-        <div>
-          {{ new Date(row.created_at).toLocaleString() }}
-        </div>
-      </template>
-      <template #finished_at-data="{ row }">
-        <div>
-          {{ new Date(row.created_at).toLocaleString() }}
-        </div>
+      <template #state-data="{ row }">
+        <UBadge
+          :color="getStatusBadgeColor(row.state)"
+          :label="getStatusText(row.state)"
+        />
       </template>
       <template #experiment_id-data="{ row }">
         <UPopover mode="hover">
@@ -38,9 +34,27 @@
           </template>
         </UPopover>
       </template>
-
-      <template #pipeline_spec-data="{ row }">
-        {{ row.pipeline_spec ? row.pipeline_spec.pipelineInfo?.name : '' }}
+      <template #pipeline_version_reference.pipeline_id-data="{ row }">
+        <UPopover mode="hover">
+          <div class="truncate max-w-36">
+            {{ row.pipeline_version_reference?.pipeline_id? row.pipeline_version_reference.pipeline_id : ''}}
+          </div>
+          <template #panel>
+            <div class="text-wrap p-4">
+              {{ row.pipeline_version_reference?.pipeline_id? row.pipeline_version_reference.pipeline_id : ''}}
+            </div>
+          </template>
+        </UPopover>
+      </template>
+      <template #created_at-data="{ row }">
+        <div>
+          {{ new Date(row.created_at).toLocaleString() }}
+        </div>
+      </template>
+      <template #finished_at-data="{ row }">
+        <div>
+          {{ new Date(row.created_at).toLocaleString() }}
+        </div>
       </template>
       <template #action-data="{ row }">
         <div>
@@ -100,6 +114,30 @@ const deleteRun = async (run_id: string) => {
   }
 }
 
+function getStatusText(status: string) {
+  const textMap = {
+    'pending': '대기중',
+    'running': '실행중',
+    'completed': '완료',
+    'succeeded': '성공',
+    'failed': '실패',
+    'cancelled': '취소됨'
+  };
+  return textMap[status] || status;
+}
+
+function getStatusBadgeColor(status: string) {
+  const colorMap = {
+    'PENDING': 'gray',
+    'RUNNING': 'blue',
+    'COMPLETED': 'green',
+    'SUCCEEDED': 'green',
+    'FAILED': 'red',
+    'CANCELLED': 'gray'
+  }
+  return colorMap[status] || 'gray'
+}
+
 onMounted(() => {
   loadRuns();
 })
@@ -129,20 +167,20 @@ const pipelineColumns = ref([
     label: '상태'
   },
   {
+    key: 'experiment_id',
+    label: 'Experiment'
+  },
+  {
+    key: 'pipeline_version_reference.pipeline_id',
+    label: 'Pipeline'
+  },
+  {
     key: 'created_at',
     label: '생성일시'
   },
   {
     key: 'finished_at',
     label: '최종실행일시'
-  },
-  {
-    key: 'experiment_id',
-    label: 'Experiment'
-  },
-  {
-    key: 'pipeline_spec',
-    label: 'Pipeline'
   },
   {
     key: 'action',
