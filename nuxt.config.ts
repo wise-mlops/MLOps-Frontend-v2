@@ -51,6 +51,7 @@ export default defineNuxtConfig({
     },
     public: {
       baseURL: process.env.APP_BASE_URL || "/",
+      prometheusUrl: process.env.PROMETHEUS_URL || 'http://prometheus-kube-prometheus-prometheus.prometheus.svc.cluster.local:9090'
     },
   }
 })
