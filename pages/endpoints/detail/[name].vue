@@ -256,8 +256,6 @@ const scrollToBottom = async () => {
   await nextTick()
   if (logContainer.value) {
     logContainer.value.scrollTop = logContainer.value.scrollHeight
-
-    // 추가로 확실하게 하기 위해 약간의 지연 후 다시 스크롤
     setTimeout(() => {
       if (logContainer.value) {
         logContainer.value.scrollTop = logContainer.value.scrollHeight
@@ -301,7 +299,7 @@ const loadPods = async () => {
       }
     }
   } catch (error) {
-    // 에러 처리 (토스트 제거)
+    console.error('Error loading pods:', error)
   } finally {
     podLoading.value = false
   }
@@ -329,6 +327,7 @@ const refreshLogs = async () => {
       logs.value = [`Error: ${response.message || '로그를 가져올 수 없습니다'}`]
     }
   } catch (error) {
+    console.error('Error loading logs:', error)
     logs.value = [`Error loading logs: ${error.message}`]
   } finally {
     logLoading.value = false
@@ -345,7 +344,7 @@ const loadEvents = async () => {
       eventsData.value = response.result.events || response.result || []
     }
   } catch (error) {
-    // 에러 처리 (토스트 제거)
+    console.error('Error loading events:', error)
   } finally {
     eventsPending.value = false
   }
@@ -368,7 +367,7 @@ const loadStatus = async () => {
       }
     }
   } catch (error) {
-    // 에러 처리
+    console.error('Error loading status:', error)
   }
 }
 
@@ -431,13 +430,12 @@ const loadEndpointDetails = async () => {
       await refreshLogs()
     }
   } catch (error) {
-    // 에러 처리
+    console.error('Error loading endpoint details:', error)
   }
 }
 
 // 초기 로드 완료 후 스크롤 처리
 onMounted(() => {
-  // 컴포넌트 마운트 후 약간의 지연을 두고 스크롤 확인
   setTimeout(() => {
     if (logs.value.length > 0) {
       scrollToBottom()
@@ -553,7 +551,8 @@ const predictorInfo = computed(() => {
 })
 
 const yamlContent = computed(() => {
-  return JSON.stringify(data.value, null, 2)
+  let yamlString = JSON.stringify(data.value, null, 2)
+  return jsonToYaml(yamlString)
 })
 
 const reloadEndpointDetails = () => {
