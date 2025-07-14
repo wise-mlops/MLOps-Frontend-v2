@@ -60,6 +60,11 @@ const links = [
     label: 'AUTO ML',
     icon: 'i-heroicons-cog',
     to: '/auto-ml'
+  },
+  {
+    label: 'GPU MONITORING',
+    icon: 'i-heroicons-computer-desktop',
+    to: '/gpu-monitoring'
   }
 ]
 </script>
