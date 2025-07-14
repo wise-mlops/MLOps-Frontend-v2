@@ -92,3 +92,25 @@ export const jsonToYaml = (jsonData: string) => {
   // Convert the data object to a YAML string
   return convertToYaml(data);
 }
+
+// Pod 로그는 공통 함수 사용
+export const getPodLogs = async (
+  namespace: string,
+  podName: string,
+  container?: string,
+  tailLines: number = 100,
+  sinceSeconds?: number
+) => {
+  const params = new URLSearchParams();
+  if (container) params.append('container', container);
+  params.append('tail_lines', tailLines.toString());
+  params.append('timestamps', 'true');
+  if (sinceSeconds) params.append('since_seconds', sinceSeconds.toString());
+
+  let url = encodeURI(`/k8s-managements/namespaces/${namespace}/pods/${podName}/logs/advanced?${params.toString()}`)
+  const response  = await $fetch<ResponseBody>(url, {
+    method: 'GET',
+    baseURL: config.api.url,
+  })
+  return response;
+};
