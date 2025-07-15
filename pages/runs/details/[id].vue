@@ -136,18 +136,63 @@ const loadRunDetails = async () => {
   // 상세정보 표시
   detail.value = JSON.stringify(runDetails.value.run_details, null, 2)
 
-  // pipeline 정보 
+  // pipeline 정보
   const response2 = await getPipelineDetails(pipeline_id, pipeline_version)
-  pipeline.value = response2.result
 
-  if (pipeline.value?.nodes !== undefined) {
-    pipeline.value.nodes.forEach((node: any, i: number) => {
-      let runItem = runDetails.value.run_details.task_details.find((item: any) => {
-        return item.display_name === node.data.attribute.type.replace(/_/g, "-");
+  // 기존 방식: getPipelineDetails에 nodes가 있는 경우
+  if (response2.result && response2.result.nodes && response2.result.nodes.length > 0) {
+    pipeline.value = response2.result
+    // 기존 상태 매핑 로직 유지
+    if (pipeline.value?.nodes !== undefined) {
+      pipeline.value.nodes.forEach((node: any, i: number) => {
+        let runItem = runDetails.value.run_details.task_details.find((item: any) => {
+          return item.display_name === node.data.attribute.type.replace(/_/g, "-");
+        })
+        pipeline.value ? pipeline.value.nodes[i].data.state = runItem?.state : new Node()
+        pipeline.value ? pipeline.value.nodes[i].data.details = runItem : new Node()
       })
-      pipeline.value ? pipeline.value.nodes[i].data.state = runItem?.state : new Node()
-      pipeline.value ? pipeline.value.nodes[i].data.details = runItem : new Node()
-    })
+    }
+  }
+  // 새로운 방식: getPipelineDetails에 결과가 없거나 빈 경우 getPipelineVersionDetail 호출
+  else {
+    try {
+      const versionResponse = await getPipelineVersionDetailsKFP(pipeline_id, pipeline_version)
+      if (versionResponse.result && versionResponse.result.pipeline_spec) {
+        // KFP 스펙을 워크플로우로 변환
+        pipeline.value = convertKFPToWorkflow(versionResponse.result, runDetails.value)
+      } else {
+        // 그래도 데이터가 없는 경우 빈 pipeline
+        pipeline.value = {
+          pipeline_name: 'Unknown Pipeline',
+          pipeline_description: '',
+          nodes: [],
+          edges: [],
+          position: [0, 0],
+          zoom: 1,
+          pipeline_id: pipeline_id,
+          pipeline_type: 'unknown',
+          last_version_id: pipeline_version,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load pipeline version detail:', error)
+      // 에러 발생 시 빈 pipeline
+      pipeline.value = {
+        pipeline_name: 'Error Loading Pipeline',
+        pipeline_description: '',
+        nodes: [],
+        edges: [],
+        position: [0, 0],
+        zoom: 1,
+        pipeline_id: pipeline_id,
+        pipeline_type: 'error',
+        last_version_id: pipeline_version,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+    }
   }
 }
 
