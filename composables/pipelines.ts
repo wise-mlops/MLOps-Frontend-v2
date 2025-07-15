@@ -68,6 +68,23 @@ export const createPipeline = async ( pipeline: any ) => {
   return response
 }
 
+export const createPipelineVersion = async ( pipeline_id: string, pipeline: any ) => {
+  // let url = encodeURI(`/workflow/pipeline`);
+  let url = encodeURI(`/workflows/ml-pipelines/${pipeline_id}/versions`);
+  const options = {
+    headers: { "Content-type": "application/json" },
+    method: 'POST',
+    baseURL: config.api.url,
+    params: {
+      start_run: false
+    },
+    body: pipeline
+  }
+  const response = await $fetch<ResponseBody>(url, options as object)
+
+  return response
+}
+
 export const removePipeline = async ( pipeline_id : string ) => {
   // let url = encodeURI(`/kfp/pipelines/${pipeline_id}`)
   let url = encodeURI(`/workflows/ml-pipelines/${pipeline_id}`)
