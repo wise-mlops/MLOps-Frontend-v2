@@ -41,6 +41,16 @@ export const getPipelineVersionDetails = async ( pipeline_id: string | string[],
   return response;
 }
 
+export const getPipelineVersionDetailsKFP = async ( pipeline_id: string | string[], version_id: string ) => {
+  // let url = encodeURI(`/kfp/pipelines/versions/${id}/${version}`)
+  let url = encodeURI(`/workflows/pipelines/${pipeline_id}/versions/${version_id}`)
+  const response = await $fetch<ResponseBody>(url, {
+    method: 'GET',
+    baseURL: config.api.url
+  })
+  return response;
+}
+
 export const createPipeline = async ( pipeline: any ) => {
   // let url = encodeURI(`/workflow/pipeline`);
   let url = encodeURI(`/workflows/ml-pipelines`);

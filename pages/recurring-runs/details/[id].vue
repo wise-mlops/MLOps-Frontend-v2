@@ -449,24 +449,75 @@ async function showRunDetail(run: any) {
 
     selectedRunDetail.value = JSON.stringify(runDetails.run_details, null, 2)
 
-    // Pipeline 정보 로드
+    // Pipeline 정보 로드 (수정된 부분)
     if (runDetails.pipeline_version_reference) {
       const pipelineId = runDetails.pipeline_version_reference.pipeline_id
       const pipelineVersion = runDetails.pipeline_version_reference.pipeline_version_id
-      const pipelineResponse = await getPipelineDetails(pipelineId, pipelineVersion)
-      selectedRunPipeline.value = pipelineResponse.result
 
-      // Pipeline 노드에 실행 상태 적용
-      if (selectedRunPipeline.value?.nodes && runDetails.run_details?.task_details) {
-        selectedRunPipeline.value.nodes.forEach((node, i) => {
-          const runItem = runDetails.run_details.task_details.find(item => {
-            return item.display_name === node.data.attribute.type.replace(/_/g, "-")
-          })
-          if (runItem) {
-            selectedRunPipeline.value.nodes[i].data.state = runItem.state
-            selectedRunPipeline.value.nodes[i].data.details = runItem
+      try {
+        const pipelineResponse = await getPipelineDetails(pipelineId, pipelineVersion)
+
+        // 기존 방식: getPipelineDetails에 nodes가 있는 경우
+        if (pipelineResponse.result && pipelineResponse.result.nodes && pipelineResponse.result.nodes.length > 0) {
+          selectedRunPipeline.value = pipelineResponse.result
+
+          // 기존 상태 매핑 로직 유지
+          if (selectedRunPipeline.value?.nodes && runDetails.run_details?.task_details) {
+            selectedRunPipeline.value.nodes.forEach((node, i) => {
+              const runItem = runDetails.run_details.task_details.find(item => {
+                return item.display_name === node.data.attribute.type.replace(/_/g, "-")
+              })
+              if (runItem) {
+                selectedRunPipeline.value.nodes[i].data.state = runItem.state
+                selectedRunPipeline.value.nodes[i].data.details = runItem
+              }
+            })
           }
-        })
+        }
+        // 새로운 방식: getPipelineDetails에 결과가 없거나 빈 경우 getPipelineVersionDetailsKFP 호출
+        else {
+          try {
+            const versionResponse = await getPipelineVersionDetailsKFP(pipelineId, pipelineVersion)
+            if (versionResponse.result && versionResponse.result.pipeline_spec) {
+              // KFP 스펙을 워크플로우로 변환
+              selectedRunPipeline.value = convertKFPToWorkflow(versionResponse.result, runDetails)
+            } else {
+              // 그래도 데이터가 없는 경우 빈 pipeline
+              selectedRunPipeline.value = {
+                pipeline_name: 'Unknown Pipeline',
+                pipeline_description: '',
+                nodes: [],
+                edges: [],
+                position: [0, 0],
+                zoom: 1,
+                pipeline_id: pipelineId,
+                pipeline_type: 'unknown',
+                last_version_id: pipelineVersion,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              }
+            }
+          } catch (error) {
+            console.error('Failed to load pipeline version detail:', error)
+            // 에러 발생 시 빈 pipeline
+            selectedRunPipeline.value = {
+              pipeline_name: 'Error Loading Pipeline',
+              pipeline_description: '',
+              nodes: [],
+              edges: [],
+              position: [0, 0],
+              zoom: 1,
+              pipeline_id: pipelineId,
+              pipeline_type: 'error',
+              last_version_id: pipelineVersion,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load pipeline details:', error)
+        selectedRunPipeline.value = null
       }
     }
 
@@ -529,9 +580,58 @@ const loadRecurringRunDetails = async () => {
 
   detail.value = JSON.stringify(recurringRunDetails.value, null, 2)
 
+  // Pipeline 정보 로드 (수정된 부분)
   if (pipeline_id && pipeline_version) {
-    const response2 = await getPipelineDetails(pipeline_id, pipeline_version)
-    pipeline.value = response2.result
+    try {
+      const response2 = await getPipelineDetails(pipeline_id, pipeline_version)
+
+      // 기존 방식: getPipelineDetails에 nodes가 있는 경우
+      if (response2.result && response2.result.nodes && response2.result.nodes.length > 0) {
+        pipeline.value = response2.result
+      }
+      // 새로운 방식: getPipelineDetails에 결과가 없거나 빈 경우 getPipelineVersionDetailsKFP 호출
+      else {
+        try {
+          const versionResponse = await getPipelineVersionDetailsKFP(pipeline_id, pipeline_version)
+          if (versionResponse.result && versionResponse.result.pipeline_spec) {
+            // KFP 스펙을 워크플로우로 변환 (runDetails가 없으므로 빈 객체 전달)
+            pipeline.value = convertKFPToWorkflow(versionResponse.result, { run_details: { task_details: [] } })
+          } else {
+            pipeline.value = {
+              pipeline_name: 'Unknown Pipeline',
+              pipeline_description: '',
+              nodes: [],
+              edges: [],
+              position: [0, 0],
+              zoom: 1,
+              pipeline_id: pipeline_id,
+              pipeline_type: 'unknown',
+              last_version_id: pipeline_version,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }
+          }
+        } catch (error) {
+          console.error('Failed to load pipeline version detail:', error)
+          pipeline.value = {
+            pipeline_name: 'Error Loading Pipeline',
+            pipeline_description: '',
+            nodes: [],
+            edges: [],
+            position: [0, 0],
+            zoom: 1,
+            pipeline_id: pipeline_id,
+            pipeline_type: 'error',
+            last_version_id: pipeline_version,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load pipeline details:', error)
+      pipeline.value = null
+    }
   }
 }
 
