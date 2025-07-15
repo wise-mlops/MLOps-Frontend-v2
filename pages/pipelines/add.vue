@@ -4,42 +4,38 @@
     <LayoutPageHeader :title="pageTitle" />
     <LayoutPageToolbar :links="toolbarLinks" />
 
-    <UTabs :items="tabItems"
-      :ui="{ container: 'relative w-full grow', list: { width: 'w-96' }, base: 'focus:outline-none h-full' }"
-      class="grow flex flex-col">
-      <template #info="{ item }">
-        <UCard class="min-h-10 mb-4">
-          <div class="space-y-4">
-            <UFormGroup label="NAME" name="pipeline_name" class="py-0">
-              <UInput v-model="pipeline.pipeline_name" placeholder="Input Name" variant="outline" size="md"
-                autocomplete="false">
-              </UInput>
-            </UFormGroup>
-            <UFormGroup label="Description" name="pipeline_description" class="py-0">
-              <UInput v-model="pipeline.pipeline_description" placeholder="Input Description" size="md"
-                autocomplete="false">
-              </UInput>
-            </UFormGroup>
-          </div>
-        </UCard>
-      </template>
-      <template #pipeline="{ item }">
-        <!-- <UCard class="min-h-10"> -->
-        <div class="w-full h-full border">
-          <Workflow :isEditable="true" />
+    <!-- Information Section -->
+    <UCard class="mb-4">
+      <div class="flex gap-4">
+        <div class="w-1/4">
+          <UFormGroup label="NAME" name="pipeline_name" class="py-0">
+            <UInput v-model="pipeline.pipeline_name" placeholder="Input Name" variant="outline" size="md"
+              autocomplete="false">
+            </UInput>
+          </UFormGroup>
         </div>
-        <!-- </UCard> -->
-      </template>
-    </UTabs>
+        <div class="w-3/4">
+          <UFormGroup label="Description" name="pipeline_description" class="py-0">
+            <UInput v-model="pipeline.pipeline_description" placeholder="Input Description" size="md"
+              autocomplete="false">
+            </UInput>
+          </UFormGroup>
+        </div>
+      </div>
+    </UCard>
 
+    <!-- Pipeline Section -->
+    <div class="flex-1 border rounded-lg bg-white shadow">
+      <Workflow :isEditable="true" />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-
 const router = useRouter();
 import { useVueFlow } from '@vue-flow/core';
 const { toObject } = useVueFlow()
+
 const pipeline = ref<Pipeline>({
   pipeline_name: '',
   pipeline_description: '',
@@ -65,19 +61,19 @@ const breadcrumbs = ref([
     label: 'Add',
   },
 ])
+
 const pageTitle = ref('Add Pipeline')
 
 const savePipeline = async () => {
   const pipelineObject = toObject();
-
   pipeline.value.nodes = pipelineObject.nodes;
   pipeline.value.edges = pipelineObject.edges;
   pipeline.value.position = pipelineObject.position;
-  // pipeline.value.zoom = pipelineObject.zoom;
   pipeline.value.zoom = 1
   pipeline.value.viewport = pipelineObject.viewport;
 
   const response = await createPipeline(pipeline.value)
+  console.log(response)
   if (response.code == 130200) {
     navigateTo(`/pipelines`, {
       replace: true,
@@ -89,9 +85,7 @@ const savePipeline = async () => {
   }
 }
 
-
-
-// toolbar links  
+// toolbar links
 const toolbarLinks = ref([
   [
     {
@@ -107,16 +101,5 @@ const toolbarLinks = ref([
       click: savePipeline
     },
   ]
-])
-
-const tabItems = ref([
-  {
-    slot: 'info',
-    label: 'Information'
-  },
-  {
-    slot: 'pipeline',
-    label: 'Pipeline'
-  }
 ])
 </script>
