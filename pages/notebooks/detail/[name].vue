@@ -3,7 +3,6 @@
     <LayoutPageBreadcrumb :breadcrumbs="breadcrumbs" />
     <LayoutPageHeader :title="pageTitle" />
     <LayoutPageToolbar :links="toolbarLinks" />
-
     <!-- Notebook Name with Status -->
     <div class="mb-6 flex items-center">
       <UIcon
@@ -12,58 +11,60 @@
       />
       <h2 class="text-xl font-semibold">{{ notebookName }}</h2>
     </div>
-
     <UTabs :items="tabItems" :ui="{ list: { width: 'w-2/5' } }">
       <template #overview="{ item }">
         <div class="space-y-6">
-          <!-- Basic Information -->
-          <UCard>
-            <div class="flex justify-between items-center mb-4">
-              <h3 class="text-lg font-semibold">기본 정보</h3>
-            </div>
-            <ModuleLabelValue v-model="overviewInfo" />
-          </UCard>
+          <!-- Basic Information and Volumes in 2 columns -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Basic Information -->
+            <UCard>
+              <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">기본 정보</h3>
+              </div>
+              <ModuleLabelValue v-model="overviewInfo" />
+            </UCard>
 
-          <!-- Volumes -->
-          <UCard>
-            <div class="flex justify-between items-center mb-4">
-              <h3 class="text-lg font-semibold">Volumes</h3>
-            </div>
-            <div class="space-y-4">
-              <!-- PersistentVolumeClaims -->
-              <div>
-                <h4 class="font-medium text-gray-700 mb-2">PersistentVolumeClaims</h4>
-                <div v-if="volumeInfo.persistentVolumeClaims.length === 0" class="text-gray-500">
-                  No PersistentVolumeClaims
+            <!-- Volumes -->
+            <UCard>
+              <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">Volumes</h3>
+              </div>
+              <div class="space-y-4">
+                <!-- PersistentVolumeClaims -->
+                <div>
+                  <h4 class="font-medium text-gray-700 mb-2">PersistentVolumeClaims</h4>
+                  <div v-if="volumeInfo.persistentVolumeClaims.length === 0" class="text-gray-500">
+                    No PersistentVolumeClaims
+                  </div>
+                  <div v-else>
+                    <div
+                      v-for="pvc in volumeInfo.persistentVolumeClaims"
+                      :key="pvc"
+                      class="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded mr-2 mb-2"
+                    >
+                      {{ pvc }}
+                    </div>
+                  </div>
                 </div>
-                <div v-else>
-                  <div
-                    v-for="pvc in volumeInfo.persistentVolumeClaims"
-                    :key="pvc"
-                    class="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded mr-2 mb-2"
-                  >
-                    {{ pvc }}
+                <!-- Memory-backed Volumes -->
+                <div>
+                  <h4 class="font-medium text-gray-700 mb-2">Memory-backed Volumes</h4>
+                  <div v-if="volumeInfo.memoryBackedVolumes.length === 0" class="text-gray-500">
+                    No Memory-backed Volumes
+                  </div>
+                  <div v-else>
+                    <div
+                      v-for="vol in volumeInfo.memoryBackedVolumes"
+                      :key="vol"
+                      class="inline-block bg-gray-100 text-gray-800 px-2 py-1 rounded mr-2 mb-2"
+                    >
+                      {{ vol }}
+                    </div>
                   </div>
                 </div>
               </div>
-              <!-- Memory-backed Volumes -->
-              <div>
-                <h4 class="font-medium text-gray-700 mb-2">Memory-backed Volumes</h4>
-                <div v-if="volumeInfo.memoryBackedVolumes.length === 0" class="text-gray-500">
-                  No Memory-backed Volumes
-                </div>
-                <div v-else>
-                  <div
-                    v-for="vol in volumeInfo.memoryBackedVolumes"
-                    :key="vol"
-                    class="inline-block bg-gray-100 text-gray-800 px-2 py-1 rounded mr-2 mb-2"
-                  >
-                    {{ vol }}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </UCard>
+            </UCard>
+          </div>
 
           <!-- Conditions -->
           <UCard>
@@ -88,7 +89,6 @@
           </UCard>
         </div>
       </template>
-
       <template #logs="{ item }">
         <UCard>
           <div class="flex justify-between items-center mb-4">
@@ -134,7 +134,6 @@
           </div>
         </UCard>
       </template>
-
       <template #events="{ item }">
         <UCard>
           <div class="flex justify-between items-center mb-4">
@@ -176,7 +175,6 @@
           </ModuleDataTable>
         </UCard>
       </template>
-
       <template #yaml="{ item }">
         <UCard>
           <div class="flex justify-between items-center mb-4">
@@ -199,25 +197,20 @@
     </UTabs>
   </div>
 </template>
-
 <script lang="ts" setup>
 const router = useRouter()
 const route = useRoute()
-
 const breadcrumbs = ref([
   { label: 'Home', to: '/' },
   { label: 'Notebooks', to: '/notebooks/' },
   { label: 'Details' }
 ])
-
 const pageTitle = ref('Notebook details')
 const notebookName = ref(route.params.name)
 const namespace = ref('kubeflow-user-example-com')
-
 // 데이터 상태
 const notebookData = ref({})
 const notebookStatus = ref({ ready: false, phase: 'Unknown' })
-
 // 로그 관련 상태
 const logs = ref([])
 const selectedPod = ref('')
@@ -227,20 +220,17 @@ const containerOptions = ref([])
 const podLoading = ref(false)
 const logLoading = ref(false)
 const logContainer = ref<HTMLElement>()
-
 // 이벤트 관련 상태
 const conditionsPending = ref(false)
 const eventsPending = ref(false)
 const conditionsData = ref([])
 const eventsData = ref([])
 const eventTypeFilter = ref('all')
-
 const eventTypeOptions = ref([
   { label: '전체', value: 'all' },
   { label: 'Normal', value: 'Normal' },
   { label: 'Warning', value: 'Warning' }
 ])
-
 // 테이블 컬럼 정의
 const conditionColumns = ref([
   { key: 'status', label: 'Status' },
@@ -249,14 +239,12 @@ const conditionColumns = ref([
   { key: 'reason', label: 'Reason' },
   { key: 'message', label: 'Message' }
 ])
-
 const eventColumns = ref([
   { key: 'type', label: 'Type' },
   { key: 'reason', label: 'Reason' },
   { key: 'first_timestamp', label: 'Created at' },
   { key: 'message', label: 'Message' }
 ])
-
 // Computed
 const filteredEventsData = computed(() => {
   if (eventTypeFilter.value === 'all') {
@@ -264,7 +252,6 @@ const filteredEventsData = computed(() => {
   }
   return eventsData.value.filter(event => event.type === eventTypeFilter.value)
 })
-
 const volumeInfo = computed(() => {
   const volumes = notebookData.value.parsed_info?.volumes || {}
   return {
@@ -272,7 +259,6 @@ const volumeInfo = computed(() => {
     memoryBackedVolumes: volumes.memory_backed_volumes || []
   }
 })
-
 const overviewInfo = computed(() => [
   { label: 'Type', value: getNotebookType() },
   { label: 'Minimum CPU', value: getMinCPU() },
@@ -289,7 +275,6 @@ const overviewInfo = computed(() => [
     badge: true
   }))
 ])
-
 const yamlContent = computed(() => {
   if (notebookData.value.spec) {
     const yamlObject = {
@@ -304,14 +289,12 @@ const yamlContent = computed(() => {
   }
   return "# YAML 데이터를 불러오는 중..."
 })
-
 const tabItems = computed(() => [
   { slot: 'overview', label: 'Overview' },
   { slot: 'logs', label: 'Logs' },
   { slot: 'events', label: 'Events' },
   { slot: 'yaml', label: 'YAML' }
 ])
-
 const toolbarLinks = ref([
   [
     {
@@ -328,17 +311,14 @@ const toolbarLinks = ref([
     }
   ]
 ])
-
 // 유틸리티 함수들
 const isSuccessResponse = (response: any) => {
   return response && (response.code === 130200 || response.success === true)
 }
-
 const getNotebookType = () => {
   return notebookData.value.parsed_info?.server_type === 'jupyter' ? 'JupyterLab' :
          notebookData.value.parsed_info?.server_type === 'vscode' ? 'VSCode' : 'Unknown'
 }
-
 const getImage = () => notebookData.value.parsed_info?.image || 'N/A'
 const getCreator = () => notebookData.value.parsed_info?.creator || 'N/A'
 const getMinCPU = () => notebookData.value.parsed_info?.resources?.requests?.cpu || 'N/A'
@@ -346,11 +326,9 @@ const getMaxCPU = () => notebookData.value.parsed_info?.resources?.limits?.cpu |
 const getMinMemory = () => notebookData.value.parsed_info?.resources?.requests?.memory || 'N/A'
 const getMaxMemory = () => notebookData.value.parsed_info?.resources?.limits?.memory || 'N/A'
 const getEnvironmentVars = () => notebookData.value.parsed_info?.environment_vars || []
-
 const getSharedMemoryEnabled = () => {
   return notebookData.value.parsed_info?.volumes?.memory_backed_volumes?.length > 0 ? 'Yes' : 'No'
 }
-
 const formatRelativeTime = (dateString: string) => {
   if (!dateString) return 'N/A'
   const date = new Date(dateString)
@@ -359,14 +337,12 @@ const formatRelativeTime = (dateString: string) => {
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
   return diffDays > 0 ? `${diffDays} day${diffDays > 1 ? 's' : ''} ago` : 'Today'
 }
-
 const scrollToBottom = async () => {
   await nextTick()
   if (logContainer.value) {
     logContainer.value.scrollTop = logContainer.value.scrollHeight
   }
 }
-
 // API 함수들
 const loadNotebookDetails = async () => {
   try {
@@ -392,7 +368,6 @@ const loadNotebookDetails = async () => {
     conditionsPending.value = false
   }
 }
-
 const loadPods = async () => {
   try {
     podLoading.value = true
@@ -404,7 +379,6 @@ const loadPods = async () => {
         value: pod.name,
         containers: pod.containers
       }))
-
       if (pods.length > 0) {
         selectedPod.value = pods[0].name
         containerOptions.value = pods[0].containers.map(container => ({
@@ -422,7 +396,6 @@ const loadPods = async () => {
     podLoading.value = false
   }
 }
-
 const refreshLogs = async () => {
   if (!selectedPod.value) return
   try {
@@ -446,7 +419,6 @@ const refreshLogs = async () => {
     logLoading.value = false
   }
 }
-
 const loadEvents = async () => {
   try {
     eventsPending.value = true
@@ -460,11 +432,9 @@ const loadEvents = async () => {
     eventsPending.value = false
   }
 }
-
 const refreshEvents = async () => {
   await loadEvents()
 }
-
 const loadAllData = async () => {
   try {
     await loadNotebookDetails()
@@ -476,14 +446,12 @@ const loadAllData = async () => {
     console.error('데이터 로드 에러:', error)
   }
 }
-
 // Watchers
 watch(logs, async (newLogs) => {
   if (newLogs.length > 0) {
     await scrollToBottom()
   }
 }, { flush: 'post' })
-
 watch(selectedPod, async (newPod, oldPod) => {
   if (newPod) {
     const selectedPodInfo = podOptions.value.find(pod => pod.value === newPod)
@@ -501,13 +469,11 @@ watch(selectedPod, async (newPod, oldPod) => {
     }
   }
 })
-
 watch(selectedContainer, async (newContainer, oldContainer) => {
   if (newContainer && selectedPod.value && oldContainer) {
     await refreshLogs()
   }
 })
-
 // Lifecycle
 onBeforeMount(() => {
   loadAllData()
