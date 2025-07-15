@@ -906,7 +906,7 @@ onUnmounted(() => {
 }
 
 .table-headers {
-  @apply grid gap-2 pb-3 mb-3 border-b border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider;
+  @apply grid gap-2 pb-3 mb-3 border-b border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center;
   grid-template-columns: 20px 70px 100px 65px 65px 75px;
   align-items: center;
 }
