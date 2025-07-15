@@ -907,37 +907,39 @@ onUnmounted(() => {
 
 .table-headers {
   @apply grid gap-2 pb-3 mb-3 border-b border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center;
-  grid-template-columns: 20px 70px 100px 65px 65px 75px;
+  grid-template-columns: 20px 2fr 2.5fr 1.5fr 1.5fr 2fr;
   align-items: center;
+  min-width: 400px;
 }
 
 .table-row {
   @apply grid gap-2 items-center py-2 text-sm hover:bg-gray-50 rounded-md transition-colors;
-  grid-template-columns: 20px 70px 100px 65px 65px 75px;
+  grid-template-columns: 20px 2fr 2.5fr 1.5fr 1.5fr 2fr;
   min-height: 32px;
+  min-width: 400px;
 }
 
-@media (max-width: 1024px) {
-  .table-headers,
-  .table-row {
-    grid-template-columns: 18px 65px 90px 60px 60px 70px;
-    @apply gap-1;
-  }
+/* 테이블 영역에 스크롤 추가 */
+.metric-panel .p-4.pt-0 {
+  overflow-x: auto;
 }
 
-@media (max-width: 768px) {
-  .table-headers,
-  .table-row {
-    grid-template-columns: 16px 55px 80px 55px 55px 65px;
-    @apply gap-1 text-xs;
-  }
+/* 스크롤바 스타일 개선 */
+.metric-panel .p-4.pt-0::-webkit-scrollbar {
+  height: 6px;
 }
 
-@media (max-width: 640px) {
-  .table-headers,
-  .table-row {
-    grid-template-columns: 14px 50px 70px 50px 50px 60px;
-    @apply gap-1 text-xs py-1;
-  }
+.metric-panel .p-4.pt-0::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.metric-panel .p-4.pt-0::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.metric-panel .p-4.pt-0::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 </style>
