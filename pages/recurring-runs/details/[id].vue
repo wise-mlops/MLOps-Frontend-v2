@@ -4,7 +4,7 @@
     <LayoutPageHeader :title="pageTitle" />
     <LayoutPageToolbar :links="toolbarLinks" />
     <UTabs :items="tabItems"
-      :ui="{ container: 'relative w-full grow', list: { width: 'w-96' }, base: 'focus:outline-none h-full' }"
+      :ui="{ container: 'relative w-full grow', list: { width: 'w-2/5' }, base: 'focus:outline-none h-full' }"
       class="grow flex flex-col">
       <template #pipeline="{ item }">
         <div class="w-full h-full border">
@@ -690,7 +690,7 @@ const tabItems = ref([
   },
   {
     slot: 'info',
-    label: 'Info'  // Information -> Info로 단축
+    label: 'Information'
   },
   {
     slot: 'detail',
