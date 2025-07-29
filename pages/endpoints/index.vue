@@ -44,6 +44,14 @@
     </template>
     <template #action-data="{ row }">
       <div class="flex items-center space-x-1">
+        <UTooltip text="인퍼런스">
+          <UButton
+            @click="runInference(row.name)"
+            icon="i-heroicons-play"
+            variant="ghost"
+            size="sm"
+          />
+        </UTooltip>
         <UTooltip text="상세보기">
           <UButton
             @click="detail(row.name)"
@@ -275,6 +283,10 @@ const reloadEndpoints = () => {
 
 const detail = (endpointName: string) => {
   navigateTo(`/endpoints/detail/${endpointName}`)
+}
+
+const runInference = (endpointName: string) => {
+  navigateTo(`/endpoints/inference/${endpointName}`)
 }
 
 onMounted(() => {
