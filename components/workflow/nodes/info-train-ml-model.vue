@@ -148,7 +148,7 @@ const componentTypes = ref([
 
 const algorithmList = ref<EnumItem>({
   classifier: ["decision_tree", "gaussian_naive_bayes", "logistic_regression", "multinomial_naive_bayes", "random_forest", "support_vector_classification"],
-  regressor: ["bayesian_ridge", "decision_tree", "elastic_net", "gradient_boosting", "kernel_ridge", "linear_regression", "sgd", "support_vector_regression"]
+  regressor: ["bayesian_ridge", "decision_tree", "elastic_net", "gradient_boosting", "kernel_ridge", "linear_regression", "sgd", "support_vector_regression", "random_forest_regressor"]
 })
 
 const itemTemplate = ref<ItemTemplate>({
