@@ -15,7 +15,6 @@
         </div>
       </UCard>
     </div>
-
     <LayoutPageBreadcrumb :breadcrumbs="breadcrumbs" />
     <LayoutPageHeader :title="pageTitle" />
     <LayoutPageToolbar :links="toolbarLinks" />
@@ -46,15 +45,12 @@
                 :key="algorithm.value"
                 class="flex items-center gap-3"
               >
-                <UToggle
-                  :model-value="algorithm.value === selectedAlgorithm"
-                  :disabled="!algorithm.enabled || isStartingNAS"
-                  size="sm"
-                  @update:model-value="selectAlgorithm(algorithm.value)"
+                <URadio
+                  v-model="nasConfig.search_algorithm"
+                  :value="algorithm.value"
+                  :label="algorithm.label"
+                  :disabled="isStartingNAS"
                 />
-                <span :class="algorithm.enabled ? 'text-gray-900 font-medium' : 'text-gray-400'">
-                  {{ algorithm.label }}
-                </span>
               </div>
             </div>
           </div>
@@ -193,19 +189,17 @@ const router = useRouter()
 
 // Loading states
 const loadingDatasets = ref(false)
-const isStartingNAS = ref(false) // 추가된 로딩 상태
+const isStartingNAS = ref(false)
 
 // Options
 const datasetOptions = ref<Array<{label: string, value: string}>>([])
 
-// 고정된 알고리즘 옵션
 const algorithmOptions = ref([
-  { label: 'enas', value: 'enas', enabled: false },
-  { label: 'darts', value: 'darts', enabled: true },
-  { label: 'pdarts', value: 'pdarts', enabled: false }
+  { label: 'ENAS', value: 'enas' },
+  { label: 'DARTS', value: 'darts' },
+  { label: 'GumbelDARTS', value: 'gumbeldarts' }
 ])
 
-// 고정된 레이어 옵션
 const layerOptions = ref([
   { label: 'max_pool_3x3', value: 'max_pool_3x3' },
   { label: 'avg_pool_3x3', value: 'avg_pool_3x3' },
@@ -216,8 +210,8 @@ const layerOptions = ref([
   { label: 'dil_conv_5x5', value: 'dil_conv_5x5' },
 ])
 
-const selectedAlgorithm = ref('darts')
 const nasConfig = ref({
+  search_algorithm: 'darts',
   dataset_name: '',
   max_epochs: 5,
   batch_size: 64,
@@ -252,7 +246,7 @@ const isFormValid = computed(() => {
          nasConfig.value.max_epochs >= 1 &&
          nasConfig.value.max_epochs <= 999 &&
          nasConfig.value.layer_operations.length > 0 &&
-         selectedAlgorithm.value
+         nasConfig.value.search_algorithm
 })
 
 // API function to fetch datasets
@@ -290,25 +284,15 @@ async function fetchDatasetOptions() {
   }
 }
 
-function selectAlgorithm(algorithm: string) {
-  const option = algorithmOptions.value.find(opt => opt.value === algorithm)
-  if (option && option.enabled) {
-    selectedAlgorithm.value = algorithm
-  }
-}
-
 const startNeuralArchitectureSearch = async () => {
   if (!isFormValid.value) {
     alert("필수 항목을 입력해주세요.")
     return
   }
 
-  isStartingNAS.value = true // 로딩 시작
+  isStartingNAS.value = true
 
-  const searchConfig = {
-    algorithm: selectedAlgorithm.value,
-    ...nasConfig.value
-  }
+  const searchConfig = { ...nasConfig.value }
 
   Object.keys(searchConfig).forEach(key => {
     if (searchConfig[key as keyof typeof searchConfig] === null ||
@@ -333,7 +317,7 @@ const startNeuralArchitectureSearch = async () => {
     console.error('NAS Search creation failed:', error)
     alert("검색 시작 중 오류가 발생했습니다.")
   } finally {
-    isStartingNAS.value = false // 로딩 종료
+    isStartingNAS.value = false
   }
 }
 
@@ -343,17 +327,17 @@ const toolbarLinks = ref([
       label: '취소',
       icon: 'i-heroicons-arrow-uturn-left',
       click: () => { router.back() },
-      disabled: computed(() => isStartingNAS.value) // 로딩 중 비활성화
+      disabled: computed(() => isStartingNAS.value)
     }
   ],
   [
     {
-      label: computed(() => isStartingNAS.value ? '탐색 시작 중...' : '탐색 시작'), // 동적 라벨
-      icon: isStartingNAS.value ? 'i-heroicons-arrow-path' : 'i-heroicons-magnifying-glass', // 동적 아이콘
+      label: computed(() => isStartingNAS.value ? '탐색 시작 중...' : '탐색 시작'),
+      icon: isStartingNAS.value ? 'i-heroicons-arrow-path' : 'i-heroicons-magnifying-glass',
       color: 'green' as const,
       click: startNeuralArchitectureSearch,
-      disabled: computed(() => !isFormValid.value || isStartingNAS.value), // 로딩 중 비활성화
-      loading: isStartingNAS.value // Nuxt UI의 loading prop 사용
+      disabled: computed(() => !isFormValid.value || isStartingNAS.value),
+      loading: isStartingNAS.value
     },
   ]
 ])
@@ -370,6 +354,7 @@ onMounted(() => {
   border-radius: 8px;
   border: 1px solid #e9ecef;
 }
+
 .options-section h4 {
   margin-top: 0;
   margin-bottom: 12px;
