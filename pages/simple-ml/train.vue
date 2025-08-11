@@ -3,7 +3,6 @@
     <LayoutPageBreadcrumb :breadcrumbs="breadcrumbs" />
     <LayoutPageHeader :title="pageTitle" />
     <LayoutPageToolbar :links="toolbarLinks" />
-
     <UCard class="min-h-10">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- 왼쪽: 모델 선택 및 데이터셋 설정 -->
@@ -18,7 +17,6 @@
               placeholder="모델 타입을 선택하세요"
             />
           </UFormGroup>
-
           <!-- Algorithm 선택 -->
           <UFormGroup v-if="selectedModelType" label="Algorithm" class="py-2">
             <USelectMenu
@@ -29,7 +27,6 @@
               placeholder="알고리즘을 선택하세요"
             />
           </UFormGroup>
-
           <!-- Dataset 선택 -->
           <UFormGroup v-if="selectedModelType && availableDatasets.length > 0" label="Dataset" class="py-2">
             <USelectMenu
@@ -40,7 +37,6 @@
               placeholder="데이터셋을 선택하세요"
             />
           </UFormGroup>
-
           <!-- 데이터셋 설정 (Tabular 모델용) -->
           <div v-if="selectedDataset && isTabularModel" class="dataset-config">
             <!-- Target 선택 -->
@@ -56,7 +52,6 @@
                 <span class="text-gray-500 text-sm">예측할 대상 컬럼</span>
               </template>
             </UFormGroup>
-
             <!-- Input Features -->
             <UFormGroup label="Input Features" class="py-2">
               <div class="space-y-3">
@@ -77,7 +72,6 @@
                   </template>
                   <span v-else class="text-gray-400 text-sm">특성을 선택하세요</span>
                 </div>
-
                 <!-- 사용 가능한 특성들 -->
                 <div v-if="unselectedColumns.length > 0" class="available-features">
                   <div class="text-xs font-medium text-gray-600 mb-2">사용 가능한 특성:</div>
@@ -94,7 +88,6 @@
                     </button>
                   </div>
                 </div>
-
                 <!-- 빠른 선택 버튼 -->
                 <div v-if="availableInputColumns.length > 0" class="quick-actions">
                   <UButton
@@ -116,7 +109,6 @@
                     전체 해제
                   </UButton>
                 </div>
-
                 <div class="text-xs text-gray-500">
                   선택된 특성: {{ selectedInputs.length }}개
                   <span v-if="availableInputColumns.length > 0">
@@ -128,7 +120,6 @@
                 <span class="text-gray-500 text-sm">모델 학습에 사용할 입력 특성들을 선택하세요</span>
               </template>
             </UFormGroup>
-
             <!-- Train Test Split -->
             <UFormGroup label="Train Test Split" class="py-2">
               <UInput
@@ -147,12 +138,10 @@
             </UFormGroup>
           </div>
         </div>
-
         <!-- 오른쪽: 학습 설정 -->
         <div class="config-panel">
           <div v-if="selectedAlgorithm && allOptions.length > 0" class="options-section">
             <h4 class="text-md font-semibold mb-3">학습 옵션</h4>
-
             <template v-for="option in allOptions" :key="option.id">
               <!-- Boolean Toggle -->
               <UFormGroup v-if="option.type === 'bool'" :label="option.label" class="py-2">
@@ -161,7 +150,6 @@
                   <span class="text-gray-500 text-sm">{{ option.description }}</span>
                 </template>
               </UFormGroup>
-
               <!-- Number Input -->
               <UFormGroup v-else-if="option.type === 'number'" :label="option.label" class="py-2">
                 <UInput
@@ -179,7 +167,6 @@
                   <span class="text-gray-500 text-sm">{{ option.description }}</span>
                 </template>
               </UFormGroup>
-
               <!-- Select -->
               <UFormGroup v-else-if="option.type === 'select'" :label="option.label" class="py-2">
                 <USelectMenu
@@ -192,7 +179,6 @@
                   <span class="text-gray-500 text-sm">{{ option.description }}</span>
                 </template>
               </UFormGroup>
-
               <!-- Text Input -->
               <UFormGroup v-else :label="option.label" class="py-2">
                 <UInput
@@ -210,7 +196,6 @@
               </UFormGroup>
             </template>
           </div>
-
           <!-- 설정이 없을 때 안내 -->
           <div v-else class="text-center py-8 text-gray-500">
             <Icon name="heroicons:cog-6-tooth" class="w-12 h-12 mx-auto text-gray-300 mb-2" />
@@ -258,87 +243,99 @@ const trainTestSplit = ref(0.2)
 const allOptions = ref<Option[]>([])
 const isEditable = ref(true)
 
-// 정적 데이터
+// 모델 타입 정의
 const modelTypes = [
-  { label: 'Image Classifier', value: 'image-classifier' },
-  { label: 'Text Classifier', value: 'text-classifier' },
+  { label: 'Image Classification Model', value: 'image-classifier' },
+  { label: 'Image Segmentation Model', value: 'image-segmentation' },
+  { label: 'Text Classification Model', value: 'text-classifier' },
   { label: 'Tabular Classifier', value: 'classifier' },
   { label: 'Tabular Regressor', value: 'regressor' }
 ]
 
-const algorithmMap = {
-  'image-classifier': [
-    { label: 'VGG19', value: 'vgg19' },
-    { label: 'ResNet50', value: 'resnet50' },
-    { label: 'DenseNet121', value: 'densenet121' },
-    { label: 'MobileNet V2', value: 'mobilenet_v2' },
-    { label: 'Mobile Vision Transformer', value: 'mobile_vit' },
-    { label: 'Pyramid Vision Transformer V2', value: 'pvt_v2' }
-  ],
-  'text-classifier': [
-    { label: 'RNN', value: 'rnn' },
-    { label: 'Transformer', value: 'transformer' },
-    { label: 'Switch Transformer', value: 'switch-transformer' }
-  ],
-  'classifier': [
-    { label: 'Decision Tree', value: 'decision-tree' },
-    { label: 'Gaussian Naive Bayes', value: 'gaussian-naive-bayes' },
-    { label: 'Logistic Regression', value: 'logistic-regression' },
-    { label: 'Multinomial Naive Bayes', value: 'multinomial-naive-bayes' },
-    { label: 'Random Forest', value: 'random-forest' },
-    { label: 'Support Vector Classification', value: 'support-vector-classification' }
-  ],
-  'regressor': [
-    { label: 'Bayesian Ridge', value: 'bayesian-ridge' },
-    { label: 'Decision Tree', value: 'decision-tree' },
-    { label: 'Elastic Net', value: 'elastic-net' },
-    { label: 'Gradient Boosting', value: 'gradient-boosting' },
-    { label: 'Kernel Ridge', value: 'kernel-ridge' },
-    { label: 'Linear Regression', value: 'linear-regression' },
-    { label: 'SGD', value: 'sgd' },
-    { label: 'Support Vector Regression', value: 'support-vector-regression' }
-  ]
+// 모델 설정 구조화
+const MODEL_CONFIGS = {
+  'image-classifier': {
+    algorithms: [
+      { label: 'VGG19', value: 'vgg19' },
+      { label: 'ResNet50', value: 'resnet50' },
+      { label: 'DenseNet121', value: 'densenet121' },
+      { label: 'MobileNet V2', value: 'mobilenet_v2' },
+      { label: 'Mobile Vision Transformer', value: 'mobile_vit' },
+      { label: 'Pyramid Vision Transformer V2', value: 'pvt_v2' }
+    ],
+    datasets: [{ label: 'CIFAR-10', value: 'cifar10' }]
+  },
+  'image-segmentation': {
+    algorithms: [{ label: 'Auto Focus Former', value: 'afformer' }],
+    datasets: [{ label: 'PENNFUDAN', value: 'pennfudan' }]
+  },
+  'text-classifier': {
+    algorithms: [
+      { label: 'GRU', value: 'gru' },
+      { label: 'LSTM', value: 'lstm' },
+      { label: 'Transformer', value: 'transformer' },
+      { label: 'Switch Transformer', value: 'switch-transformer' }
+    ],
+    datasets: [
+      { label: 'Newsgroup 20', value: 'newsgroup20' },
+      { label: 'Rotten Tomatoes reviews', value: 'rotten_tomatoes_reviews' }
+    ]
+  },
+  'classifier': {
+    algorithms: [
+      { label: 'Decision Tree', value: 'decision-tree' },
+      { label: 'Gaussian Naive Bayes', value: 'gaussian-naive-bayes' },
+      { label: 'Logistic Regression', value: 'logistic-regression' },
+      { label: 'Multinomial Naive Bayes', value: 'multinomial-naive-bayes' },
+      { label: 'Random Forest', value: 'random-forest' },
+      { label: 'Support Vector Classification', value: 'support-vector-classification' }
+    ],
+    datasets: [
+      {
+        label: 'Wine Dataset',
+        value: 'wine',
+        columns: ["alcohol", "sugar", "pH", "class"],
+        targets: [{ label: "class", value: "class" }]
+      },
+      {
+        label: 'Iris Dataset',
+        value: 'iris',
+        columns: ["sepal.length", "sepal.width", "petal.length", "petal.width", "variety"],
+        targets: [{ label: "variety", value: "variety" }]
+      }
+    ]
+  },
+  'regressor': {
+    algorithms: [
+      { label: 'Bayesian Ridge', value: 'bayesian-ridge' },
+      { label: 'Decision Tree', value: 'decision-tree' },
+      { label: 'Elastic Net', value: 'elastic-net' },
+      { label: 'Gradient Boosting', value: 'gradient-boosting' },
+      { label: 'Kernel Ridge', value: 'kernel-ridge' },
+      { label: 'Linear Regression', value: 'linear-regression' },
+      { label: 'SGD', value: 'sgd' },
+      { label: 'Support Vector Regression', value: 'support-vector-regression' }
+    ],
+    datasets: [
+      {
+        label: 'Boston Housing',
+        value: 'boston',
+        columns: ["crim", "zn", "indus", "chas", "nox", "rm", "age", "dis", "rad", "tax", "ptratio", "b", "lstat", "medv"],
+        targets: [{ label: "medv", value: "medv" }]
+      }
+    ]
+  }
 }
 
-const datasetMap = {
-  'image-classifier': [{ label: 'CIFAR-10', value: 'cifar10' }],
-  'text-classifier': [{ label: 'Newsgroup 20', value: 'newsgroup20' }],
-  'classifier': [
-    {
-      label: 'Wine Dataset',
-      value: 'wine',
-      columns: ["alcohol", "sugar", "pH", "class"],
-      targets: [{ label: "class", value: "class" }]
-    },
-    {
-      label: 'Iris Dataset',
-      value: 'iris',
-      columns: ["sepal.length", "sepal.width", "petal.length", "petal.width", "variety"],
-      targets: [{ label: "variety", value: "variety" }]
-    }
-  ],
-  'regressor': [
-    {
-      label: 'Boston Housing',
-      value: 'boston',
-      columns: ["crim", "zn", "indus", "chas", "nox", "rm", "age", "dis", "rad", "tax", "ptratio", "b", "lstat", "medv"],
-      targets: [{ label: "medv", value: "medv" }]
-    }
-  ]
-}
-
-// 옵션 템플릿 (간소화)
-// 헬퍼 함수 수정
+// 헬퍼 함수
 const createSelectOption = (id: string, label: string, options: Array<{label: string, value: any}>, defaultValue: any, description?: string, isHyperParameter = false) => {
-  // 기본값을 options 배열에서 찾아서 전체 객체로 설정
   const defaultOption = options.find(opt => opt.value === defaultValue) || options[0]
-
   return {
     id,
     label,
     type: 'select' as const,
     options,
-    value: defaultOption, // 전체 객체로 설정
+    value: defaultOption,
     description,
     isHyperParameter
   }
@@ -352,19 +349,38 @@ const createBoolOption = (id: string, label: string, defaultValue: boolean, desc
   id, label, type: 'bool' as const, value: defaultValue, description, isHyperParameter
 })
 
+// 옵션 템플릿 구조화
 const optionTemplates = {
-  // 공통 옵션
+  // 기본 공통 옵션들
   'common': [
     createNumberOption('epochs', 'Epochs', 1, 1000, 1, 10, '모델 학습 에폭 수'),
     createNumberOption('batch_size', 'Batch Size', 1, 512, 1, 32, '모델 학습 배치 사이즈'),
     createNumberOption('learning_rate', 'Learning Rate', 0.0001, 1, 0.0001, 0.001, '모델 학습 learning rate')
   ],
 
-  // Image Classifier 전용 옵션
-  'image-classifier': [
+  // 모델 타입별 공통 옵션
+  'cnn-common': [  // VGG, ResNet, DenseNet, MobileNet V2용
     createNumberOption('momentum', 'Momentum', 0, 1, 0.1, 0.9, '모멘텀')
   ],
 
+  'text-classifier-common': [
+    createNumberOption('sequence_length', 'Sequence Length', 50, 1000, 50, 200, '시퀀스 길이'),
+    createNumberOption('vocab_size', 'Vocab Size', 1000, 100000, 1000, 20000, '어휘 크기'),
+    createNumberOption('embed_dim', 'Embedding Dimension', 16, 512, 16, 32, '임베딩 차원')
+  ],
+
+  'rnn-common': [
+    createNumberOption('num_neurons', 'Hidden Neurons', 16, 512, 16, 64, '은닉층 뉴런 수'),
+    createNumberOption('num_layers', 'Number of Layers', 1, 16, 1, 1, '계층 수'),
+    createBoolOption('bidirectional', 'Bidirectional', true, '양방향 순환 신경망 사용 여부')
+  ],
+
+  'transformer-common': [
+    createNumberOption('num_heads', 'Number of Heads', 1, 16, 1, 2, '헤드 수'),
+    createNumberOption('ff_dim', 'Feed Forward Dimension', 16, 512, 16, 32, '피드포워드 차원')
+  ],
+
+  // 알고리즘별 특화 옵션
   'mobile_vit': [
     createBoolOption('pretrained', 'Pretrained', false, '사전 학습된 모델 사용 여부')
   ],
@@ -374,19 +390,12 @@ const optionTemplates = {
     createNumberOption('weight_decay', 'Weight Decay', 0, 1, 0.0001, 0.0001, '가중치 감소')
   ],
 
-  // Text Classifier 전용 옵션
-  'text-classifier': [
-    createNumberOption('embed_dim', 'Embedding Dimension', 16, 512, 16, 32, '임베딩 차원'),
-    createNumberOption('num_heads', 'Number of Heads', 1, 16, 1, 2, '헤드 수'),
-    createNumberOption('ff_dim', 'Feed Forward Dimension', 16, 512, 16, 32, '피드포워드 차원'),
-    createNumberOption('sequence_length', 'Sequence Length', 50, 1000, 50, 200, '시퀀스 길이'),
-    createNumberOption('vocab_size', 'Vocab Size', 1000, 100000, 1000, 20000, '어휘 크기')
-  ],
-
-  'rnn': [
-    createNumberOption('num_neurons', 'Hidden Neurons', 16, 512, 16, 64, '은닉층 뉴런 수'),
-    createNumberOption('output_dim', 'Output Dimension', 1, 10, 1, 1, '출력 차원'),
-    createNumberOption('dense_neurons', 'Dense Neurons', 16, 256, 16, 32, '밀집층 뉴런 수')
+  'afformer': [
+    createBoolOption('pretrained', 'Pretrained', false, '사전 학습된 모델 사용 여부'),
+    createNumberOption('weight_decay', 'Weight Decay', 0, 1, 0.0001, 0.0001, '가중치 감소'),
+    createNumberOption('power', 'Power', 0.1, 2.0, 0.1, 1.0, '학습률을 점진적으로 줄이는 스케줄러의 감소 속도 제어'),
+    createNumberOption('warmup_epoch', 'Warmup Epochs', 0, 50, 1, 0, '학습률 워밍업을 위한 에폭 수'),
+    createNumberOption('warmup_ratio', 'Warmup Ratio', 0.000001, 0.01, 0.000001, 0.000001, '학습률 워밍업을 위한 초기 비율')
   ],
 
   'switch-transformer': [
@@ -394,7 +403,7 @@ const optionTemplates = {
     createNumberOption('dropout_rate', 'Dropout Rate', 0, 0.9, 0.1, 0.1, '드롭아웃 비율')
   ],
 
-  // === Classifier 하이퍼파라미터 ===
+  // Tabular 모델 알고리즘들
   'decision-tree': [
     createSelectOption('criterion', 'Criterion', [
       { label: 'Gini', value: 'gini' },
@@ -450,7 +459,6 @@ const optionTemplates = {
     createNumberOption('max_iter', 'Max Iterations', -1, 10000, 1, -1, '모델 수렴에 걸리는 최대 반복 횟수', true)
   ],
 
-  // === Regressor 하이퍼파라미터 ===
   'bayesian-ridge': [
     createNumberOption('alpha_1', 'Alpha 1', 1e-6, 1e-3, 1e-6, 1e-6, '감마 분포 사전 확률로서 alpha 매개변수에 대한 형상 매개변수', true),
     createNumberOption('alpha_2', 'Alpha 2', 1e-6, 1e-3, 1e-6, 1e-6, 'alpha 매개변수에 대한 감마 분포 사전 확률의 역 스케일 매개변수', true),
@@ -527,12 +535,12 @@ const optionTemplates = {
 // Computed Properties
 const availableAlgorithms = computed(() => {
   if (!selectedModelType.value?.value) return []
-  return algorithmMap[selectedModelType.value.value as keyof typeof algorithmMap] || []
+  return MODEL_CONFIGS[selectedModelType.value.value as keyof typeof MODEL_CONFIGS]?.algorithms || []
 })
 
 const availableDatasets = computed(() => {
   if (!selectedModelType.value?.value) return []
-  return datasetMap[selectedModelType.value.value as keyof typeof datasetMap] || []
+  return MODEL_CONFIGS[selectedModelType.value.value as keyof typeof MODEL_CONFIGS]?.datasets || []
 })
 
 const isTabularModel = computed(() => {
@@ -549,7 +557,7 @@ const availableInputColumns = computed(() => {
   if (!selectedDataset.value || !isTabularModel.value || !selectedTarget.value) return []
   const dataset = availableDatasets.value.find(d => d.value === selectedDataset.value?.value)
   if (!dataset || !(dataset as any).columns) return []
-  return (dataset as any).columns.filter((column: string) => column !== selectedTarget.value.value)
+  return (dataset as any).columns.filter((column: string) => column !== selectedTarget.value?.value)
 })
 
 const unselectedColumns = computed(() => {
@@ -564,24 +572,19 @@ const canTrain = computed(() => {
 
 const requestBody = computed(() => {
   const body: {[key: string]: any} = {}
-
   if (selectedDataset.value?.value) {
     body.dataset_name = selectedDataset.value.value
   }
-
   if (isTabularModel.value) {
     body.train_test_split = trainTestSplit.value
     if (selectedInputs.value.length > 0) body.inputs = selectedInputs.value
     if (selectedTarget.value?.value) body.target = selectedTarget.value.value
-
     const hp: {[key: string]: any} = {}
     allOptions.value.forEach(option => {
       if (option.value !== undefined && option.value !== null && option.value !== '') {
-        // select 타입인 경우 value 속성을 추출
         const optionValue = option.type === 'select' && typeof option.value === 'object' && option.value.value !== undefined
           ? option.value.value
           : option.value
-
         if (option.isHyperParameter) {
           hp[option.id] = optionValue
         } else {
@@ -589,23 +592,19 @@ const requestBody = computed(() => {
         }
       }
     })
-
     if (Object.keys(hp).length > 0) {
       body.hp = hp
     }
   } else {
     allOptions.value.forEach(option => {
       if (option.value !== undefined && option.value !== null && option.value !== '') {
-        // select 타입인 경우 value 속성을 추출
         const optionValue = option.type === 'select' && typeof option.value === 'object' && option.value.value !== undefined
           ? option.value.value
           : option.value
-
         body[option.id] = optionValue
       }
     })
   }
-
   return body
 })
 
@@ -637,6 +636,7 @@ const clearAllFeatures = () => {
   selectedInputs.value = []
 }
 
+// 개선된 generateOptions 함수
 const generateOptions = () => {
   if (!selectedModelType.value || !selectedAlgorithm.value) {
     allOptions.value = []
@@ -647,14 +647,47 @@ const generateOptions = () => {
   const modelType = selectedModelType.value.value
   const algorithm = selectedAlgorithm.value.value
 
-  if (modelType === 'image-classifier' || modelType === 'text-classifier') {
-    options = [...optionTemplates.common]
+  // 1. 기본 공통 옵션 (딥러닝 모델들)
+  if (['image-classifier', 'image-segmentation', 'text-classifier'].includes(modelType)) {
+    options.push(...optionTemplates.common)
   }
 
-  const algorithmOptions = optionTemplates[algorithm as keyof typeof optionTemplates] || []
-  options = [...options, ...algorithmOptions]
+  // 2. 특정 CNN 모델들 공통 옵션 (momentum 필요한 것들만)
+  if (['vgg19', 'resnet50', 'densenet121', 'mobilenet_v2'].includes(algorithm)) {
+    options.push(...optionTemplates['cnn-common'])
+  }
 
-  allOptions.value = JSON.parse(JSON.stringify(options))
+  // 3. Text Classifier 공통 옵션
+  if (modelType === 'text-classifier') {
+    options.push(...optionTemplates['text-classifier-common'])
+  }
+
+  // 4. RNN 계열 공통 옵션
+  if (['gru', 'lstm'].includes(algorithm)) {
+    options.push(...optionTemplates['rnn-common'])
+  }
+
+  // 5. Transformer 계열 공통 옵션
+  if (['transformer', 'switch-transformer'].includes(algorithm)) {
+    options.push(...optionTemplates['transformer-common'])
+  }
+
+  // 6. 알고리즘별 특화 옵션
+  const algorithmOptions = optionTemplates[algorithm as keyof typeof optionTemplates] || []
+  options.push(...algorithmOptions)
+
+  // 7. 중복 제거
+  const uniqueOptions = options.reduce((acc, current) => {
+    const existingIndex = acc.findIndex(item => item.id === current.id)
+    if (existingIndex >= 0) {
+      acc[existingIndex] = current
+    } else {
+      acc.push(current)
+    }
+    return acc
+  }, [] as Option[])
+
+  allOptions.value = JSON.parse(JSON.stringify(uniqueOptions))
 }
 
 const initializeDatasetConfig = () => {
@@ -663,31 +696,25 @@ const initializeDatasetConfig = () => {
     selectedTarget.value = null
     return
   }
-
   const dataset = availableDatasets.value.find(d => d.value === selectedDataset.value?.value)
   if (!dataset) return
-
   const datasetWithTarget = dataset as any
-
   if (datasetWithTarget.targets && datasetWithTarget.targets.length > 0) {
     selectedTarget.value = datasetWithTarget.targets[0]
   }
-
   if (datasetWithTarget.columns && Array.isArray(datasetWithTarget.columns) && selectedTarget.value) {
-    selectedInputs.value = datasetWithTarget.columns.filter((col: string) => col !== selectedTarget.value.value)
+    selectedInputs.value = datasetWithTarget.columns.filter((col: string) => col !== selectedTarget.value?.value)
   }
 }
 
 const handleTrain = async () => {
   if (!canTrain.value) return
-
   try {
     const response = await trainSimpleMLModel(
       selectedModelType.value?.value!,
       selectedAlgorithm.value?.value!,
       requestBody.value
     )
-
     if (String(response.code).endsWith('200')) {
       navigateTo('/simple-ml', { replace: true })
     } else {
@@ -727,14 +754,11 @@ watch(selectedDataset, (newDataset) => {
 
 watch(selectedTarget, (newTarget) => {
   if (!newTarget || !selectedDataset.value || !isTabularModel.value) return
-
   const dataset = availableDatasets.value.find(d => d.value === selectedDataset.value?.value)
   if (!dataset) return
-
   const datasetWithColumns = dataset as any
   if (datasetWithColumns.columns && Array.isArray(datasetWithColumns.columns)) {
     selectedInputs.value = selectedInputs.value.filter(input => input !== newTarget.value)
-
     const availableColumns = datasetWithColumns.columns.filter((col: string) => col !== newTarget.value)
     availableColumns.forEach((col: string) => {
       if (!selectedInputs.value.includes(col)) {
@@ -831,7 +855,6 @@ watch(availableTargetOptions, (newTargets) => {
   .feature-add-btn {
     @apply text-xs px-2 py-1;
   }
-
   .quick-actions {
     @apply flex-col space-y-2;
   }
