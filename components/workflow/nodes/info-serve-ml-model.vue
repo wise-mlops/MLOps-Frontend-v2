@@ -151,7 +151,7 @@ const itemTemplate = ref<ItemTemplate>(
         id: 'model_format',
         label: 'Model Format',
         type: 'string',
-        value: 'llm'
+        value: 'mlflow'
       },
       {
         id: 'model_name',
@@ -182,6 +182,12 @@ const itemTemplate = ref<ItemTemplate>(
         label: 'Service Account Name',
         type: 'string',
         value: 'storage-system-minio-sa'
+      },
+      {
+        id: 'endpoint',
+        label: 'S3 Endpoint URL',
+        type: 'string',
+        value: 'http://minio.storage-system.svc.cluster.local:9000'
       },
       {
         id: 'vllm_options',

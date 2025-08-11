@@ -153,7 +153,7 @@ const itemTemplate = ref<ItemTemplate>(
         id: 'endpoint',
         label: 'MLflow S3 Endpoint URL',
         type: 'string',
-        value: 'http://storage-system-minio.storage-system.svc.cluster.local:9000'
+        value: 'http://minio.storage-system.svc.cluster.local:9000'
       },
       {
         id: 'key',

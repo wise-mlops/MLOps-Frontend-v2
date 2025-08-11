@@ -146,7 +146,23 @@ const loadRunDetails = async () => {
     if (pipeline.value?.nodes !== undefined) {
       pipeline.value.nodes.forEach((node: any, i: number) => {
         let runItem = runDetails.value.run_details.task_details.find((item: any) => {
-          return item.display_name === node.data.attribute.type.replace(/_/g, "-");
+          if (!item.display_name) return false;
+          
+          const displayName = item.display_name.toLowerCase();
+          const nodeType = node.data.attribute.type.replace(/_/g, "-").toLowerCase();
+          
+          if (displayName.includes('-driver')) return false;
+          
+          // 정확한 매칭
+          if (displayName === nodeType) return true;
+
+          if (displayName.startsWith(nodeType)) return true;
+          
+          // 하이픈 제거한 매칭
+          if (displayName.replace(/-/g, '') === nodeType.replace(/-/g, '')) return true;
+          
+          // 포함 관계 매칭
+          return !!(displayName.includes(nodeType) || nodeType.includes(displayName));
         })
         pipeline.value ? pipeline.value.nodes[i].data.state = runItem?.state : new Node()
         pipeline.value ? pipeline.value.nodes[i].data.details = runItem : new Node()
