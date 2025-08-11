@@ -247,7 +247,8 @@ function mapComponentToNodeType(componentName: string): string {
     'train-model-with-csv': 'NodeTrainMlModel',
     'get-model-metrics': 'NodeValMlModel',
     'pick-the-best-model': 'NodePickMlModel',
-    'serve-model': 'NodeServeMlModel'
+    'serve-model': 'NodeServeMlModel',
+    'llm-fine-tune-model-with-csv': 'NodeTrainLLMFinetune'
   };
   
   for (const [key, nodeType] of Object.entries(typeMap)) {
@@ -268,7 +269,8 @@ function getNodeLabel(componentName: string, taskName: string): string {
     'train-model-with-csv': 'ML 학습',
     'get-model-metrics': '모델 평가',
     'pick-the-best-model': '최적 모델 선택',
-    'serve-model': '모델 서빙'
+    'serve-model': '모델 서빙',
+    'llm-fine-tune-model-with-csv': 'LLM 파인튜닝'
   };
   
   for (const [key, label] of Object.entries(labelMap)) {

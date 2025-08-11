@@ -44,6 +44,10 @@
           <UButton @click="pipelineDetail(row.pipeline_id, row.last_version_id)" icon="i-heroicons-pencil-square"
             variant="ghost" class="px-2 py-0" />
         </UTooltip>
+        <UTooltip text="복제">
+          <UButton @click="clonePipeline(row)" icon="i-heroicons-document-duplicate"
+            variant="ghost" class="px-2 py-0" />
+        </UTooltip>
         <UTooltip text="delete">
           <UButton @click="deletePipeline(row.pipeline_id)" icon="i-heroicons-trash" variant="ghost"
             class="px-2 py-0" />
@@ -83,6 +87,18 @@ const reloadPipelines = () => {
 const pipelineDetail = (pipelineId: string, pipelineVersion: string) => {
   navigateTo(`/pipelines/details/${pipelineId}?version=${pipelineVersion}`);
 }
+
+const clonePipeline = (pipeline: any) => {
+  navigateTo({
+    path: '/pipelines/add',
+    query: {
+      clone: 'true',
+      sourceId: pipeline.pipeline_id,
+      sourceName: pipeline.pipeline_name,
+      sourceDescription: pipeline.pipeline_description
+    }
+  });
+};
 
 const deletePipeline = async (pipelineId: string) => {
   if (confirm('delete?')) {
