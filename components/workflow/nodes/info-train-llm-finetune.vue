@@ -203,7 +203,13 @@ const itemTemplate = ref<ItemTemplate>(
         id: 'type',
         label: 'Ful Fine Tune Model With CSV',
         type: 'type',
-        value: 'full_fine_tune_model_with_csv'
+        value: 'llm_fine_tune_model_with_csv'
+      },
+      {
+        id: 'training_type',
+        label: 'Training Type',
+        type: 'string',
+        value: 'unsupervised'
       },
       {
         id: 'model_name',
@@ -218,36 +224,60 @@ const itemTemplate = ref<ItemTemplate>(
         value: ''
       },
       {
-        id: 'ephochs',
-        label: 'Model Name',
+        id: 'source_column',
+        label: 'Source Column',
         type: 'string',
-        value: '1'
+        value: ''
+      },
+      {
+        id: 'epochs',
+        label: 'epochs',
+        type: 'number',
+        value: 1
       },
       {
         id: 'batch_size',
         label: 'Batch Size',
-        type: 'string',
-        value: '2'
+        type: 'number',
+        value: 2
       },
       {
         id: 'save_steps',
         label: 'Save Steps',
-        type: 'string',
-        value: '500'
+        type: 'number',
+        value: 500
       },
       {
         id: 'save_total_limit',
         label: 'Save Total Limit',
-        type: 'string',
-        value: '2'
+        type: 'number',
+        value: 2
       },
+      {
+        id: 'endpoint',
+        label: 'Endpoint URL',
+        type: 'string',
+        value: 'http://minio.storage-system.svc.cluster.local:9000'
+      },
+      {
+        id: 'use_gpu',
+        label: 'Use GPU',
+        type: 'bool',
+        value: true
+      }
     ],
     sft_fine_tune_model_with_csv: [
       {
         id: 'type',
         label: 'SFT Fine Tune Model(CSV)',
         type: 'type',
-        value: 'sft_fine_tune_model_with_csv'
+        value: 'llm_fine_tune_model_with_csv'
+      },
+      {
+        id: 'training_type',
+        label: 'Training Type',
+        type: 'string',
+        value: 'supervised'
       },
       {
         id: 'experiment_name',
@@ -262,34 +292,34 @@ const itemTemplate = ref<ItemTemplate>(
         value: ''
       },
       {
-        id: 'input_col',
-        label: 'Input Column',
+        id: 'source_column',
+        label: 'Source Column',
         type: 'string',
         value: ''
       },
       {
-        id: 'output_col',
-        label: 'Output Column',
+        id: 'label_column',
+        label: 'Label Column',
         type: 'string',
         value: ''
       },
       {
         id: 'batch_size',
         label: 'Batch Size',
-        type: 'string',
-        value: '1'
+        type: 'number',
+        value: 1
       },
       {
         id: 'gradient_accumulation_steps',
         label: 'Gradient Accumulation Steps',
-        type: 'string',
-        value: '16'
+        type: 'number',
+        value: 16
       },
       {
         id: 'epochs',
         label: 'Epochs',
-        type: 'string',
-        value: '3'
+        type: 'number',
+        value: 3
       },
       {
         id: 'gradient_checkpointing',
@@ -306,14 +336,14 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'max_grad_norm',
         label: 'Max Grad Norm',
-        type: 'string',
-        value: '0.5'
+        type: 'number',
+        value: 0.5
       },
       {
         id: 'learning_rate',
         label: 'Learning Rate',
-        type: 'string',
-        value: '0.00005'
+        type: 'number',
+        value: 0.00005
       },
       {
         id: 'save_strategy',
@@ -325,14 +355,14 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'save_steps',
         label: 'Save Steps',
-        type: 'string',
-        value: '100'
+        type: 'number',
+        value: 100
       },
       {
         id: 'logging_steps',
         label: 'Logging Steps',
-        type: 'string',
-        value: '10'
+        type: 'number',
+        value: 10
       },
       {
         id: 'evaluation_strategy',
@@ -344,22 +374,34 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'eval_steps',
         label: 'Evaluation Step Interval',
-        type: 'string',
-        value: '100'
+        type: 'number',
+        value: 100
       },
       {
         id: 'save_total_limit',
         label: 'Save Total Limit',
-        type: 'string',
-        value: '3'
+        type: 'number',
+        value: 3
+      },
+      {
+        id: 'use_gpu',
+        label: 'Use GPU',
+        type: 'bool',
+        value: true
       }
     ],
     lora_fine_tune_model_with_csv: [
       {
         id: 'type',
-        label: 'SFT Fine Tune Model(CSV)',
+        label: 'LoRA Fine Tune Model(CSV)',
         type: 'type',
-        value: 'lora_fine_tune_model_with_csv'
+        value: 'llm_fine_tune_model_with_csv'
+      },
+      {
+        id: 'training_type',
+        label: 'Training Type',
+        type: 'string',
+        value: 'unsupervised'
       },
       {
         id: 'experiment_name',
@@ -374,29 +416,29 @@ const itemTemplate = ref<ItemTemplate>(
         value: ''
       },
       {
-        id: 'target_column',
-        label: 'Target Column',
+        id: 'source_column',
+        label: 'Source Column',
         type: 'string',
-        value: 'text'
+        value: ''
       },
       {
         id: 'batch_size',
         label: 'Batch Size',
-        type: 'string',
-        value: '8'
+        type: 'number',
+        value: 8
 
       },
       {
         id: 'gradient_accumulation_steps',
         label: 'Gradient Accumulation Steps',
-        type: 'string',
-        value: '1'
+        type: 'number',
+        value: 1
       },
       {
         id: 'epochs',
         label: 'Epochs',
-        type: 'string',
-        value: '1'
+        type: 'number',
+        value: 1
       },
       {
         id: 'gradient_checkpointing',
@@ -413,14 +455,14 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'max_grad_norm',
         label: 'Max Grad Norm',
-        type: 'string',
-        value: '1.0'
+        type: 'number',
+        value: 1.0
       },
       {
         id: 'learning_rate',
         label: 'Learning Rate',
-        type: 'string',
-        value: '0.00005'
+        type: 'number',
+        value: 0.00005
       },
       {
         id: 'save_strategy',
@@ -432,14 +474,14 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'save_steps',
         label: 'Save Steps',
-        type: 'string',
-        value: '100'
+        type: 'number',
+        value: 100
       },
       {
         id: 'logging_steps',
         label: 'Logging Steps',
-        type: 'string',
-        value: '10'
+        type: 'number',
+        value: 10
       },
       {
         id: 'evaluation_strategy',
@@ -451,14 +493,14 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'eval_steps',
         label: 'Evaluation Step Interval',
-        type: 'string',
-        value: '100'
+        type: 'number',
+        value: 100
       },
       {
         id: 'save_total_limit',
         label: 'Save Total Limit',
-        type: 'string',
-        value: '2'
+        type: 'number',
+        value: 2
       },
       {
         id: 'prediction_loss_only',
@@ -469,14 +511,14 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'r',
         label: 'LoRA Rank',
-        type: 'string',
-        value: '8'
+        type: 'number',
+        value: 8
       },
       {
         id: 'lora_alpha',
         label: 'LoRA Alpha',
-        type: 'string',
-        value: '16'
+        type: 'number',
+        value: 16
       },
       {
         id: 'target_modules',
@@ -488,8 +530,8 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'lora_dropout',
         label: 'LoRA Dropout',
-        type: 'string',
-        value: '0.1'
+        type: 'number',
+        value: 0.1
       },
       {
         id: 'bias',
@@ -521,6 +563,12 @@ const itemTemplate = ref<ItemTemplate>(
         label: 'Secret Name',
         type: 'string',
         value: ''
+      },
+      {
+        id: 'endpoint',
+        label: 'Endpoint URL',
+        type: 'string',
+        value: 'http://minio.storage-system.svc.cluster.local:9000'
       },
       {
         id: 'use_gpu',
@@ -530,12 +578,17 @@ const itemTemplate = ref<ItemTemplate>(
       }
     ],
     lora_sft_fine_tune_model_with_csv: [
-
       {
         id: 'type',
         label: 'Lora SFT Fine Tune Model (CSV)',
         type: 'type',
-        value: 'lora_sft_fine_tune_model_with_csv'
+        value: 'llm_fine_tune_model_with_csv'
+      },
+      {
+        id: 'training_type',
+        label: 'Training Type',
+        type: 'string',
+        value: 'supervised'
       },
       {
         id: 'experiment_name',
@@ -550,29 +603,35 @@ const itemTemplate = ref<ItemTemplate>(
         value: ''
       },
       {
-        id: 'target_column',
-        label: 'Target Column',
+        id: 'source_column',
+        label: 'Source Column',
         type: 'string',
-        value: 'text'
+        value: ''
+      },
+      {
+        id: 'label_column',
+        label: 'Label Column',
+        type: 'string',
+        value: ''
       },
       {
         id: 'batch_size',
         label: 'Batch Size',
-        type: 'string',
-        value: '8'
+        type: 'number',
+        value: 8
 
       },
       {
         id: 'gradient_accumulation_steps',
         label: 'Gradient Accumulation Steps',
-        type: 'string',
-        value: '1'
+        type: 'number',
+        value: 1
       },
       {
         id: 'epochs',
         label: 'Epochs',
-        type: 'string',
-        value: '1'
+        type: 'number',
+        value: 1
       },
       {
         id: 'gradient_checkpointing',
@@ -589,14 +648,14 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'max_grad_norm',
         label: 'Max Grad Norm',
-        type: 'string',
-        value: '1.0'
+        type: 'number',
+        value: 1.0
       },
       {
         id: 'learning_rate',
         label: 'Learning Rate',
-        type: 'string',
-        value: '0.00005'
+        type: 'number',
+        value: 0.00005
       },
       {
         id: 'save_strategy',
@@ -608,14 +667,14 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'save_steps',
         label: 'Save Steps',
-        type: 'string',
-        value: '100'
+        type: 'number',
+        value: 100
       },
       {
         id: 'logging_steps',
         label: 'Logging Steps',
-        type: 'string',
-        value: '10'
+        type: 'number',
+        value: 10
       },
       {
         id: 'evaluation_strategy',
@@ -627,14 +686,14 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'eval_steps',
         label: 'Evaluation Step Interval',
-        type: 'string',
-        value: '100'
+        type: 'number',
+        value: 100
       },
       {
         id: 'save_total_limit',
         label: 'Save Total Limit',
-        type: 'string',
-        value: '2'
+        type: 'number',
+        value: 2
       },
       {
         id: 'prediction_loss_only',
@@ -645,14 +704,14 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'r',
         label: 'LoRA Rank',
-        type: 'string',
-        value: '8'
+        type: 'number',
+        value: 8
       },
       {
         id: 'lora_alpha',
         label: 'LoRA Alpha',
-        type: 'string',
-        value: '16'
+        type: 'number',
+        value: 16
       },
       {
         id: 'target_modules',
@@ -664,8 +723,8 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'lora_dropout',
         label: 'LoRA Dropout',
-        type: 'string',
-        value: '0.1'
+        type: 'number',
+        value: 0.1
       },
       {
         id: 'bias',
@@ -697,6 +756,12 @@ const itemTemplate = ref<ItemTemplate>(
         label: 'Secret Name',
         type: 'string',
         value: ''
+      },
+      {
+        id: 'endpoint',
+        label: 'Endpoint URL',
+        type: 'string',
+        value: 'http://minio.storage-system.svc.cluster.local:9000'
       },
       {
         id: 'use_gpu',
@@ -710,7 +775,13 @@ const itemTemplate = ref<ItemTemplate>(
         id: 'type',
         label: 'AdaLoRA Fine Tune Model (CSV)',
         type: 'type',
-        value: 'adalora_fine_tune_model_with_csv'
+        value: 'llm_fine_tune_model_with_csv'
+      },
+      {
+        id: 'training_type',
+        label: 'Training Type',
+        type: 'string',
+        value: 'unsupervised'
       },
       {
         id: 'experiment_name',
@@ -725,28 +796,28 @@ const itemTemplate = ref<ItemTemplate>(
         value: ''
       },
       {
-        id: 'target_column',
-        label: 'Target Column',
+        id: 'source_column',
+        label: 'Source Column',
         type: 'string',
-        value: 'text'
+        value: ''
       },
       {
         id: 'batch_size',
         label: 'Batch Size',
-        type: 'string',
-        value: '8'
+        type: 'number',
+        value: 8
       },
       {
         id: 'gradient_accumulation_steps',
         label: 'Gradient Accumulation Steps',
-        type: 'string',
-        value: '8'
+        type: 'number',
+        value: 8
       },
       {
         id: 'epochs',
         label: 'Epochs',
-        type: 'string',
-        value: '1'
+        type: 'number',
+        value: 1
       },
       {
         id: 'gradient_checkpointing',
@@ -763,14 +834,14 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'max_grad_norm',
         label: 'Max Grad Norm',
-        type: 'string',
-        value: '1.0'
+        type: 'number',
+        value: 1.0
       },
       {
         id: 'learning_rate',
         label: 'Learning Rate',
-        type: 'string',
-        value: '0.00005'
+        type: 'number',
+        value: 0.00005
       },
       {
         id: 'save_strategy',
@@ -782,14 +853,14 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'save_steps',
         label: 'Save Steps',
-        type: 'string',
-        value: '100'
+        type: 'number',
+        value: 100
       },
       {
         id: 'logging_steps',
         label: 'Logging Steps',
-        type: 'string',
-        value: '10'
+        type: 'number',
+        value: 10
       },
       {
         id: 'evaluation_strategy',
@@ -801,14 +872,14 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'eval_steps',
         label: 'Evaluation Step Interval',
-        type: 'string',
-        value: '100'
+        type: 'number',
+        value: 100
       },
       {
         id: 'save_total_limit',
         label: 'Save Total Limit',
-        type: 'string',
-        value: '2'
+        type: 'number',
+        value: 2
       },
       {
         id: 'prediction_loss_only',
@@ -819,44 +890,44 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'max_length',
         label: 'Max Length',
-        type: 'string',
-        value: '256'
+        type: 'number',
+        value: 256
       },
       {
         id: 'init_r',
         label: 'Initial Rank',
-        type: 'string',
-        value: '12'
+        type: 'number',
+        value: 12
       },
       {
         id: 'target_r',
         label: 'Target Rank',
-        type: 'string',
-        value: '6'
+        type: 'number',
+        value: 6
       },
       {
         id: 'beta1',
         label: 'Beta 1',
-        type: 'string',
-        value: '0.85'
+        type: 'number',
+        value: 0.85
       },
       {
         id: 'beta2',
         label: 'Beta 2',
-        type: 'string',
-        value: '0.85'
+        type: 'number',
+        value: 0.85
       },
       {
         id: 'tinit',
         label: 'Initialization Steps',
-        type: 'string',
-        value: '200'
+        type: 'number',
+        value: 200
       },
       {
         id: 'lora_alpha',
         label: 'LoRA Alpha',
-        type: 'string',
-        value: '16'
+        type: 'number',
+        value: 16
       },
       {
         id: 'target_modules',
@@ -868,8 +939,8 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'lora_dropout',
         label: 'LoRA Dropout',
-        type: 'string',
-        value: '0.1'
+        type: 'number',
+        value: 0.1
       },
       {
         id: 'bias',
@@ -901,6 +972,12 @@ const itemTemplate = ref<ItemTemplate>(
         label: 'Secret Name',
         type: 'string',
         value: ''
+      },
+      {
+        id: 'endpoint',
+        label: 'Endpoint URL',
+        type: 'string',
+        value: 'http://minio.storage-system.svc.cluster.local:9000'
       },
       {
         id: 'use_gpu',
@@ -914,7 +991,13 @@ const itemTemplate = ref<ItemTemplate>(
         id: 'type',
         label: 'AdaLoRA SFT Fine Tune Model (CSV)',
         type: 'type',
-        value: 'adalora_sft_fine_tune_model_with_csv'
+        value: 'llm_fine_tune_model_with_csv'
+      },
+      {
+        id: 'training_type',
+        label: 'Training Type',
+        type: 'string',
+        value: 'supervised'
       },
       {
         id: 'experiment_name',
@@ -929,29 +1012,35 @@ const itemTemplate = ref<ItemTemplate>(
         value: ''
       },
       {
-        id: 'target_column',
-        label: 'Target Column',
+        id: 'source_column',
+        label: 'Source Column',
         type: 'string',
-        value: 'text'
+        value: ''
+      },
+      {
+        id: 'label_column',
+        label: 'Label Column',
+        type: 'string',
+        value: ''
       },
       {
         id: 'batch_size',
         label: 'Batch Size',
-        type: 'string',
-        value: '8'
+        type: 'number',
+        value: 8
 
       },
       {
         id: 'gradient_accumulation_steps',
         label: 'Gradient Accumulation Steps',
-        type: 'string',
-        value: '8'
+        type: 'number',
+        value: 8
       },
       {
         id: 'epochs',
         label: 'Epochs',
-        type: 'string',
-        value: '1'
+        type: 'number',
+        value: 1
       },
       {
         id: 'gradient_checkpointing',
@@ -968,14 +1057,14 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'max_grad_norm',
         label: 'Max Grad Norm',
-        type: 'string',
-        value: '1.0'
+        type: 'number',
+        value: 1.0
       },
       {
         id: 'learning_rate',
         label: 'Learning Rate',
-        type: 'string',
-        value: '0.00005'
+        type: 'number',
+        value: 0.00005
       },
       {
         id: 'save_strategy',
@@ -987,14 +1076,14 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'save_steps',
         label: 'Save Steps',
-        type: 'string',
-        value: '100'
+        type: 'number',
+        value: 100
       },
       {
         id: 'logging_steps',
         label: 'Logging Steps',
-        type: 'string',
-        value: '10'
+        type: 'number',
+        value: 10
       },
       {
         id: 'evaluation_strategy',
@@ -1006,14 +1095,14 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'eval_steps',
         label: 'Evaluation Step Interval',
-        type: 'string',
-        value: '100'
+        type: 'number',
+        value: 100
       },
       {
         id: 'save_total_limit',
         label: 'Save Total Limit',
-        type: 'string',
-        value: '2'
+        type: 'number',
+        value: 2
       },
       {
         id: 'prediction_loss_only',
@@ -1024,44 +1113,44 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'max_length',
         label: 'Max Length',
-        type: 'string',
-        value: '256'
+        type: 'number',
+        value: 256
       },
       {
         id: 'init_r',
         label: 'Initial Rank',
-        type: 'string',
-        value: '12'
+        type: 'number',
+        value: 12
       },
       {
         id: 'target_r',
         label: 'Target Rank',
-        type: 'string',
-        value: '6'
+        type: 'number',
+        value: 6
       },
       {
         id: 'beta1',
         label: 'Beta 1',
-        type: 'string',
-        value: '0.85'
+        type: 'number',
+        value: 0.85
       },
       {
         id: 'beta2',
         label: 'Beta 2',
-        type: 'string',
-        value: '0.85'
+        type: 'number',
+        value: 0.85
       },
       {
         id: 'tinit',
         label: 'Initialization Steps',
-        type: 'string',
-        value: '200'
+        type: 'number',
+        value: 200
       },
       {
         id: 'lora_alpha',
         label: 'LoRA Alpha',
-        type: 'string',
-        value: '16'
+        type: 'number',
+        value: 16
       },
       {
         id: 'target_modules',
@@ -1073,8 +1162,8 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'lora_dropout',
         label: 'LoRA Dropout',
-        type: 'string',
-        value: '0.1'
+        type: 'number',
+        value: 0.1
       },
       {
         id: 'bias',
@@ -1106,6 +1195,12 @@ const itemTemplate = ref<ItemTemplate>(
         label: 'Secret Name',
         type: 'string',
         value: ''
+      },
+      {
+        id: 'endpoint',
+        label: 'Endpoint URL',
+        type: 'string',
+        value: 'http://minio.storage-system.svc.cluster.local:9000'
       },
       {
         id: 'use_gpu',

@@ -32,7 +32,7 @@
           </div>
 
           <!-- 입력 방식 토글 -->
-          <div class="px-4 pt-4 pb-3 flex-shrink-0">
+          <div class="px-4 pt-4 pb-3 flex-shrink-0" v-if="isMLFlow">
             <div
               class="flex space-x-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg"
             >
@@ -63,9 +63,63 @@
             </div>
           </div>
 
-          <!-- Form 모드 -->
+          <!-- LLM 모드 (MLFlow가 아닌 경우) -->
+          <div v-if="!isMLFlow" class="flex-1 p-4 pt-2 overflow-auto">
+            <div class="space-y-4">
+              <!-- Prompt 입력 -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  Prompt
+                </label>
+                <UTextarea
+                  v-model="llmData.prompt"
+                  :rows="6"
+                  placeholder="Enter your prompt here..."
+                  class="w-full"
+                />
+              </div>
+
+              <!-- LLM 파라미터 -->
+              <div class="bg-gray-50 p-4 rounded-lg space-y-3">
+                <h5 class="text-sm font-medium mb-3">LLM Parameters</h5>
+
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">
+                      Max Tokens
+                    </label>
+                    <UInput
+                      v-model="llmData.max_tokens"
+                      type="number"
+                      :min="1"
+                      :max="8192"
+                      size="xs"
+                      placeholder="100"
+                    />
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">
+                      Temperature
+                    </label>
+                    <UInput
+                      v-model="llmData.temperature"
+                      type="number"
+                      :min="0"
+                      :max="2"
+                      :step="0.1"
+                      size="xs"
+                      placeholder="0.7"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Form 모드 (MLFlow인 경우) -->
           <div
-            v-if="inputMethod === 'form'"
+            v-if="inputMethod === 'form' && isMLFlow"
             class="flex-1 p-4 pt-2 overflow-auto"
           >
             <div class="space-y-4">
@@ -93,8 +147,7 @@
                         { label: 'FP64', value: 'FP64' },
                         { label: 'FP32', value: 'FP32' },
                         { label: 'INT64', value: 'INT64' },
-                        { label: 'INT32', value: 'INT32' },
-                        { label: 'STRING', value: 'STRING' },
+                        { label: 'INT32', value: 'INT32' }
                       ]"
                       size="xs"
                     />
@@ -174,7 +227,7 @@
                 </h5>
                 <div class="flex flex-wrap gap-2">
                   <UButton
-                    @click="useTemplate('example')"
+                    @click="() => useTemplate('example', inputExampleData)"
                     variant="soft"
                     color="blue"
                     size="xs"
@@ -182,7 +235,7 @@
                     Example Data
                   </UButton>
                   <UButton
-                    @click="useTemplate('zeros')"
+                    @click="() => useTemplate('zeros', inputExampleData)"
                     variant="soft"
                     color="gray"
                     size="xs"
@@ -190,7 +243,7 @@
                     All Zeros
                   </UButton>
                   <UButton
-                    @click="useTemplate('ones')"
+                    @click="() => useTemplate('ones', inputExampleData)"
                     variant="soft"
                     color="gray"
                     size="xs"
@@ -202,8 +255,11 @@
             </div>
           </div>
 
-          <!-- JSON 모드 -->
-          <div v-else class="flex-1 relative overflow-hidden">
+          <!-- JSON 모드 (MLFlow인 경우) -->
+          <div
+            v-else-if="inputMethod === 'json' && isMLFlow"
+            class="flex-1 relative overflow-hidden"
+          >
             <!-- JSON Input 라벨과 Example 버튼 -->
             <div
               class="flex justify-between items-center px-4 pb-3 flex-shrink-0"
@@ -272,13 +328,17 @@
           <div
             class="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-between flex-shrink-0"
           >
-            <UButton @click="clearInput" variant="outline" color="gray">
+            <UButton
+              @click="() => clearFormInput(isMLFlow)"
+              variant="outline"
+              color="gray"
+            >
               Clear
             </UButton>
             <UButton
               @click="runInference"
               :loading="isLoading"
-              :disabled="!canSubmit"
+              :disabled="!canSubmitForm"
               color="green"
             >
               <UIcon name="i-heroicons-play" class="w-4 h-4 mr-2" />
@@ -373,73 +433,77 @@
 
               <!-- 결과 내용 -->
               <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                <h4 class="text-sm font-medium mb-4">Prediction</h4>
-                <!-- 단일 예측값 표시 -->
-                <div
-                  v-if="
-                    result?.result &&
-                    Array.isArray(result.result) &&
-                    result.result.length === 1
-                  "
-                  class="text-center"
-                >
-                  <div
-                    class="inline-block p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 rounded-xl"
-                  >
+                <!-- LLM 모델 결과 (isMLFlow: false) -->
+                <template v-if="!isMLFlow">
+                  <h4 class="text-sm font-medium mb-4">Generated Text</h4>
+
+                  <!-- LLM 텍스트 결과가 있는 경우 -->
+                  <div v-if="hasLlmText">
+                    <div class="bg-white dark:bg-gray-700 rounded-lg p-4">
+                      <pre class="whitespace-pre-wrap text-sm text-gray-800 dark:text-gray-200 leading-relaxed">{{ llmText }}</pre>
+                    </div>
+
+                    <!-- 토큰 사용량 정보 -->
+                    <div v-if="llmUsage" class="mt-3 text-xs text-gray-500 flex gap-4">
+                      <span>Prompt Tokens: {{ llmUsage.prompt_tokens }}</span>
+                      <span>Completion Tokens: {{ llmUsage.completion_tokens }}</span>
+                      <span>Total Tokens: {{ llmUsage.total_tokens }}</span>
+                    </div>
+                  </div>
+
+                  <!-- LLM 텍스트 결과가 없는 경우 -->
+                  <div v-else class="text-center py-4 text-gray-500">
+                    No generated text available
+                  </div>
+                </template>
+
+                <!-- MLFlow 모델 결과 (isMLFlow: true) -->
+                <template v-else>
+                  <h4 class="text-sm font-medium mb-4">Prediction</h4>
+
+                  <!-- 단일 예측값 -->
+                  <div v-if="mlflowResultType === 'single'" class="text-center">
+                    <div class="inline-block p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 rounded-xl">
+                      <div class="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                        {{ formatNumber(mlflowResult[0]) }}
+                      </div>
+                      <div class="text-sm text-blue-600 dark:text-blue-400 mt-1">
+                        Predicted Value
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- 다중 예측값 -->
+                  <div v-else-if="mlflowResultType === 'multiple'" class="space-y-2">
                     <div
-                      class="text-3xl font-bold text-blue-600 dark:text-blue-400"
+                      v-for="(value, index) in mlflowResult"
+                      :key="`result-${index}`"
+                      class="flex justify-between items-center p-3 bg-white dark:bg-gray-700 rounded"
                     >
-                      {{ formatNumber(result.result[0]) }}
-                    </div>
-                    <div class="text-sm text-blue-600 dark:text-blue-400 mt-1">
-                      Predicted Value
+                      <span class="font-medium">Result {{ index + 1 }}</span>
+                      <span class="text-lg font-mono text-blue-600">{{ formatNumber(value) }}</span>
                     </div>
                   </div>
-                </div>
-                <!-- 다중 예측값 표시 -->
-                <div
-                  v-else-if="
-                    result?.result &&
-                    Array.isArray(result.result) &&
-                    result.result.length > 1
-                  "
-                  class="space-y-2"
-                >
-                  <div
-                    v-for="(value, index) in result.result"
-                    :key="`result-${index}`"
-                    class="flex justify-between items-center p-3 bg-white dark:bg-gray-700 rounded"
-                  >
-                    <span class="font-medium">Result {{ index + 1 }}</span>
-                    <span class="text-lg font-mono text-blue-600">
-                      {{ formatNumber(value) }}
-                    </span>
+
+                  <!-- 객체 형태 결과 -->
+                  <div v-else-if="mlflowResultType === 'object'" class="space-y-2">
+                    <div
+                      v-for="(value, key) in result.value"
+                      :key="key"
+                      class="flex justify-between items-center p-3 bg-white dark:bg-gray-700 rounded"
+                    >
+                      <span class="font-medium">{{ key }}</span>
+                      <span class="text-sm font-mono text-blue-600">
+                        {{ typeof value === "object" ? JSON.stringify(value) : value }}
+                      </span>
+                    </div>
                   </div>
-                </div>
-                <!-- 객체 형태 결과 표시 -->
-                <div
-                  v-else-if="result && typeof result === 'object'"
-                  class="space-y-2"
-                >
-                  <div
-                    v-for="(value, key) in result"
-                    :key="key"
-                    class="flex justify-between items-center p-3 bg-white dark:bg-gray-700 rounded"
-                  >
-                    <span class="font-medium">{{ key }}</span>
-                    <span class="text-sm font-mono text-blue-600">
-                      {{
-                        typeof value === "object"
-                          ? JSON.stringify(value)
-                          : value
-                      }}
-                    </span>
+
+                  <!-- 결과가 없는 경우 -->
+                  <div v-else class="text-center py-4 text-gray-500">
+                    No prediction results available
                   </div>
-                </div>
-                <!-- 결과가 없는 경우 -->
-                <div v-else class="text-center py-4 text-gray-500">
-                  No prediction results available
-                </div>
+                </template>
               </div>
 
               <!-- Raw JSON - 고정 높이로 스크롤 -->
@@ -507,6 +571,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
+// 리팩토링 전 직접 로직으로 되돌림
 
 // Route params
 const route = useRoute();
@@ -514,8 +579,28 @@ const router = useRouter();
 const endpointName = route.params.name as string;
 
 // 엔드포인트 정보와 input example 로드
-const endpointInfo = ref(null)
-const inputExampleData = ref(null)
+const endpointInfo = ref(null);
+const inputExampleData = ref(null);
+
+// Form management composable
+const {
+  llmData,
+  formData,
+  jsonInput,
+  jsonError,
+  inputMethod,
+  totalInputs,
+  canSubmit,
+  updateDataArray,
+  syncFormToJson,
+  validateJson,
+  clearInput: clearFormInput,
+  fillRandomData,
+  fillZeroData,
+  useTemplate,
+  setInputMethod,
+  loadFromHistory: loadFormFromHistory,
+} = useInferenceForm();
 
 // 브레드크럼 설정
 const breadcrumbs = ref([
@@ -549,7 +634,6 @@ const toolbarLinks = ref([
 const textareaRef = ref<HTMLTextAreaElement | null>(null);
 
 // 상태 관리
-const inputMethod = ref("json");
 const modelStatus = ref("ready");
 const isLoading = ref(false);
 const result = ref(null);
@@ -557,10 +641,6 @@ const error = ref("");
 const executionTime = ref(0);
 const scrollTop = ref(0);
 const isJsonExpanded = ref(false);
-
-// JSON 입력
-const jsonInput = ref("");
-const jsonError = ref("");
 
 // 히스토리
 const history = ref([]);
@@ -571,216 +651,71 @@ const totalLines = computed(() => {
   return Math.max(lines.length, 1);
 });
 
-const canSubmit = computed(() => {
-  if (inputMethod.value === "json") {
-    return jsonInput.value.trim() && !jsonError.value;
-  } else {
-    return formData.value.data.some(
-      (val) => val !== 0 && val !== "" && val !== null && val !== undefined
-    );
+// MLFlow 모델인지 확인
+const isMLFlow = computed(() => {
+  if (!endpointInfo.value) {
+    return true; // 기본값은 true (MLFlow)
   }
+  
+  // LLM 모델이면 MLFlow가 아님
+  if (isLLMModel(endpointInfo.value)) {
+    return false;
+  }
+  
+  // 그렇지 않으면 MLFlow 모델인지 확인
+  return isMLFlowModel(endpointInfo.value);
 });
 
-// 메서드들
-const totalInputs = computed(() => {
-  const shape0 = Number(formData.value.shape[0]) || 1;
-  const shape1 = Number(formData.value.shape[1]) || 1;
-  return shape0 * shape1;
+// Form submission validation
+const canSubmitForm = computed(() => {
+  return canSubmit.value(isMLFlow.value);
 });
 
-// Shape 변경 감지하여 data 배열 크기 조정
-const updateDataArray = () => {
-  const newSize = totalInputs.value;
-  const currentData = [...formData.value.data];
-
-  if (newSize > currentData.length) {
-    // 크기가 늘어났을 때 0으로 채움
-    formData.value.data = [
-      ...currentData,
-      ...new Array(newSize - currentData.length).fill(0),
-    ];
-  } else {
-    // 크기가 줄어들었을 때 잘라냄
-    formData.value.data = currentData.slice(0, newSize);
-  }
-  syncFormToJson();
-};
-
-const formData = ref({
-  name: "input",
-  shape: [1, 4],
-  datatype: "FP64",
-  data: new Array(5).fill(0),
+// LLM 응답 데이터 추출 computed
+const llmText = computed(() => {
+  return result.value?.result?.choices?.[0]?.text || result.value?.choices?.[0]?.text || '';
 });
 
-// 페이지 로드시 엔드포인트 정보와 input example 가져오기
-onMounted(async () => {
-  try {
-    const namespace = "kubeflow-user-example-com"
-    const { endpoint, inputExample } = await getEndpointWithInputExample(namespace, endpointName)
-    
-    endpointInfo.value = endpoint
-    inputExampleData.value = inputExample
+const llmUsage = computed(() => {
+  return result.value?.result?.usage || result.value?.usage || null;
+});
 
-    // input example이 있으면 shape와 기본 데이터 자동 설정
-    if (inputExample && Array.isArray(inputExample) && inputExample.length > 0) {
-      const firstArray = inputExample[0]
-      
-      if (Array.isArray(firstArray)) {
-        // 2차원 배열인 경우
-        formData.value.shape = [1, firstArray.length]  // 첫 번째 배열만 사용하므로 [1, length]
-        formData.value.data = [...firstArray]  // 첫 번째 배열의 값들을 그대로 사용
-      } else {
-        // 1차원 배열인 경우 (inputExample 자체가 데이터 배열)
-        formData.value.shape = [1, inputExample.length]
-        formData.value.data = [...inputExample]
-      }
-      
-      // JSON도 동기화
-      syncFormToJson()
-      
-    }
-  } catch (error) {
-    console.error('Failed to load endpoint info:', error)
+const hasLlmText = computed(() => {
+  return !!llmText.value;
+});
+
+// MLFlow 응답 데이터 추출 computed
+const mlflowResult = computed(() => {
+  if (result.value?.result && Array.isArray(result.value.result)) {
+    return result.value.result;
   }
-})
-
-
-watch(
-  () => [formData.value.shape[0], formData.value.shape[1]],
-  () => {
-    updateDataArray();
-  },
-  { deep: true }
-);
-
-// 메서드들 추가
-const fillRandomData = () => {
-  formData.value.data = new Array(totalInputs.value)
-    .fill(0)
-    .map(() => Math.floor(Math.random() * 1000000000));
-  syncFormToJson();
-};
-
-const fillZeroData = () => {
-  formData.value.data = new Array(totalInputs.value).fill(0);
-  syncFormToJson();
-};
-
-const useTemplate = (template) => {
-  const size = totalInputs.value;
-  switch (template) {
-    case "example":
-      // input_example.json의 첫 번째 배열 데이터만 사용
-      if (inputExampleData.value && Array.isArray(inputExampleData.value) && inputExampleData.value.length > 0) {
-        const firstArray = inputExampleData.value[0]
-        let exampleData = []
-        
-        if (Array.isArray(firstArray)) {
-          // 2차원 배열인 경우 - 첫 번째 배열 사용
-          exampleData = [...firstArray]
-        } else {
-          // 1차원 배열인 경우 - 전체 배열 사용
-          exampleData = [...inputExampleData.value]
-        }
-        
-        // 필요한 크기에 맞춰 조정
-        if (size <= exampleData.length) {
-          formData.value.data = exampleData.slice(0, size)
-        } else {
-          // 크기가 부족하면 0으로 채움
-          formData.value.data = [
-            ...exampleData,
-            ...new Array(size - exampleData.length).fill(0)
-          ]
-        }
-      }
-      break;
-    case "zeros":
-      formData.value.data = new Array(size).fill(0);
-      break;
-    case "ones":
-      formData.value.data = new Array(size).fill(1);
-      break;
+  if (result.value && Array.isArray(result.value)) {
+    return result.value;
   }
-  syncFormToJson();
-};
+  return null;
+});
 
-// syncFormToJson 메서드 수정
-const syncFormToJson = () => {
-  const data = {
-    name: formData.value.name,
-    shape: formData.value.shape,
-    datatype: formData.value.datatype,
-    data: formData.value.data.map((val) => Number(val) || 0),
-  };
-  jsonInput.value = JSON.stringify(data, null, 2);
-  validateJson();
-};
+const hasMlflowResult = computed(() => {
+  return !!mlflowResult.value;
+});
 
-const handleJsonToggle = (event) => {
-  isJsonExpanded.value = event.target.open;
-};
-
-const setInputMethod = (method) => {
-  inputMethod.value = method;
-};
-
-const useExampleJson = () => {
-  if (inputExampleData.value && Array.isArray(inputExampleData.value) && inputExampleData.value.length > 0) {
-    const firstArray = inputExampleData.value[0]
-    let data = []
-    
-    if (Array.isArray(firstArray)) {
-      // 2차원 배열인 경우 - 첫 번째 배열 사용
-      data = [...firstArray]
-    } else {
-      // 1차원 배열인 경우 - 전체 배열 사용
-      data = [...inputExampleData.value]
-    }
-    
-    jsonInput.value = JSON.stringify(
-      {
-        name: formData.value.name,
-        shape: formData.value.shape,
-        datatype: formData.value.datatype,
-        data: data,
-      },
-      null,
-      2
-    );
+// MLFlow 결과 표시 타입 판별
+const mlflowResultType = computed(() => {
+  if (!result.value) return 'none';
+  
+  if (mlflowResult.value) {
+    return mlflowResult.value.length === 1 ? 'single' : 'multiple';
   }
-  validateJson();
-};
-
-const removeFromHistory = (index) => {
-  history.value.splice(index, 1);
-};
-
-const validateJson = () => {
-  if (!jsonInput.value.trim()) {
-    jsonError.value = "";
-    return;
+  
+  if (result.value && typeof result.value === 'object' && !Array.isArray(result.value)) {
+    return 'object';
   }
-  try {
-    JSON.parse(jsonInput.value);
-    jsonError.value = "";
-  } catch (e) {
-    jsonError.value = "Invalid JSON format";
-  }
-};
+  
+  return 'none';
+});
 
-const handleJsonInput = () => {
-  validateJson();
-};
-
-const syncScroll = () => {
-  if (textareaRef.value) {
-    scrollTop.value = textareaRef.value.scrollTop;
-  }
-};
-
-const formatNumber = (value: any) => {
+// 숫자 포맷팅 함수
+const formatNumber = (value: any): string => {
   if (value === null || value === undefined) return "N/A";
   if (typeof value !== "number" || isNaN(value)) return String(value);
   try {
@@ -793,61 +728,95 @@ const formatNumber = (value: any) => {
   }
 };
 
-const clearInput = () => {
-  if (inputMethod.value === "json") {
-    jsonInput.value = "";
-    jsonError.value = "";
-  } else {
-    formData.value = { imageName: "" };
+// 페이지 로드시 엔드포인트 정보와 input example 가져오기
+onMounted(async () => {
+  try {
+    const namespace = "kubeflow-user-example-com";
+    const { endpoint, inputExample } = await getEndpointWithInputExample(
+      namespace,
+      endpointName
+    );
+
+    endpointInfo.value = endpoint;
+    inputExampleData.value = inputExample;
+
+
+    // input example이 있으면 shape와 기본 데이터 자동 설정
+    if (
+      inputExample &&
+      Array.isArray(inputExample) &&
+      inputExample.length > 0
+    ) {
+      const firstArray = inputExample[0];
+
+      if (Array.isArray(firstArray)) {
+        // 2차원 배열인 경우
+        formData.value.shape = [1, firstArray.length]; // 첫 번째 배열만 사용하므로 [1, length]
+        formData.value.data = [...firstArray]; // 첫 번째 배열의 값들을 그대로 사용
+      } else {
+        // 1차원 배열인 경우 (inputExample 자체가 데이터 배열)
+        formData.value.shape = [1, inputExample.length];
+        formData.value.data = [...inputExample];
+      }
+
+      // JSON도 동기화
+      syncFormToJson();
+    }
+  } catch (error) {
+    console.error("Failed to load endpoint info:", error);
+  }
+});
+
+watch(
+  () => [formData.value.shape[0], formData.value.shape[1]],
+  () => {
+    updateDataArray();
+  },
+  { deep: true }
+);
+
+const handleJsonToggle = (event) => {
+  isJsonExpanded.value = event.target.open;
+};
+
+const useExampleJson = () => {
+  useTemplate("example", inputExampleData.value);
+};
+
+const removeFromHistory = (index) => {
+  history.value.splice(index, 1);
+};
+
+const handleJsonInput = () => {
+  validateJson();
+};
+
+const syncScroll = () => {
+  if (textareaRef.value) {
+    scrollTop.value = textareaRef.value.scrollTop;
   }
 };
 
-const runInference = async () => {
+// 공통 추론 실행 전후 처리
+const executeInference = async (inferenceFunction: () => Promise<any>, previewData: any, previewText: string) => {
   isLoading.value = true;
   error.value = "";
   result.value = null;
   const startTime = Date.now();
 
   try {
-    let inputData = {};
-    if (inputMethod.value === "json") {
-      inputData = JSON.parse(jsonInput.value);
-    } else {
-      inputData = {
-        name: formData.value.name,
-        shape: formData.value.shape,
-        datatype: formData.value.datatype,
-        data: formData.value.data.map((val) => Number(val) || 0),
-      };
-    }
-
-    const namespace = "kubeflow-user-example-com";
-    const apiUrl = `/inference-services/${namespace}/${endpointName}/infer`;
-    const config = useAppConfig();
-
-    const response = await $fetch(apiUrl, {
-      method: "POST",
-      baseURL: config.api?.url,
-      body: inputData,
-      headers: {
-        "Content-Type": "application/json",
-        "wisenut-authorization": "miracle-wisenut",
-      },
-    });
-
-    // 응답이 있으면 무조건 result에 저장
+    const response = await inferenceFunction();
     result.value = response || {};
     executionTime.value = Date.now() - startTime;
 
     addToHistory({
       timestamp: new Date().toLocaleTimeString(),
       status: "success",
-      preview: JSON.stringify(inputData).substring(0, 80) + "...",
-      data: inputData,
+      preview: previewText,
+      data: previewData,
       result: result.value,
     });
   } catch (err) {
-    console.error("API Error:", err); // 디버깅용
     error.value = `API Error: ${err?.message || "Unknown error occurred"}`;
     addToHistory({
       timestamp: new Date().toLocaleTimeString(),
@@ -857,6 +826,59 @@ const runInference = async () => {
     });
   } finally {
     isLoading.value = false;
+  }
+};
+
+const runLLMInferenceLocal = async () => {
+  await executeInference(
+    () => runLLMInference(
+      "kubeflow-user-example-com",
+      endpointName,
+      llmData.value.prompt,
+      llmData.value.max_tokens,
+      llmData.value.temperature
+    ),
+    llmData.value,
+    `Prompt: ${llmData.value.prompt.substring(0, 50)}...`
+  );
+};
+
+const runMLFlowInferenceLocal = async () => {
+  const inputData = inputMethod.value === "json" 
+    ? JSON.parse(jsonInput.value)
+    : {
+        name: formData.value.name,
+        shape: formData.value.shape,
+        datatype: formData.value.datatype,
+        data: formData.value.data.map((val) => Number(val) || 0),
+      };
+
+  await executeInference(
+    async () => {
+      const namespace = "kubeflow-user-example-com";
+      const apiUrl = `/inference-services/${namespace}/${endpointName}/infer`;
+      const config = useAppConfig();
+
+      return await $fetch(apiUrl, {
+        method: "POST",
+        baseURL: config.api?.url,
+        body: inputData,
+        headers: {
+          "Content-Type": "application/json",
+          "wisenut-authorization": "miracle-wisenut",
+        },
+      });
+    },
+    inputData,
+    JSON.stringify(inputData).substring(0, 80) + "..."
+  );
+};
+
+const runInference = async () => {
+  if (!isMLFlow.value) {
+    await runLLMInferenceLocal();
+  } else {
+    await runMLFlowInferenceLocal();
   }
 };
 
@@ -873,16 +895,7 @@ const addToHistory = (item) => {
 };
 
 const loadFromHistory = (item) => {
-  if (item.data) {
-    if (typeof item.data === "object") {
-      jsonInput.value = JSON.stringify(item.data, null, 2);
-      inputMethod.value = "json";
-    }
-  }
-};
-
-const clearHistory = () => {
-  history.value = [];
+  loadFormFromHistory(item, isMLFlow.value);
 };
 
 const downloadResult = () => {

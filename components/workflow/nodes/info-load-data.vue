@@ -142,7 +142,7 @@ const itemTemplate = ref<ItemTemplate>(
         id: 'endpoint_url',
         label: 'Endpoint URL',
         type: 'string',
-        value: 'http://storage-system-minio.storage-system.svc.cluster.local:9000'
+        value: 'http://minio.storage-system.svc.cluster.local:9000'
       },
       {
         id: 'access_key',
