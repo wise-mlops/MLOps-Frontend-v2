@@ -581,6 +581,7 @@ const endpointName = route.params.name as string;
 // 엔드포인트 정보와 input example 로드
 const endpointInfo = ref(null);
 const inputExampleData = ref(null);
+const mlModelSignature = ref(null);
 
 // Form management composable
 const {
@@ -732,14 +733,19 @@ const formatNumber = (value: any): string => {
 onMounted(async () => {
   try {
     const namespace = "kubeflow-user-example-com";
-    const { endpoint, inputExample } = await getEndpointWithInputExample(
+    const { endpoint, inputExample, mlModelSignature: signature } = await getEndpointWithInputExample(
       namespace,
       endpointName
     );
 
     endpointInfo.value = endpoint;
     inputExampleData.value = inputExample;
+    mlModelSignature.value = signature;
 
+    // MLmodel signature가 있으면 datatype을 자동 설정
+    if (signature && signature.dtype) {
+      formData.value.datatype = signature.dtype;
+    }
 
     // input example이 있으면 shape와 기본 데이터 자동 설정
     if (
