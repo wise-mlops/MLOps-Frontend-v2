@@ -21,6 +21,12 @@
           <UToggle v-model="item.value" size="md" :disabled="!isEditable" />
         </UFormGroup>
       </div>
+      <div v-else-if="item.type === 'number'">
+        <UFormGroup :label="item.label" :name="item.id" class="py-2">
+          <UInput type="number" v-model.number="item.value" placeholder="Value" variant="outline" size="md" autocomplete="off"
+            :disabled="!isEditable" />
+        </UFormGroup>
+      </div>
       <div v-else>
         <UFormGroup :label="item.label" :name="item.id" class="py-2">
           <UInput type="text" v-model="item.value" placeholder="Value" variant="outline" size="md" autocomplete="off"
@@ -107,28 +113,66 @@ onMounted(() => {
 
 // Attribute 객체를 items 배열로 변환하는 함수
 const attributeToItems = (attr: Attribute, existingItems: Item[] = []) => {
-
-  return Object.entries(attr).map(([key, value]) => {
-    // 기존 items에서 동일한 id를 가진 항목 찾
-    const existingItem = existingItems.find(item => item.id === key)
-    return {
-      id: key,
-      label: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' '), // snake_case를 타이틀 케이스로 변환
-      // type: typeof value,
-      type: existingItem?.type || '',
-      options: existingItem?.options || [],
-      value: value
-    };
-  }) as Item[];
+  const items: Item[] = []
+  
+  // technique_params를 분해하여 개별 파라미터로 처리
+  Object.entries(attr).forEach(([key, value]) => {
+    if (key === 'technique_params' && typeof value === 'object' && value !== null) {
+      // technique_params 내부의 각 파라미터를 개별 item으로 추가
+      Object.entries(value).forEach(([techKey, techValue]) => {
+        const existingItem = existingItems.find(item => item.id === techKey)
+        items.push({
+          id: techKey,
+          label: techKey.charAt(0).toUpperCase() + techKey.slice(1).replace(/_/g, ' '),
+          type: existingItem?.type || '',
+          options: existingItem?.options || [],
+          value: techValue
+        })
+      })
+    } else {
+      // 일반 파라미터 처리
+      const existingItem = existingItems.find(item => item.id === key)
+      items.push({
+        id: key,
+        label: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' '), // snake_case를 타이틀 케이스로 변환
+        type: existingItem?.type || '',
+        options: existingItem?.options || [],
+        value: value
+      })
+    }
+  })
+  
+  return items
 };
 // items 배열을 Attribute 객체로 변환하는 함수
 const itemsToAttribute = (items: Item[]) => {
 
   const attribute: Attribute = {}
+  const techniqueParams: Record<string, any> = {}
+  
+  let currentTechnique = 'prompt' // prompt tuning component이므로 기본값을 prompt로 설정
+  
   items.forEach(item => {
-    attribute[item.id] = item.value;
-
+    // technique별 파라미터들을 technique_params로 묶기
+    const isTechniqueParam = (
+      currentTechnique === 'prompt' && 
+      ['task_type', 'num_virtual_tokens', 'prompt_tuning_init', 'prompt_tuning_init_text', 'prompt_template_type'].includes(item.id)
+    ) || (
+      currentTechnique === 'prefix' && 
+      ['task_type', 'num_virtual_tokens'].includes(item.id)
+    )
+    
+    if (isTechniqueParam) {
+      techniqueParams[item.id] = item.value
+    } else {
+      attribute[item.id] = item.value
+    }
   });
+  
+  // technique_params가 비어있지 않으면 추가
+  if (Object.keys(techniqueParams).length > 0) {
+    attribute['technique_params'] = techniqueParams
+  }
 
   return attribute as Attribute;
 };
@@ -152,7 +196,7 @@ const itemTemplate = ref<ItemTemplate>(
         id: 'type',
         label: 'Prompt Tuning Model (CSV)',
         type: 'type',
-        value: 'prompt_tuning_model_with_csv'
+        value: 'llm_fine_tune_model_with_csv'
       },
       {
         id: 'model_name',
@@ -175,8 +219,8 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'max_length',
         label: 'Max Length',
-        type: 'string',
-        value: '256'
+        type: 'number',
+        value: 256
       },
       {
         id: 'text_column',
@@ -193,8 +237,8 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'gradient_accumulation_steps',
         label: 'Gradient Accumulation Steps',
-        type: 'string',
-        value: '1'
+        type: 'number',
+        value: 1
       },
       {
         id: 'fp16',
@@ -212,32 +256,32 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'epochs',
         label: 'Epochs',
-        type: 'string',
-        value: '1'
+        type: 'number',
+        value: 1
       },
       {
         id: 'batch_size',
         label: 'Batch Size',
-        type: 'string',
-        value: '8'
+        type: 'number',
+        value: 8
       },
       {
         id: 'save_steps',
         label: 'Save Steps',
-        type: 'string',
-        value: '100'
+        type: 'number',
+        value: 100
       },
       {
         id: 'logging_steps',
         label: 'Logging Steps',
-        type: 'string',
-        value: '10'
+        type: 'number',
+        value: 10
       },
       {
         id: 'save_total_limit',
         label: 'Save Total Limit',
-        type: 'string',
-        value: '2'
+        type: 'number',
+        value: 2
       },
       {
         id: 'evaluation_strategy',
@@ -249,8 +293,8 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'eval_steps',
         label: 'Eval Steps',
-        type: 'string',
-        value: '100'
+        type: 'number',
+        value: 100
       },
       {
         id: 'prediction_loss_only',
@@ -287,6 +331,40 @@ const itemTemplate = ref<ItemTemplate>(
         label: 'Use GPU',
         type: 'bool',
         value: true
+      },
+      // Technique-specific parameters for prompt tuning
+      {
+        id: 'task_type',
+        label: 'Task Type',
+        type: 'list',
+        options: ['CAUSAL_LM', 'SEQ_2_SEQ_LM'],
+        value: 'CAUSAL_LM'
+      },
+      {
+        id: 'num_virtual_tokens',
+        label: 'Virtual Tokens Count',
+        type: 'number',
+        value: 20
+      },
+      {
+        id: 'prompt_tuning_init',
+        label: 'Prompt Tuning Init',
+        type: 'list',
+        options: ['TEXT', 'RANDOM'],
+        value: 'RANDOM'
+      },
+      {
+        id: 'prompt_tuning_init_text',
+        label: 'Prompt Tuning Init Text',
+        type: 'string',
+        value: ''
+      },
+      {
+        id: 'prompt_template_type',
+        label: 'Prompt Template Type',
+        type: 'list',
+        options: ['classification', 'sentiment', 'summarization', 'qa', 'generation', 'translation', 'ner', 'paraphrase'],
+        value: 'classification'
       },
     ],
     prefix_tuning_model_with_csv: [
@@ -294,13 +372,7 @@ const itemTemplate = ref<ItemTemplate>(
         id: 'type',
         label: 'Prefix Tuning Model (CSV)',
         type: 'type',
-        value: 'prefix_tuning_model_with_csv'
-      },
-      {
-        id: 'type',
-        label: 'Prompt Tuning Model (CSV)',
-        type: 'type',
-        value: 'prompt_tuning_model_with_csv'
+        value: 'llm_fine_tune_model_with_csv'
       },
       {
         id: 'model_name',
@@ -323,8 +395,8 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'max_length',
         label: 'Max Length',
-        type: 'string',
-        value: '256'
+        type: 'number',
+        value: 256
       },
       {
         id: 'text_column',
@@ -341,8 +413,8 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'gradient_accumulation_steps',
         label: 'Gradient Accumulation Steps',
-        type: 'string',
-        value: '1'
+        type: 'number',
+        value: 1
       },
       {
         id: 'fp16',
@@ -360,32 +432,32 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'epochs',
         label: 'Epochs',
-        type: 'string',
-        value: '1'
+        type: 'number',
+        value: 1
       },
       {
         id: 'batch_size',
         label: 'Batch Size',
-        type: 'string',
-        value: '8'
+        type: 'number',
+        value: 8
       },
       {
         id: 'save_steps',
         label: 'Save Steps',
-        type: 'string',
-        value: '100'
+        type: 'number',
+        value: 100
       },
       {
         id: 'logging_steps',
         label: 'Logging Steps',
-        type: 'string',
-        value: '10'
+        type: 'number',
+        value: 10
       },
       {
         id: 'save_total_limit',
         label: 'Save Total Limit',
-        type: 'string',
-        value: '2'
+        type: 'number',
+        value: 2
       },
       {
         id: 'evaluation_strategy',
@@ -397,8 +469,8 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'eval_steps',
         label: 'Eval Steps',
-        type: 'string',
-        value: '100'
+        type: 'number',
+        value: 100
       },
       {
         id: 'prediction_loss_only',
@@ -435,6 +507,20 @@ const itemTemplate = ref<ItemTemplate>(
         label: 'Use GPU',
         type: 'bool',
         value: true
+      },
+      // Technique-specific parameters for prefix tuning
+      {
+        id: 'task_type',
+        label: 'Task Type',
+        type: 'list',
+        options: ['CAUSAL_LM', 'SEQ_2_SEQ_LM'],
+        value: 'CAUSAL_LM'
+      },
+      {
+        id: 'num_virtual_tokens',
+        label: 'Virtual Tokens Count',
+        type: 'number',
+        value: 20
       },
     ]
 
