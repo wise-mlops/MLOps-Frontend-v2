@@ -40,6 +40,9 @@
                 <div v-else-if="node?.type === 'NodeTrainLLMPrompttune'">
                   <InfoTrainLlmPrompttune v-model="params" :isEditable="isEditable" />
                 </div>
+                <div v-else-if="node?.type === 'NodeQuantizeModel'">
+                  <InfoQuantizeModel v-model="params" :isEditable="isEditable" />
+                </div>
                 <div v-else-if="node?.type === 'NodeValMlModel'">
                   <InfoValMlModel v-model="params" :isEditable="isEditable" />
                 </div>
@@ -83,6 +86,7 @@ import InfoLoadPreLlm from './nodes/info-load-pre-llm.vue';
 import InfoTrainMlModel from './nodes/info-train-ml-model.vue';
 import InfoTrainLlmFinetune from './nodes/info-train-llm-finetune.vue';
 import InfoTrainLlmPrompttune from './nodes/info-train-llm-prompttune.vue';
+import InfoQuantizeModel from './nodes/info-quantize-model.vue';
 import InfoValMlModel from './nodes/info-val-ml-model.vue';
 import InfoValLlm from './nodes/info-val-llm.vue';
 import InfoPickMlModel from './nodes/info-pick-ml-model.vue';

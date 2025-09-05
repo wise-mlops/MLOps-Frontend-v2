@@ -15,6 +15,17 @@
           <ModuleKeyValue v-model="item.value" :isEditable="isEditable" />
         </UFormGroup>
       </div>
+      <div v-else-if="item.type === 'bool'">
+        <UFormGroup :label="item.label" :name="item.id" class="py-2">
+          <!--Toggle-->
+          <UToggle v-model="item.value" size="md" :disabled="!isEditable" />
+        </UFormGroup>
+      </div>
+      <div v-else-if="item.type === 'list'">
+        <UFormGroup :label="item.label" :name="item.id" class="py-2">
+          <USelectMenu v-model="item.value" :options="item.options" size="md" :disabled="!isEditable" />
+        </UFormGroup>
+      </div>
       <div v-else>
         <UFormGroup :label="item.label" :name="item.id" class="py-2">
           <UInput type="text" v-model="item.value" placeholder="Value" variant="outline" size="md" autocomplete="off"
@@ -61,6 +72,22 @@ const componentTypeValue = ref('')
 watch(items, (newItems) => {
   // 재귀 방지를 위해 값이 실제로 변경되었는지 확인
   if (!newItems) return;
+  
+  // model_format 변경 시 endpoint와 service_account_name 자동 변경
+  const modelFormatItem = newItems.find(item => item.id === 'model_format')
+  const endpointItem = newItems.find(item => item.id === 'endpoint')
+  const serviceAccountItem = newItems.find(item => item.id === 'service_account_name')
+  
+  if (modelFormatItem && endpointItem && serviceAccountItem) {
+    if (modelFormatItem.value !== 'mlflow') {
+      endpointItem.value = 'http://minio-service.kubeflow.svc.cluster.local:9000'
+      serviceAccountItem.value = 'kubeflow-minio-sa'
+    } else {
+      endpointItem.value = 'http://minio.storage-system.svc.cluster.local:9000'
+      serviceAccountItem.value = 'storage-system-minio-sa'
+    }
+  }
+  
   const newAttribute = itemsToAttribute(newItems)
   if (params.value['type'] === componentType.value) {
     params.value = newAttribute
@@ -150,7 +177,8 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'model_format',
         label: 'Model Format',
-        type: 'string',
+        type: 'list',
+        options: ['adapter', 'llm', 'mlflow'],
         value: 'mlflow'
       },
       {
@@ -188,6 +216,12 @@ const itemTemplate = ref<ItemTemplate>(
         label: 'S3 Endpoint URL',
         type: 'string',
         value: 'http://minio.storage-system.svc.cluster.local:9000'
+      },
+      {
+        id: 'use_gpu',
+        label: 'Use GPU',
+        type: 'bool',
+        value: true
       },
       {
         id: 'vllm_options',

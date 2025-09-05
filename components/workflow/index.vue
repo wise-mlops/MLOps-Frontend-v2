@@ -31,8 +31,8 @@ import NodeLoadPreLLM from './nodes/node-load-pre-llm.vue'
 import NodeTrainMlModel from './nodes/node-train-ml-model.vue'
 import NodeTrainLLMFinetune from './nodes/node-train-llm-finetune.vue'
 import NodeTrainLLMPrompttune from './nodes/node-train-llm-prompttune.vue'
+import NodeQuantizeModel from './nodes/node-quantize-model.vue'
 import NodeValMlModel from './nodes/node-val-ml-model.vue'
-import NodeValLLM from './nodes/node-val-llm.vue'
 import NodePickMlModel from './nodes/node-pick-ml-model.vue'
 import NodeServeMlModel from './nodes/node-serve-ml-model.vue'
 
@@ -55,8 +55,8 @@ const nodeTypes = ref<any>({
   'NodeTrainMlModel': markRaw(NodeTrainMlModel),
   'NodeTrainLLMFinetune': markRaw(NodeTrainLLMFinetune),
   'NodeTrainLLMPrompttune': markRaw(NodeTrainLLMPrompttune),
+  'NodeQuantizeModel': markRaw(NodeQuantizeModel),
   'NodeValMlModel': markRaw(NodeValMlModel),
-  'NodeValLLM': markRaw(NodeValLLM),
   'NodePickMlModel': markRaw(NodePickMlModel),
   'NodeServeMlModel': markRaw(NodeServeMlModel)
 })
@@ -163,6 +163,12 @@ const pannelItems = ref([
       icon: 'i-heroicons-rocket-launch',
       click: () => { onAddNode({ type: 'NodeTrainLLMPrompttune', label: 'LLM 프롬프트 튜닝' }) }
     },
+    {
+      type: 'NodeQuantizeModel',
+      label: '모델 양자화',
+      icon: 'i-heroicons-rocket-launch',
+      click: () => { onAddNode({ type: 'NodeQuantizeModel', label: '모델 양자화' }) }
+    },
   ],
   [
     {
@@ -170,12 +176,6 @@ const pannelItems = ref([
       label: 'ML모델 평가',
       icon: 'i-heroicons-chart-bar-square',
       click: () => { onAddNode({ type: 'NodeValMlModel', label: 'ML모델 평가' }) }
-    },
-    {
-      type: 'NodeValLLM',
-      label: 'LLM모델 평가',
-      icon: 'i-heroicons-chart-bar-square',
-      click: () => { onAddNode({ type: 'NodeValLLM', label: 'LLM모델 평가' }) }
     },
   ],
   [
