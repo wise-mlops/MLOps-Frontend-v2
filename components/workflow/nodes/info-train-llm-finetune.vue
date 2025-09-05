@@ -15,10 +15,21 @@
           <USelectMenu v-model="item.value" :options="item.options" size="md" :disabled="!isEditable" />
         </UFormGroup>
       </div>
+      <div v-else-if="item.type === 'multiselect'">
+        <UFormGroup :label="item.label" :name="item.id" class="py-2">
+          <USelectMenu v-model="item.value" :options="item.options" size="md" :disabled="!isEditable" multiple />
+        </UFormGroup>
+      </div>
       <div v-else-if="item.type === 'bool'">
         <UFormGroup :label="item.label" :name="item.id" class="py-2">
           <!--Toggle-->
           <UToggle v-model="item.value" size="md" :disabled="!isEditable" />
+        </UFormGroup>
+      </div>
+      <div v-else-if="item.type === 'number'">
+        <UFormGroup :label="item.label" :name="item.id" class="py-2">
+          <UInput type="number" v-model.number="item.value" placeholder="Value" variant="outline" size="md" autocomplete="off"
+            :disabled="!isEditable" />
         </UFormGroup>
       </div>
       <div v-else>
@@ -107,56 +118,123 @@ onMounted(() => {
 
 // Attribute 객체를 items 배열로 변환하는 함수
 const attributeToItems = (attr: Attribute, existingItems: Item[] = []) => {
-
-  return Object.entries(attr).map(([key, value]) => {
-    // 기존 items에서 동일한 id를 가진 항목 찾
-    const existingItem = existingItems.find(item => item.id === key)
-    return {
-      id: key,
-      label: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' '), // snake_case를 타이틀 케이스로 변환
-      // type: typeof value,
-      type: existingItem?.type || '',
-      options: existingItem?.options || [],
-      value: value
-    };
-  }) as Item[];
+  const items: Item[] = []
+  
+  // technique_params를 분해하여 개별 파라미터로 처리
+  Object.entries(attr).forEach(([key, value]) => {
+    if (key === 'technique_params' && typeof value === 'object' && value !== null) {
+      // technique_params 내부의 각 파라미터를 개별 item으로 추가
+      Object.entries(value).forEach(([techKey, techValue]) => {
+        const existingItem = existingItems.find(item => item.id === techKey)
+        items.push({
+          id: techKey,
+          label: techKey.charAt(0).toUpperCase() + techKey.slice(1).replace(/_/g, ' '),
+          type: existingItem?.type || '',
+          options: existingItem?.options || [],
+          value: techValue
+        })
+      })
+    } else {
+      // 일반 파라미터 처리
+      const existingItem = existingItems.find(item => item.id === key)
+      items.push({
+        id: key,
+        label: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' '), // snake_case를 타이틀 케이스로 변환
+        type: existingItem?.type || '',
+        options: existingItem?.options || [],
+        value: value
+      })
+    }
+  })
+  
+  return items
 };
 // items 배열을 Attribute 객체로 변환하는 함수
 const itemsToAttribute = (items: Item[]) => {
 
   const attribute: Attribute = {}
+  const techniqueParams: Record<string, any> = {}
+  
+  let currentTechnique = ''
+  
   items.forEach(item => {
-    attribute[item.id] = item.value;
-
+    // technique 값을 확인
+    if (item.id === 'technique') {
+      currentTechnique = item.value
+    }
+    
+    // technique별 파라미터들을 technique_params로 묶기
+    const isTechniqueParam = (
+      currentTechnique === 'lora' && 
+      ['r', 'lora_alpha', 'target_modules', 'lora_dropout', 'bias'].includes(item.id)
+    ) || (
+      currentTechnique === 'qlora' && 
+      ['r', 'lora_alpha', 'target_modules', 'lora_dropout', 'bias', 'llm_int8_threshold'].includes(item.id)
+    ) || (
+      currentTechnique === 'adalora' && 
+      ['init_r', 'target_r', 'beta1', 'beta2', 'tinit', 'lora_alpha', 'target_modules', 'lora_dropout', 'bias'].includes(item.id)
+    ) || (
+      currentTechnique === 'prompt' && 
+      ['task_type', 'num_virtual_tokens', 'prompt_tuning_init', 'prompt_tuning_init_text', 'prompt_template_type'].includes(item.id)
+    ) || (
+      currentTechnique === 'prefix' && 
+      ['task_type', 'num_virtual_tokens'].includes(item.id)
+    ) || (
+      currentTechnique === 'dpo' && 
+      ['beta'].includes(item.id)
+    )
+    
+    if (isTechniqueParam) {
+      techniqueParams[item.id] = item.value
+    } else {
+      attribute[item.id] = item.value
+    }
   });
+  
+  // technique_params가 비어있지 않으면 추가
+  if (Object.keys(techniqueParams).length > 0) {
+    attribute['technique_params'] = techniqueParams
+  }
 
   return attribute as Attribute;
 };
 
 const componentTypes = ref([
   {
-    label: 'Full fine tune modeel(CSV)',
-    value: 'full_fine_tune_model_with_csv'
+    label: 'Full Fine Tune (CSV)',
+    value: 'fft_fine_tune_model_with_csv'
   },
   {
-    label: 'SFT fine tune model(CSV)',
+    label: 'SFT Fine Tune (CSV)',
     value: 'sft_fine_tune_model_with_csv'
   },
   {
-    label: 'LoRA fine tune model(CSV)',
+    label: 'LoRA Fine Tune (CSV)',
     value: 'lora_fine_tune_model_with_csv'
   },
   {
-    label: 'LoRA SFT fine tune model(CSV)',
+    label: 'LoRA SFT Fine Tune (CSV)',
     value: 'lora_sft_fine_tune_model_with_csv'
   },
   {
-    label: 'AdaLoRA fine tune model(CSV)',
+    label: 'QLoRA Fine Tune (CSV)',
+    value: 'qlora_fine_tune_model_with_csv'
+  },
+  {
+    label: 'QLoRA SFT Fine Tune (CSV)',
+    value: 'qlora_sft_fine_tune_model_with_csv'
+  },
+  {
+    label: 'AdaLoRA Fine Tune (CSV)',
     value: 'adalora_fine_tune_model_with_csv'
   },
   {
-    label: 'AdaLoRA SFT fine tune model(CSV)',
+    label: 'AdaLoRA SFT Fine Tune (CSV)',
     value: 'adalora_sft_fine_tune_model_with_csv'
+  },
+  {
+    label: 'DPO Fine Tune (CSV)',
+    value: 'dpo_fine_tune_model_with_csv'
   },
 ])
 
@@ -198,17 +276,24 @@ use_gpu		BOOL
 */
 const itemTemplate = ref<ItemTemplate>(
   {
-    full_fine_tune_model_with_csv: [
+    fft_fine_tune_model_with_csv: [
       {
         id: 'type',
-        label: 'Ful Fine Tune Model With CSV',
+        label: 'Full Fine Tune Model (CSV)',
         type: 'type',
         value: 'llm_fine_tune_model_with_csv'
       },
       {
+        id: 'technique',
+        label: 'Technique',
+        type: 'string',
+        value: 'fft'
+      },
+      {
         id: 'training_type',
         label: 'Training Type',
-        type: 'string',
+        type: 'list',
+        options: ['unsupervised', 'supervised'],
         value: 'unsupervised'
       },
       {
@@ -220,74 +305,6 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'experiment_name',
         label: 'Experiment Name',
-        type: 'string',
-        value: ''
-      },
-      {
-        id: 'source_column',
-        label: 'Source Column',
-        type: 'string',
-        value: ''
-      },
-      {
-        id: 'epochs',
-        label: 'epochs',
-        type: 'number',
-        value: 1
-      },
-      {
-        id: 'batch_size',
-        label: 'Batch Size',
-        type: 'number',
-        value: 2
-      },
-      {
-        id: 'save_steps',
-        label: 'Save Steps',
-        type: 'number',
-        value: 500
-      },
-      {
-        id: 'save_total_limit',
-        label: 'Save Total Limit',
-        type: 'number',
-        value: 2
-      },
-      {
-        id: 'endpoint',
-        label: 'Endpoint URL',
-        type: 'string',
-        value: 'http://minio.storage-system.svc.cluster.local:9000'
-      },
-      {
-        id: 'use_gpu',
-        label: 'Use GPU',
-        type: 'bool',
-        value: true
-      }
-    ],
-    sft_fine_tune_model_with_csv: [
-      {
-        id: 'type',
-        label: 'SFT Fine Tune Model(CSV)',
-        type: 'type',
-        value: 'llm_fine_tune_model_with_csv'
-      },
-      {
-        id: 'training_type',
-        label: 'Training Type',
-        type: 'string',
-        value: 'supervised'
-      },
-      {
-        id: 'experiment_name',
-        label: 'Experiment Name',
-        type: 'string',
-        value: ''
-      },
-      {
-        id: 'model_name',
-        label: 'Model Name',
         type: 'string',
         value: ''
       },
@@ -304,46 +321,46 @@ const itemTemplate = ref<ItemTemplate>(
         value: ''
       },
       {
+        id: 'max_length',
+        label: 'Max Length',
+        type: 'number',
+        value: 512
+      },
+      {
         id: 'batch_size',
         label: 'Batch Size',
         type: 'number',
-        value: 1
-      },
-      {
-        id: 'gradient_accumulation_steps',
-        label: 'Gradient Accumulation Steps',
-        type: 'number',
-        value: 16
+        value: 2
       },
       {
         id: 'epochs',
         label: 'Epochs',
         type: 'number',
-        value: 3
-      },
-      {
-        id: 'gradient_checkpointing',
-        label: 'Gradient Checkpointing',
-        type: 'bool',
-        value: true
-      },
-      {
-        id: 'fp16',
-        label: 'FP16',
-        type: 'bool',
-        value: true
-      },
-      {
-        id: 'max_grad_norm',
-        label: 'Max Grad Norm',
-        type: 'number',
-        value: 0.5
+        value: 1
       },
       {
         id: 'learning_rate',
         label: 'Learning Rate',
         type: 'number',
         value: 0.00005
+      },
+      {
+        id: 'fp16',
+        label: 'FP16 Training',
+        type: 'bool',
+        value: false
+      },
+      {
+        id: 'logging_steps',
+        label: 'Logging Steps',
+        type: 'number',
+        value: 10
+      },
+      {
+        id: 'save_steps',
+        label: 'Save Steps',
+        type: 'number',
+        value: 500
       },
       {
         id: 'save_strategy',
@@ -353,16 +370,16 @@ const itemTemplate = ref<ItemTemplate>(
         value: 'steps'
       },
       {
-        id: 'save_steps',
-        label: 'Save Steps',
+        id: 'save_total_limit',
+        label: 'Save Total Limit',
         type: 'number',
-        value: 100
+        value: 2
       },
       {
-        id: 'logging_steps',
-        label: 'Logging Steps',
+        id: 'eval_steps',
+        label: 'Evaluation Steps',
         type: 'number',
-        value: 10
+        value: 100
       },
       {
         id: 'evaluation_strategy',
@@ -372,16 +389,170 @@ const itemTemplate = ref<ItemTemplate>(
         value: 'no'
       },
       {
-        id: 'eval_steps',
-        label: 'Evaluation Step Interval',
+        id: 'gradient_accumulation_steps',
+        label: 'Gradient Accumulation Steps',
+        type: 'number',
+        value: 1
+      },
+      {
+        id: 'max_grad_norm',
+        label: 'Max Gradient Norm',
+        type: 'number',
+        value: 1.0
+      },
+      {
+        id: 'gradient_checkpointing',
+        label: 'Gradient Checkpointing',
+        type: 'bool',
+        value: false
+      },
+      {
+        id: 'prediction_loss_only',
+        label: 'Prediction Loss Only',
+        type: 'bool',
+        value: true
+      },
+      {
+        id: 'use_gpu',
+        label: 'Use GPU',
+        type: 'bool',
+        value: true
+      }
+    ],
+    sft_fine_tune_model_with_csv: [
+      {
+        id: 'type',
+        label: 'SFT Fine Tune Model (CSV)',
+        type: 'type',
+        value: 'llm_fine_tune_model_with_csv'
+      },
+      {
+        id: 'technique',
+        label: 'Technique',
+        type: 'string',
+        value: 'fft'
+      },
+      {
+        id: 'training_type',
+        label: 'Training Type',
+        type: 'string',
+        value: 'supervised'
+      },
+      {
+        id: 'model_name',
+        label: 'Model Name',
+        type: 'string',
+        value: ''
+      },
+      {
+        id: 'experiment_name',
+        label: 'Experiment Name',
+        type: 'string',
+        value: ''
+      },
+      {
+        id: 'source_column',
+        label: 'Source Column',
+        type: 'string',
+        value: ''
+      },
+      {
+        id: 'label_column',
+        label: 'Label Column',
+        type: 'string',
+        value: ''
+      },
+      {
+        id: 'max_length',
+        label: 'Max Length',
+        type: 'number',
+        value: 512
+      },
+      {
+        id: 'batch_size',
+        label: 'Batch Size',
+        type: 'number',
+        value: 1
+      },
+      {
+        id: 'epochs',
+        label: 'Epochs',
+        type: 'number',
+        value: 3
+      },
+      {
+        id: 'learning_rate',
+        label: 'Learning Rate',
+        type: 'number',
+        value: 0.00005
+      },
+      {
+        id: 'fp16',
+        label: 'FP16 Training',
+        type: 'bool',
+        value: true
+      },
+      {
+        id: 'logging_steps',
+        label: 'Logging Steps',
+        type: 'number',
+        value: 10
+      },
+      {
+        id: 'save_steps',
+        label: 'Save Steps',
         type: 'number',
         value: 100
+      },
+      {
+        id: 'save_strategy',
+        label: 'Save Strategy',
+        type: 'list',
+        options: ['steps', 'epoch', 'no', 'best'],
+        value: 'steps'
       },
       {
         id: 'save_total_limit',
         label: 'Save Total Limit',
         type: 'number',
         value: 3
+      },
+      {
+        id: 'eval_steps',
+        label: 'Evaluation Steps',
+        type: 'number',
+        value: 100
+      },
+      {
+        id: 'evaluation_strategy',
+        label: 'Evaluation Strategy',
+        type: 'list',
+        options: ['no', 'steps', 'epoch'],
+        value: 'no'
+      },
+      {
+        id: 'gradient_accumulation_steps',
+        label: 'Gradient Accumulation Steps',
+        type: 'number',
+        value: 16
+      },
+      {
+        id: 'max_grad_norm',
+        label: 'Max Gradient Norm',
+        type: 'number',
+        value: 0.5
+      },
+      {
+        id: 'gradient_checkpointing',
+        label: 'Gradient Checkpointing',
+        type: 'bool',
+        value: true
+      },
+      {
+        id: 'prediction_loss_only',
+        label: 'Prediction Loss Only',
+        type: 'bool',
+        value: true
       },
       {
         id: 'use_gpu',
@@ -393,9 +564,15 @@ const itemTemplate = ref<ItemTemplate>(
     lora_fine_tune_model_with_csv: [
       {
         id: 'type',
-        label: 'LoRA Fine Tune Model(CSV)',
+        label: 'LoRA Fine Tune Model (CSV)',
         type: 'type',
         value: 'llm_fine_tune_model_with_csv'
+      },
+      {
+        id: 'technique',
+        label: 'Technique',
+        type: 'string',
+        value: 'lora'
       },
       {
         id: 'training_type',
@@ -404,14 +581,14 @@ const itemTemplate = ref<ItemTemplate>(
         value: 'unsupervised'
       },
       {
-        id: 'experiment_name',
-        label: 'Experiment Name',
+        id: 'model_name',
+        label: 'Model Name',
         type: 'string',
         value: ''
       },
       {
-        id: 'model_name',
-        label: 'Model Name',
+        id: 'experiment_name',
+        label: 'Experiment Name',
         type: 'string',
         value: ''
       },
@@ -422,91 +599,10 @@ const itemTemplate = ref<ItemTemplate>(
         value: ''
       },
       {
-        id: 'batch_size',
-        label: 'Batch Size',
+        id: 'max_length',
+        label: 'Max Length',
         type: 'number',
-        value: 8
-
-      },
-      {
-        id: 'gradient_accumulation_steps',
-        label: 'Gradient Accumulation Steps',
-        type: 'number',
-        value: 1
-      },
-      {
-        id: 'epochs',
-        label: 'Epochs',
-        type: 'number',
-        value: 1
-      },
-      {
-        id: 'gradient_checkpointing',
-        label: 'Gradient Checkpointing',
-        type: 'bool',
-        value: false
-      },
-      {
-        id: 'fp16',
-        label: 'FP16 Training',
-        type: 'bool',
-        value: false
-      },
-      {
-        id: 'max_grad_norm',
-        label: 'Max Grad Norm',
-        type: 'number',
-        value: 1.0
-      },
-      {
-        id: 'learning_rate',
-        label: 'Learning Rate',
-        type: 'number',
-        value: 0.00005
-      },
-      {
-        id: 'save_strategy',
-        label: 'Save Strategy',
-        type: 'list',
-        options: ['steps', 'epoch', 'no', 'best'],
-        value: 'steps'
-      },
-      {
-        id: 'save_steps',
-        label: 'Save Steps',
-        type: 'number',
-        value: 100
-      },
-      {
-        id: 'logging_steps',
-        label: 'Logging Steps',
-        type: 'number',
-        value: 10
-      },
-      {
-        id: 'evaluation_strategy',
-        label: 'Evaluation Strategy',
-        type: 'list',
-        options: ['no', 'steps', 'epoch'],
-        value: 'no'
-      },
-      {
-        id: 'eval_steps',
-        label: 'Evaluation Step Interval',
-        type: 'number',
-        value: 100
-      },
-      {
-        id: 'save_total_limit',
-        label: 'Save Total Limit',
-        type: 'number',
-        value: 2
-      },
-      {
-        id: 'prediction_loss_only',
-        label: 'Prediction Loss Only',
-        type: 'bool',
-        value: true
+        value: 512
       },
       {
         id: 'r',
@@ -523,9 +619,9 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'target_modules',
         label: 'Target Modules',
-        type: 'list',
-        options: ['q_proj', 'v_proj'],
-        value: 'q_proj'
+        type: 'multiselect',
+        options: ['q_proj', 'v_proj', 'k_proj', 'o_proj'],
+        value: ['q_proj', 'v_proj']
       },
       {
         id: 'lora_dropout',
@@ -536,39 +632,95 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'bias',
         label: 'Bias',
-        type: 'string',
+        type: 'list',
         options: ['none', 'all', 'lora_only'],
         value: 'none'
       },
       {
-        id: 'input_requirement',
-        label: 'Input Requirement',
+        id: 'batch_size',
+        label: 'Batch Size',
+        type: 'number',
+        value: 2
+      },
+      {
+        id: 'epochs',
+        label: 'Epochs',
+        type: 'number',
+        value: 1
+      },
+      {
+        id: 'learning_rate',
+        label: 'Learning Rate',
+        type: 'number',
+        value: 0.00005
+      },
+      {
+        id: 'fp16',
+        label: 'FP16 Training',
+        type: 'bool',
+        value: false
+      },
+      {
+        id: 'logging_steps',
+        label: 'Logging Steps',
+        type: 'number',
+        value: 10
+      },
+      {
+        id: 'save_steps',
+        label: 'Save Steps',
+        type: 'number',
+        value: 100
+      },
+      {
+        id: 'save_strategy',
+        label: 'Save Strategy',
+        type: 'list',
+        options: ['steps', 'epoch', 'no', 'best'],
+        value: 'steps'
+      },
+      {
+        id: 'save_total_limit',
+        label: 'Save Total Limit',
+        type: 'number',
+        value: 2
+      },
+      {
+        id: 'eval_steps',
+        label: 'Evaluation Steps',
+        type: 'number',
+        value: 100
+      },
+      {
+        id: 'evaluation_strategy',
+        label: 'Evaluation Strategy',
+        type: 'list',
+        options: ['no', 'steps', 'epoch'],
+        value: 'no'
+      },
+      {
+        id: 'gradient_accumulation_steps',
+        label: 'Gradient Accumulation Steps',
+        type: 'number',
+        value: 1
+      },
+      {
+        id: 'max_grad_norm',
+        label: 'Max Gradient Norm',
+        type: 'number',
+        value: 1.0
+      },
+      {
+        id: 'gradient_checkpointing',
+        label: 'Gradient Checkpointing',
+        type: 'bool',
+        value: false
+      },
+      {
+        id: 'prediction_loss_only',
+        label: 'Prediction Loss Only',
         type: 'bool',
         value: true
-      },
-      {
-        id: 'output_requirement',
-        label: 'Output Requirement',
-        type: 'bool',
-        value: true
-      },
-      {
-        id: 'image_url',
-        label: 'Image URL',
-        type: 'string',
-        value: ''
-      },
-      {
-        id: 'secret_name',
-        label: 'Secret Name',
-        type: 'string',
-        value: ''
-      },
-      {
-        id: 'endpoint',
-        label: 'Endpoint URL',
-        type: 'string',
-        value: 'http://minio.storage-system.svc.cluster.local:9000'
       },
       {
         id: 'use_gpu',
@@ -618,8 +770,7 @@ const itemTemplate = ref<ItemTemplate>(
         id: 'batch_size',
         label: 'Batch Size',
         type: 'number',
-        value: 8
-
+        value: 2
       },
       {
         id: 'gradient_accumulation_steps',
@@ -716,9 +867,9 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'target_modules',
         label: 'Target Modules',
-        type: 'list',
+        type: 'multiselect',
         options: ['q_proj', 'v_proj'],
-        value: 'q_proj'
+        value: ['q_proj', 'v_proj']
       },
       {
         id: 'lora_dropout',
@@ -805,13 +956,13 @@ const itemTemplate = ref<ItemTemplate>(
         id: 'batch_size',
         label: 'Batch Size',
         type: 'number',
-        value: 8
+        value: 2
       },
       {
         id: 'gradient_accumulation_steps',
         label: 'Gradient Accumulation Steps',
         type: 'number',
-        value: 8
+        value: 4
       },
       {
         id: 'epochs',
@@ -932,9 +1083,9 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'target_modules',
         label: 'Target Modules',
-        type: 'list',
+        type: 'multiselect',
         options: ['q_proj', 'v_proj'],
-        value: 'q_proj'
+        value: ['q_proj', 'v_proj']
       },
       {
         id: 'lora_dropout',
@@ -1155,9 +1306,9 @@ const itemTemplate = ref<ItemTemplate>(
       {
         id: 'target_modules',
         label: 'Target Modules',
-        type: 'list',
+        type: 'multiselect',
         options: ['q_proj', 'v_proj'],
-        value: 'q_proj'
+        value: ['q_proj', 'v_proj']
       },
       {
         id: 'lora_dropout',
@@ -1209,7 +1360,522 @@ const itemTemplate = ref<ItemTemplate>(
         value: true
       }
     ],
-
+    qlora_fine_tune_model_with_csv: [
+      {
+        id: 'type',
+        label: 'QLoRA Fine Tune Model (CSV)',
+        type: 'type',
+        value: 'llm_fine_tune_model_with_csv'
+      },
+      {
+        id: 'technique',
+        label: 'Technique',
+        type: 'string',
+        value: 'qlora'
+      },
+      {
+        id: 'training_type',
+        label: 'Training Type',
+        type: 'string',
+        value: 'unsupervised'
+      },
+      {
+        id: 'model_name',
+        label: 'Model Name',
+        type: 'string',
+        value: ''
+      },
+      {
+        id: 'experiment_name',
+        label: 'Experiment Name',
+        type: 'string',
+        value: ''
+      },
+      {
+        id: 'source_column',
+        label: 'Source Column',
+        type: 'string',
+        value: ''
+      },
+      {
+        id: 'max_length',
+        label: 'Max Length',
+        type: 'number',
+        value: 512
+      },
+      {
+        id: 'quantized_bits',
+        label: 'Quantized Bits',
+        type: 'list',
+        options: [4, 8],
+        value: 4
+      },
+      {
+        id: 'llm_int8_threshold',
+        label: 'Int8 Threshold',
+        type: 'number',
+        value: 6.0
+      },
+      {
+        id: 'r',
+        label: 'LoRA Rank',
+        type: 'number',
+        value: 8
+      },
+      {
+        id: 'lora_alpha',
+        label: 'LoRA Alpha',
+        type: 'number',
+        value: 16
+      },
+      {
+        id: 'target_modules',
+        label: 'Target Modules',
+        type: 'multiselect',
+        options: ['q_proj', 'v_proj', 'k_proj', 'o_proj'],
+        value: ['q_proj', 'v_proj']
+      },
+      {
+        id: 'lora_dropout',
+        label: 'LoRA Dropout',
+        type: 'number',
+        value: 0.1
+      },
+      {
+        id: 'bias',
+        label: 'Bias',
+        type: 'list',
+        options: ['none', 'all', 'lora_only'],
+        value: 'none'
+      },
+      {
+        id: 'batch_size',
+        label: 'Batch Size',
+        type: 'number',
+        value: 4
+      },
+      {
+        id: 'epochs',
+        label: 'Epochs',
+        type: 'number',
+        value: 1
+      },
+      {
+        id: 'learning_rate',
+        label: 'Learning Rate',
+        type: 'number',
+        value: 0.0002
+      },
+      {
+        id: 'fp16',
+        label: 'FP16 Training',
+        type: 'bool',
+        value: true
+      },
+      {
+        id: 'logging_steps',
+        label: 'Logging Steps',
+        type: 'number',
+        value: 10
+      },
+      {
+        id: 'save_steps',
+        label: 'Save Steps',
+        type: 'number',
+        value: 100
+      },
+      {
+        id: 'save_strategy',
+        label: 'Save Strategy',
+        type: 'list',
+        options: ['steps', 'epoch', 'no', 'best'],
+        value: 'steps'
+      },
+      {
+        id: 'save_total_limit',
+        label: 'Save Total Limit',
+        type: 'number',
+        value: 2
+      },
+      {
+        id: 'eval_steps',
+        label: 'Evaluation Steps',
+        type: 'number',
+        value: 100
+      },
+      {
+        id: 'evaluation_strategy',
+        label: 'Evaluation Strategy',
+        type: 'list',
+        options: ['no', 'steps', 'epoch'],
+        value: 'no'
+      },
+      {
+        id: 'gradient_accumulation_steps',
+        label: 'Gradient Accumulation Steps',
+        type: 'number',
+        value: 4
+      },
+      {
+        id: 'max_grad_norm',
+        label: 'Max Gradient Norm',
+        type: 'number',
+        value: 0.3
+      },
+      {
+        id: 'gradient_checkpointing',
+        label: 'Gradient Checkpointing',
+        type: 'bool',
+        value: true
+      },
+      {
+        id: 'prediction_loss_only',
+        label: 'Prediction Loss Only',
+        type: 'bool',
+        value: true
+      },
+      {
+        id: 'use_gpu',
+        label: 'Use GPU',
+        type: 'bool',
+        value: true
+      }
+    ],
+    qlora_sft_fine_tune_model_with_csv: [
+      {
+        id: 'type',
+        label: 'QLoRA SFT Fine Tune Model (CSV)',
+        type: 'type',
+        value: 'llm_fine_tune_model_with_csv'
+      },
+      {
+        id: 'technique',
+        label: 'Technique',
+        type: 'string',
+        value: 'qlora'
+      },
+      {
+        id: 'training_type',
+        label: 'Training Type',
+        type: 'string',
+        value: 'supervised'
+      },
+      {
+        id: 'model_name',
+        label: 'Model Name',
+        type: 'string',
+        value: ''
+      },
+      {
+        id: 'experiment_name',
+        label: 'Experiment Name',
+        type: 'string',
+        value: ''
+      },
+      {
+        id: 'source_column',
+        label: 'Source Column',
+        type: 'string',
+        value: ''
+      },
+      {
+        id: 'label_column',
+        label: 'Label Column',
+        type: 'string',
+        value: ''
+      },
+      {
+        id: 'max_length',
+        label: 'Max Length',
+        type: 'number',
+        value: 512
+      },
+      {
+        id: 'quantized_bits',
+        label: 'Quantized Bits',
+        type: 'list',
+        options: [4, 8],
+        value: 4
+      },
+      {
+        id: 'llm_int8_threshold',
+        label: 'Int8 Threshold',
+        type: 'number',
+        value: 6.0
+      },
+      {
+        id: 'r',
+        label: 'LoRA Rank',
+        type: 'number',
+        value: 64
+      },
+      {
+        id: 'lora_alpha',
+        label: 'LoRA Alpha',
+        type: 'number',
+        value: 16
+      },
+      {
+        id: 'target_modules',
+        label: 'Target Modules',
+        type: 'multiselect',
+        options: ['q_proj', 'v_proj', 'k_proj', 'o_proj'],
+        value: ['q_proj', 'v_proj']
+      },
+      {
+        id: 'lora_dropout',
+        label: 'LoRA Dropout',
+        type: 'number',
+        value: 0.1
+      },
+      {
+        id: 'bias',
+        label: 'Bias',
+        type: 'list',
+        options: ['none', 'all', 'lora_only'],
+        value: 'none'
+      },
+      {
+        id: 'batch_size',
+        label: 'Batch Size',
+        type: 'number',
+        value: 1
+      },
+      {
+        id: 'epochs',
+        label: 'Epochs',
+        type: 'number',
+        value: 2
+      },
+      {
+        id: 'learning_rate',
+        label: 'Learning Rate',
+        type: 'number',
+        value: 0.0002
+      },
+      {
+        id: 'fp16',
+        label: 'FP16 Training',
+        type: 'bool',
+        value: true
+      },
+      {
+        id: 'logging_steps',
+        label: 'Logging Steps',
+        type: 'number',
+        value: 10
+      },
+      {
+        id: 'save_steps',
+        label: 'Save Steps',
+        type: 'number',
+        value: 100
+      },
+      {
+        id: 'save_strategy',
+        label: 'Save Strategy',
+        type: 'list',
+        options: ['steps', 'epoch', 'no', 'best'],
+        value: 'steps'
+      },
+      {
+        id: 'save_total_limit',
+        label: 'Save Total Limit',
+        type: 'number',
+        value: 2
+      },
+      {
+        id: 'eval_steps',
+        label: 'Evaluation Steps',
+        type: 'number',
+        value: 100
+      },
+      {
+        id: 'evaluation_strategy',
+        label: 'Evaluation Strategy',
+        type: 'list',
+        options: ['no', 'steps', 'epoch'],
+        value: 'no'
+      },
+      {
+        id: 'gradient_accumulation_steps',
+        label: 'Gradient Accumulation Steps',
+        type: 'number',
+        value: 8
+      },
+      {
+        id: 'max_grad_norm',
+        label: 'Max Gradient Norm',
+        type: 'number',
+        value: 0.3
+      },
+      {
+        id: 'gradient_checkpointing',
+        label: 'Gradient Checkpointing',
+        type: 'bool',
+        value: true
+      },
+      {
+        id: 'prediction_loss_only',
+        label: 'Prediction Loss Only',
+        type: 'bool',
+        value: true
+      },
+      {
+        id: 'use_gpu',
+        label: 'Use GPU',
+        type: 'bool',
+        value: true
+      }
+    ],
+    dpo_fine_tune_model_with_csv: [
+      {
+        id: 'type',
+        label: 'DPO Fine Tune Model (CSV)',
+        type: 'type',
+        value: 'llm_fine_tune_model_with_csv'
+      },
+      {
+        id: 'technique',
+        label: 'Technique',
+        type: 'string',
+        value: 'dpo'
+      },
+      {
+        id: 'training_type',
+        label: 'Training Type',
+        type: 'string',
+        value: 'dpo'
+      },
+      {
+        id: 'model_name',
+        label: 'Model Name',
+        type: 'string',
+        value: ''
+      },
+      {
+        id: 'experiment_name',
+        label: 'Experiment Name',
+        type: 'string',
+        value: ''
+      },
+      {
+        id: 'source_column',
+        label: 'Chosen Column',
+        type: 'string',
+        value: ''
+      },
+      {
+        id: 'label_column',
+        label: 'Rejected Column',
+        type: 'string',
+        value: ''
+      },
+      {
+        id: 'max_length',
+        label: 'Max Length',
+        type: 'number',
+        value: 512
+      },
+      {
+        id: 'beta',
+        label: 'Beta (Temperature)',
+        type: 'number',
+        value: 0.1
+      },
+      {
+        id: 'batch_size',
+        label: 'Batch Size',
+        type: 'number',
+        value: 4
+      },
+      {
+        id: 'epochs',
+        label: 'Epochs',
+        type: 'number',
+        value: 1
+      },
+      {
+        id: 'learning_rate',
+        label: 'Learning Rate',
+        type: 'number',
+        value: 0.00005
+      },
+      {
+        id: 'fp16',
+        label: 'FP16 Training',
+        type: 'bool',
+        value: true
+      },
+      {
+        id: 'logging_steps',
+        label: 'Logging Steps',
+        type: 'number',
+        value: 10
+      },
+      {
+        id: 'save_steps',
+        label: 'Save Steps',
+        type: 'number',
+        value: 100
+      },
+      {
+        id: 'save_strategy',
+        label: 'Save Strategy',
+        type: 'list',
+        options: ['steps', 'epoch', 'no', 'best'],
+        value: 'steps'
+      },
+      {
+        id: 'save_total_limit',
+        label: 'Save Total Limit',
+        type: 'number',
+        value: 2
+      },
+      {
+        id: 'eval_steps',
+        label: 'Evaluation Steps',
+        type: 'number',
+        value: 100
+      },
+      {
+        id: 'evaluation_strategy',
+        label: 'Evaluation Strategy',
+        type: 'list',
+        options: ['no', 'steps', 'epoch'],
+        value: 'no'
+      },
+      {
+        id: 'gradient_accumulation_steps',
+        label: 'Gradient Accumulation Steps',
+        type: 'number',
+        value: 4
+      },
+      {
+        id: 'max_grad_norm',
+        label: 'Max Gradient Norm',
+        type: 'number',
+        value: 1.0
+      },
+      {
+        id: 'gradient_checkpointing',
+        label: 'Gradient Checkpointing',
+        type: 'bool',
+        value: true
+      },
+      {
+        id: 'prediction_loss_only',
+        label: 'Prediction Loss Only',
+        type: 'bool',
+        value: true
+      },
+      {
+        id: 'use_gpu',
+        label: 'Use GPU',
+        type: 'bool',
+        value: true
+      }
+    ]
   })
 
 
