@@ -301,6 +301,11 @@ const toolbarLinks = ref([
       icon: 'i-heroicons-arrow-path',
       click: reloadEndpoints
     },
+    {
+      label: '등록',
+      icon: 'i-heroicons-plus',
+      to: '/endpoints/add'
+    },
   ]
 ])
 
