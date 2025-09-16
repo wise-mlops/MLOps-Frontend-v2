@@ -20,6 +20,19 @@ export const getEndpointDetails = async ( namespace: string | null, name: string
   return response
 }
 
+export const createEndpoint = async (namespace: string, name: string, inferenceServiceInfo: any) => {
+  let url = encodeURI(`/inference-services/${namespace}/${name}`)
+  const options = {
+    headers: { "Content-Type": "application/json"},
+    method: "POST",
+    baseURL: config.api.url,
+    body: inferenceServiceInfo
+  }
+  const response = await $fetch<ResponseBody>(url, options as object)
+
+  return response;
+}
+
 export const removeEndpoint = async ( namespace: string | null, name: string | string[] ) => {
   let url = encodeURI(`/inference-services/${namespace}/${name}`)
   const options = {
