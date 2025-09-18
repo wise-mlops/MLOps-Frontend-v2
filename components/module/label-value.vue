@@ -12,7 +12,7 @@
         </div>
       </template>
       <template #value-data="{ row }">
-        <div class="break-words">
+        <div class="break-words" style="white-space: pre-line;">
           {{ row.value }}
         </div>
       </template>

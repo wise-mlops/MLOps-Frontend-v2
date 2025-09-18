@@ -18,10 +18,14 @@
       </div>
     </template>
     <template #predictor-data="{ row }">
-      <UBadge :label="getPredictorType(row)" :color="getPredictorTypeColor(row)" />
+      <div class="flex justify-center">
+        <UBadge :label="getPredictorType(row)" :color="getPredictorTypeColor(row)" />
+      </div>
     </template>
     <template #servingType-data="{ row }">
-      <UBadge :label="getServingType(row)" :color="getServingTypeColor(row)" />
+      <div class="flex justify-center">
+        <UBadge :label="getServingType(row)" :color="getServingTypeColor(row)" />
+      </div>
     </template>
     <template #runtime-data="{ row }">
       <div>
@@ -39,8 +43,8 @@
           {{ getStorageUri(row) }}
         </div>
         <template #panel>
-          <div class="text-wrap p-4">
-            {{ getStorageUri(row) }}
+          <div class="text-wrap p-4 storage-uri-panel">
+            {{ getStorageUriFull(row) }}
           </div>
         </template>
       </UPopover>
@@ -104,29 +108,78 @@ const data = ref([])
 const deleteLoading = ref(false)
 const selectedEndpoint = ref(null)
 
-// 상태 아이콘 가져오기 (API 응답의 status 필드 사용)
+// 상태 아이콘 가져오기 (안전한 상태 확인)
 const getStatusIcon = (row: any) => {
-  return row.status === 'True' ? 'i-heroicons-check-circle' : 'i-heroicons-x-circle'
+  try {
+    const ready = getReadyStatus(row)
+    return ready ? 'i-heroicons-check-circle' : 'i-heroicons-x-circle'
+  } catch (error) {
+    console.error('Error getting status icon:', error, row)
+    return 'i-heroicons-question-mark-circle'
+  }
 }
 
 // 상태 아이콘 클래스
 const getStatusIconClass = (row: any) => {
-  return row.status === 'True' ? 'w-5 h-5 text-green-500' : 'w-5 h-5 text-red-500'
+  try {
+    const ready = getReadyStatus(row)
+    return ready ? 'w-5 h-5 text-green-500' : 'w-5 h-5 text-red-500'
+  } catch (error) {
+    console.error('Error getting status icon class:', error, row)
+    return 'w-5 h-5 text-gray-500'
+  }
 }
 
-// 예측기 타입 확인 함수 (predictorSpec 구조 사용)
+// Ready 상태 확인 함수 (다양한 소스에서 상태 확인)
+const getReadyStatus = (row: any) => {
+  // 1. 기존 단순 status 필드 체크 (백업용)
+  if (row.status === 'True') {
+    return true
+  }
+
+  // 2. conditions 배열에서 Ready=True 확인
+  if (row.conditions && Array.isArray(row.conditions)) {
+    const readyCondition = row.conditions.find((condition: any) => condition.type === 'Ready')
+    if (readyCondition?.status === 'True') {
+      return true
+    }
+  }
+
+  // 3. 중첩된 status.conditions 체크
+  if (row.status && row.status.conditions && Array.isArray(row.status.conditions)) {
+    const readyCondition = row.status.conditions.find((condition: any) => condition.type === 'Ready')
+    if (readyCondition?.status === 'True') {
+      return true
+    }
+  }
+
+  // 4. predicatorReady나 기타 ready 관련 필드들 체크
+  if (row.predicatorReady === true || row.ready === true) {
+    return true
+  }
+
+  // 기본값: false
+  return false
+}
+
+// 모델 포맷 확인 함수 (predictorSpec 구조 사용)
 const getPredictorType = (row: any) => {
   const predictor = row.predictorSpec
   if (predictor?.model?.modelFormat?.name) {
     return predictor.model.modelFormat.name
   }
   if (predictor?.containers) {
+    // vLLM 컨테이너 확인
+    const container = predictor.containers[0]
+    if (container?.image?.includes('vllm')) {
+      return 'LLM'
+    }
     return 'custom'
   }
   return 'unknown'
 }
 
-// 예측기 타입별 색상
+// 모델 포맷별 색상
 const getPredictorTypeColor = (row: any) => {
   const type = getPredictorType(row)
   switch (type) {
@@ -137,19 +190,25 @@ const getPredictorTypeColor = (row: any) => {
     case 'sklearn':
       return 'purple'
     case 'xgboost':
-      return 'yellow'
-    case 'pmml':
-      return 'pink'
+      return 'amber'
     case 'lightgbm':
       return 'lime'
-    case 'paddle':
-      return 'cyan'
-    case 'mlflow':
-      return 'blue'
     case 'onnx':
       return 'indigo'
+    case 'openvino_ir':
+      return 'teal'
+    case 'tensorrt':
+      return 'emerald'
+    case 'mlflow':
+      return 'blue'
+    case 'LLM':
+      return 'cyan'
     case 'custom':
       return 'green'
+    case 'pmml':
+      return 'pink'
+    case 'paddle':
+      return 'rose'
     default:
       return 'gray'
   }
@@ -159,6 +218,15 @@ const getPredictorTypeColor = (row: any) => {
 const getRuntime = (row: any) => {
   const predictor = row.predictorSpec
   const modelFormat = predictor?.model?.modelFormat?.name
+
+  // 디버깅용 (필요시 활성화)
+  // console.log('Runtime debug:', {
+  //   serviceName: row.name,
+  //   predictor,
+  //   modelFormat,
+  //   containers: predictor?.containers,
+  //   image: predictor?.containers?.[0]?.image
+  // })
 
   // Custom 컨테이너인 경우 이미지명 반환
   if (predictor?.containers?.[0]?.image) {
@@ -186,6 +254,13 @@ const getRuntime = (row: any) => {
     case 'onnx':
       return 'ONNX ModelServer'
     default:
+      // 기본값이 아닌 경우에 대한 처리
+      if (predictor?.containers) {
+        return 'Custom Container'
+      }
+      if (modelFormat) {
+        return `${modelFormat} ModelServer`
+      }
       return 'KServe ModelServer'
   }
 }
@@ -206,7 +281,7 @@ const getProtocol = (row: any) => {
   return 'v1'
 }
 
-// Storage URI 가져오기
+// Storage URI 가져오기 (목록용 - 첫 번째만)
 const getStorageUri = (row: any) => {
   const predictor = row.predictorSpec
 
@@ -215,15 +290,58 @@ const getStorageUri = (row: any) => {
     return predictor.model.storageUri
   }
 
-  // Container 기반인 경우 환경변수에서 STORAGE_URI 찾기
+  // Container 기반인 경우 (vLLM 등)
   if (predictor?.containers?.[0]?.env) {
     const storageEnv = predictor.containers[0].env.find((env: any) => env.name === 'STORAGE_URI')
     if (storageEnv?.value) {
-      return storageEnv.value
+      const uri = storageEnv.value
+
+      // {model_name}=s3://path 형태로 파싱 (첫 번째만 표시)
+      if (uri.includes('=')) {
+        const models = uri.split(',').map(item => item.trim())
+        const [name, path] = models[0].split('=')
+        const remainingCount = models.length - 1
+        return `${name} → ${path}${remainingCount > 0 ? ` (+${remainingCount}개)` : ''}`
+      }
+
+      // 기존 형태인 경우
+      return uri
     }
   }
 
-  return ''
+  return '설정되지 않음'
+}
+
+// Storage URI 전체 가져오기 (hover용)
+const getStorageUriFull = (row: any) => {
+  const predictor = row.predictorSpec
+
+  // Model 기반인 경우
+  if (predictor?.model?.storageUri) {
+    return predictor.model.storageUri
+  }
+
+  // Container 기반인 경우 (vLLM 등)
+  if (predictor?.containers?.[0]?.env) {
+    const storageEnv = predictor.containers[0].env.find((env: any) => env.name === 'STORAGE_URI')
+    if (storageEnv?.value) {
+      const uri = storageEnv.value
+
+      // {model_name}=s3://path 형태로 파싱 (전체 표시)
+      if (uri.includes('=')) {
+        const models = uri.split(',').map(item => item.trim())
+        return models.map(model => {
+          const [name, path] = model.split('=')
+          return `${name} → ${path}`
+        }).join('\n')
+      }
+
+      // 기존 형태인 경우
+      return uri
+    }
+  }
+
+  return '설정되지 않음'
 }
 
 // 시간 포맷팅 (그림과 동일하게)
@@ -278,6 +396,15 @@ const loadEndpoints = async () => {
   try {
     const response = await getEndpoints('kubeflow-user-example-com')
     data.value = response.result ? response.result.result : []
+
+    // 디버깅 (필요시 주석 해제)
+    // console.log('Full API response:', response)
+    // console.log('Extracted data:', data.value)
+    // if (data.value.length > 0) {
+    //   const firstEndpoint = data.value[0]
+    //   console.log('First endpoint structure:', firstEndpoint)
+    //   console.log('Ready status result:', getReadyStatus(firstEndpoint))
+    // }
   } catch (error) {
     console.error('Failed to load endpoints:', error)
     data.value = []
@@ -322,7 +449,7 @@ const getServingTypeColor = (row: any) => {
   const servingType = getServingType(row)
   switch (servingType) {
     case 'vLLM':
-      return 'blue'
+      return 'emerald'
     case 'ModelMesh':
       return 'purple'
     default: // Standard
@@ -369,7 +496,7 @@ const endpointColumns = ref([
   },
   {
     key: 'predictor',
-    label: 'Predictor'
+    label: 'Model Format'
   },
   {
     key: 'servingType',
@@ -393,3 +520,10 @@ const endpointColumns = ref([
   }
 ])
 </script>
+
+<style scoped>
+.storage-uri-panel {
+  white-space: pre-line !important;
+  max-width: 400px;
+}
+</style>
