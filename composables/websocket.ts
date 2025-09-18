@@ -93,6 +93,7 @@ export const useWebSocket = () => {
     ws.onmessage = (event) => {
       try {
         const message: WebSocketMessage = JSON.parse(event.data)
+        console.log('🔔 WebSocket 메시지 수신:', message) // 디버깅용
 
         if (message.type === 'deployment_log') {
           const logEntry: LogEntry = message.data
