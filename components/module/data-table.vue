@@ -9,7 +9,7 @@
       :loading-state="{ icon: 'i-heroicons-arrow-path', label: 'Loading' }"
       :progress="{ color: 'primary', animation: 'carousel' }"
       :empty-state="{ icon: 'i-heroicons-circle-stack', label: 'No items.' }"
-      @select="$emit('select', $event)"
+      @select="emit('select', $event)"
       @update:sort="onSortChange"
     >
       <template v-for="(_, slot) of $slots" #[slot]="scope">
@@ -34,6 +34,8 @@ const props = defineProps<{
     direction: 'asc' | 'desc'
   }
 }>()
+
+const emit = defineEmits(['select'])
 
 const page = ref(1)
 const pageCount = computed(() => props.rows || 10)
