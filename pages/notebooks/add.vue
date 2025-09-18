@@ -150,7 +150,7 @@ const notebook = ref({
       }
     ],
     image_pull_secrets: [
-      "backend-image-pull-secret"
+      "backend-image-pull-secret-v2","backend-image-pull-secret"
     ],
     volumes: [],
     service_account_name: "default"
@@ -195,24 +195,37 @@ const images = ref([
   },
   {
     label: 'jupyter-pytorch:v1.8.0',
-    value: 'registry.gitlab.com/wisenut-research/research/2022-iitp-mlops/mlops-platform/mlops-api/pytorch:1.8.0'
+    value: 'registry.gitlab.com/wisenut-research/research/2022-iitp-mlops/mlops-platform/mlops-api-v2/pytorch:1.8.0'
   },
   {
     label: 'jupyter-scikit-learn:v1.8.0',
-    value: 'registry.gitlab.com/wisenut-research/research/2022-iitp-mlops/mlops-platform/mlops-api/keras:1.8.0'
+    value: 'registry.gitlab.com/wisenut-research/research/2022-iitp-mlops/mlops-platform/mlops-api-v2/scikit-learn:1.8.0'
   },
   {
     label: 'jupyter-tensorflow:v1.8.0',
-    value: 'registry.gitlab.com/wisenut-research/research/2022-iitp-mlops/mlops-platform/mlops-api/tensorflow:1.8.0'
+    value: 'registry.gitlab.com/wisenut-research/research/2022-iitp-mlops/mlops-platform/mlops-api-v2/tensorflow:1.8.0'
   },
   {
     label: 'jupyter-keras:v1.8.0',
-    value: 'registry.gitlab.com/wisenut-research/research/2022-iitp-mlops/mlops-platform/mlops-api/keras:1.8.0'
+    value: 'registry.gitlab.com/wisenut-research/research/2022-iitp-mlops/mlops-platform/mlops-api-v2/keras:1.8.0'
   },
   {
     label: 'jupyter-mxnet:1.9.1',
-    value: 'registry.gitlab.com/wisenut-research/research/2022-iitp-mlops/mlops-platform/mlops-api/mxnet:1.9.1'
+    value: 'registry.gitlab.com/wisenut-research/research/2022-iitp-mlops/mlops-platform/mlops-api-v2/mxnet:1.9.1'
+  },
+  {
+    label: 'jupyter-xgboost:2.1.1',
+    value: 'registry.gitlab.com/wisenut-research/research/2022-iitp-mlops/mlops-platform/mlops-api-v2/xgboost:2.1.1'
+  },
+  {
+    label: 'jupyter-lightgbm:4.5.0',
+    value: 'registry.gitlab.com/wisenut-research/research/2022-iitp-mlops/mlops-platform/mlops-api-v2/lightgbm:4.5.0'
+  },
+  {
+    label: 'jupyter-huggingface-transformers:4.47.1',
+    value: 'registry.gitlab.com/wisenut-research/research/2022-iitp-mlops/mlops-platform/mlops-api-v2/huggingface-transformers:4.47.1'
   }
+  
 ])
 
 const numGpus = ref([
