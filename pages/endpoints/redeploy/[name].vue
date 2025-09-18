@@ -1048,9 +1048,12 @@ const startRedeploy = async () => {
     const namespace = servingType.value === 'ModelMesh' ? 'modelmesh-serving' : 'kubeflow-user-example-com'
 
     // 재배포 API 호출
+    console.log('🚀 재배포 API 호출 시작:', { namespace, serviceName, strategy: formData.value.strategy, config })
     const response = await deployInferenceService(namespace, serviceName, formData.value.strategy, config)
+    console.log('📡 재배포 API 응답:', response)
 
     if (response.code === 130200) {
+      console.log('✅ API 성공 - WebSocket 연결 시작:', response.result?.deploymentId)
       // WebSocket 연결 시작
       connectDeploymentLogs(namespace, serviceName, response.result?.deploymentId)
       connectPodLogs(namespace, serviceName, formData.value.strategy)
@@ -1058,19 +1061,7 @@ const startRedeploy = async () => {
 
       // 추론 검증은 백엔드에서 WebSocket으로 자동 전송됨
 
-      // 타임아웃 처리 (10분)
-      setTimeout(() => {
-        if (deploymentProgress.value < 100) {
-          // 타임아웃 경고 로그 추가
-          const timeoutLog = {
-            timestamp: new Date().toISOString(),
-            level: 'warning' as const,
-            message: '⏰ 배포 시간이 예상보다 오래 걸리고 있습니다 (10분 경과)',
-            source: 'frontend'
-          }
-          deploymentLogs.value.push(timeoutLog)
-        }
-      }, 600000) // 10분
+      // 타임아웃 처리는 WebSocket composable에서 처리됨
 
       console.log('재배포 시작 성공:', response)
     } else {
