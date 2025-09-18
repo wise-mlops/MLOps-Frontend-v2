@@ -442,12 +442,36 @@
               <span class="text-sm font-medium">{{ deploymentProgress }}%</span>
             </div>
 
-            <div class="text-sm text-gray-600 dark:text-gray-400">
-              {{ deploymentStatus }}
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-gray-600 dark:text-gray-400">{{ deploymentStatus }}</span>
+              <div v-if="deploymentStarted" class="flex items-center space-x-4">
+                <div class="flex items-center space-x-1">
+                  <UIcon name="i-heroicons-signal" class="w-4 h-4 text-blue-500" />
+                  <span class="text-gray-600">성공률:</span>
+                  <span class="font-medium" :class="getSuccessRateColor()">{{ successRate }}%</span>
+                </div>
+                <div v-if="metrics" class="flex items-center space-x-1">
+                  <UIcon name="i-heroicons-clock" class="w-4 h-4 text-green-500" />
+                  <span class="text-gray-600">응답시간:</span>
+                  <span class="font-medium">{{ metrics.averageResponseTime || 0 }}ms</span>
+                </div>
+              </div>
             </div>
 
-            <div v-if="deploymentStarted" class="text-sm">
-              성공률: <span class="font-medium" :class="getSuccessRateColor()">{{ successRate }}%</span>
+            <!-- 배포 단계 표시 -->
+            <div v-if="deploymentStarted" class="mt-4">
+              <div class="flex items-center justify-between text-xs text-gray-500 mb-2">
+                <span>배포 단계</span>
+                <span>{{ Math.round((Object.values(validationProgress).filter(Boolean).length / getValidationCriteria.criteria.length) * 100) }}% 완료</span>
+              </div>
+              <div class="flex space-x-1">
+                <div
+                  v-for="(criterion, index) in getValidationCriteria.criteria"
+                  :key="criterion.name"
+                  class="flex-1 h-2 rounded-full"
+                  :class="validationProgress[criterion.name] ? 'bg-green-500' : index < Object.values(validationProgress).filter(Boolean).length + 1 ? 'bg-blue-500' : 'bg-gray-200'"
+                ></div>
+              </div>
             </div>
           </div>
         </UCard>
@@ -464,10 +488,29 @@
               <div
                 v-for="(log, index) in deploymentLogs"
                 :key="index"
-                class="text-sm font-mono"
-                :class="getLogLevelClass(log.level)"
+                class="flex items-start space-x-3 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700"
               >
-                [{{ formatTime(log.timestamp) }}] {{ log.message }}
+                <UIcon
+                  :name="log.level === 'error' ? 'i-heroicons-exclamation-triangle' :
+                        log.level === 'warning' ? 'i-heroicons-exclamation-circle' :
+                        log.level === 'success' ? 'i-heroicons-check-circle' : 'i-heroicons-information-circle'"
+                  :class="getLogLevelClass(log.level)"
+                  class="w-4 h-4 mt-0.5 flex-shrink-0"
+                />
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center space-x-2">
+                    <span class="text-xs text-gray-500 font-mono">{{ formatTime(log.timestamp) }}</span>
+                    <span class="text-xs px-2 py-0.5 rounded-full uppercase" :class="
+                      log.level === 'error' ? 'bg-red-100 text-red-800' :
+                      log.level === 'warning' ? 'bg-yellow-100 text-yellow-800' :
+                      log.level === 'success' ? 'bg-green-100 text-green-800' :
+                      'bg-blue-100 text-blue-800'
+                    ">
+                      {{ log.level }}
+                    </span>
+                  </div>
+                  <div class="text-sm mt-1" :class="getLogLevelClass(log.level)">{{ log.message }}</div>
+                </div>
               </div>
               <div v-if="deploymentLogs.length === 0" class="text-gray-500 text-center py-8">
                 재배포 시작을 기다리는 중...
@@ -479,10 +522,23 @@
               <div
                 v-for="(log, index) in inferenceLogs"
                 :key="index"
-                class="text-sm font-mono"
-                :class="getLogLevelClass(log.level)"
+                class="flex items-start space-x-3 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700"
               >
-                [{{ formatTime(log.timestamp) }}] {{ log.message }}
+                <UIcon
+                  :name="log.level === 'error' ? 'i-heroicons-exclamation-triangle' :
+                        log.level === 'warning' ? 'i-heroicons-exclamation-circle' :
+                        log.level === 'success' ? 'i-heroicons-check-circle' : 'i-heroicons-information-circle'"
+                  :class="getLogLevelClass(log.level)"
+                  class="w-4 h-4 mt-0.5 flex-shrink-0"
+                />
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center space-x-2">
+                    <span class="text-xs text-gray-500 font-mono">{{ formatTime(log.timestamp) }}</span>
+                    <UIcon name="i-heroicons-cpu-chip" class="w-3 h-3 text-purple-500" />
+                    <span class="text-xs text-purple-600 font-medium">INFERENCE</span>
+                  </div>
+                  <div class="text-sm mt-1" :class="getLogLevelClass(log.level)">{{ log.message }}</div>
+                </div>
               </div>
               <div v-if="inferenceLogs.length === 0" class="text-gray-500 text-center py-8">
                 추론 검증 로그가 표시됩니다...
@@ -494,9 +550,22 @@
               <div
                 v-for="(log, index) in podLogs"
                 :key="index"
-                class="text-sm font-mono"
+                class="flex items-start space-x-3 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700"
               >
-                [{{ formatTime(log.timestamp) }}] <span class="text-blue-600">{{ log.podName }}</span>: {{ log.message }}
+                <UIcon
+                  name="i-heroicons-cube"
+                  class="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-500"
+                />
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center space-x-2">
+                    <span class="text-xs text-gray-500 font-mono">{{ formatTime(log.timestamp) }}</span>
+                    <div class="flex items-center space-x-1">
+                      <span class="text-xs px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full">{{ log.podType }}</span>
+                      <span class="text-xs text-blue-600 font-medium">{{ log.podName }}</span>
+                    </div>
+                  </div>
+                  <div class="text-sm mt-1 text-gray-700 dark:text-gray-300">{{ log.message }}</div>
+                </div>
               </div>
               <div v-if="podLogs.length === 0" class="text-gray-500 text-center py-8">
                 Pod 로그가 표시됩니다...
@@ -505,6 +574,7 @@
 
             <!-- 메트릭 -->
             <div v-if="activeTab === 3" class="space-y-4">
+              <!-- 성능 메트릭 -->
               <div v-if="metrics" class="grid grid-cols-2 gap-4">
                 <div class="bg-white dark:bg-gray-700 p-4 rounded">
                   <div class="text-sm text-gray-500">총 요청</div>
@@ -520,10 +590,35 @@
                 </div>
                 <div class="bg-white dark:bg-gray-700 p-4 rounded">
                   <div class="text-sm text-gray-500">성공률</div>
-                  <div class="text-2xl font-bold" :class="getSuccessRateColor()">{{ metrics.successRate }}%</div>
+                  <div class="text-2xl font-bold" :class="getSuccessRateColor()">{{ successRate }}%</div>
                 </div>
               </div>
-              <div v-else class="text-gray-500 text-center py-8">
+
+              <!-- 검증 기준 -->
+              <div class="border-t pt-4">
+                <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-4">{{ getValidationCriteria.title }}</h4>
+                <div class="space-y-2">
+                  <div
+                    v-for="criterion in getValidationCriteria.criteria"
+                    :key="criterion.name"
+                    class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded"
+                  >
+                    <div>
+                      <div class="font-medium text-sm">{{ criterion.name }}</div>
+                      <div class="text-xs text-gray-500">{{ criterion.condition }}</div>
+                    </div>
+                    <div class="flex items-center">
+                      <UIcon
+                        :name="validationProgress[criterion.name] ? 'i-heroicons-check-circle' : 'i-heroicons-clock'"
+                        :class="validationProgress[criterion.name] ? 'text-green-500' : 'text-gray-400'"
+                        class="w-5 h-5"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="!metrics" class="text-gray-500 text-center py-8">
                 메트릭 데이터를 수집하는 중...
               </div>
             </div>
@@ -558,9 +653,6 @@ const breadcrumbs = ref([
 const pageTitle = ref(`재배포: ${serviceName}`)
 const loading = ref(false)
 const deploymentStarted = ref(false)
-const deploymentProgress = ref(0)
-const deploymentStatus = ref('재배포 준비 중...')
-const successRate = ref(100)
 
 // 현재 서비스 정보
 const servingType = ref('Standard')
@@ -708,6 +800,22 @@ const isFormValid = computed(() => {
   }
 })
 
+// WebSocket 연동
+const {
+  deploymentLogs,
+  podLogs,
+  inferenceLogs,
+  metrics,
+  deploymentProgress,
+  deploymentStatus,
+  connectDeploymentLogs,
+  connectPodLogs,
+  connectTrafficMetrics,
+  simulateInferenceValidation,
+  disconnectAll,
+  clearLogs
+} = useWebSocket()
+
 // 로그 관련
 const activeTab = ref(0)
 const logTabs = [
@@ -717,11 +825,6 @@ const logTabs = [
   { label: '메트릭' }
 ]
 
-const deploymentLogs = ref([])
-const inferenceLogs = ref([])
-const podLogs = ref([])
-const metrics = ref(null)
-
 // 유틸리티 함수들
 const getServingTypeBadgeColor = (type: string) => {
   switch (type) {
@@ -730,6 +833,13 @@ const getServingTypeBadgeColor = (type: string) => {
     default: return 'gray'
   }
 }
+
+// 성공률 계산 (메트릭 기반)
+const successRate = computed(() => {
+  if (!metrics.value) return 100
+  if (metrics.value.totalRequests === 0) return 100
+  return Math.round((metrics.value.successfulRequests / metrics.value.totalRequests) * 100)
+})
 
 const getSuccessRateColor = () => {
   if (successRate.value === 100) return 'text-green-600'
@@ -750,13 +860,138 @@ const formatTime = (timestamp: string) => {
   return new Date(timestamp).toLocaleTimeString()
 }
 
+// 서빙 방식별 특화 검증 로직
+const getValidationCriteria = computed(() => {
+  const strategy = formData.value.strategy
+  const servingTypeValue = servingType.value
+
+  switch (strategy) {
+    case 'lora-adapter':
+      return {
+        title: 'LoRA Adapter 검증',
+        criteria: [
+          { name: 'Adapter 로딩', condition: 'LoRA 어댑터가 성공적으로 로드됨' },
+          { name: '추론 정확성', condition: '기존 베이스 모델과 동일한 추론 결과 출력' },
+          { name: '응답 시간', condition: '평균 응답 시간이 기존 대비 150% 이내' },
+          { name: '무중단 전환', condition: '추론 서비스 중단 없음 (100% 가용성)' }
+        ]
+      }
+    case 'blue-green':
+      if (servingTypeValue === 'vLLM') {
+        return {
+          title: 'vLLM Blue-Green 검증',
+          criteria: [
+            { name: 'Green 환경 준비', condition: 'vLLM 새 버전이 정상 기동됨' },
+            { name: '모델 로딩', condition: '베이스 모델 및 어댑터 로딩 완료' },
+            { name: '추론 검증', condition: '새 환경에서 정상 추론 응답 확인' },
+            { name: '트래픽 전환', condition: '100% 트래픽이 Green으로 전환됨' },
+            { name: 'Blue 환경 정리', condition: '기존 Blue 환경 안전하게 종료됨' }
+          ]
+        }
+      } else {
+        return {
+          title: 'Standard Blue-Green 검증',
+          criteria: [
+            { name: 'Green 환경 준비', condition: '새 모델 서버가 정상 기동됨' },
+            { name: '헬스체크', condition: '새 환경 헬스체크 통과' },
+            { name: '추론 검증', condition: '새 모델로 정상 추론 수행됨' },
+            { name: '트래픽 전환', condition: '모든 트래픽이 새 환경으로 이동됨' }
+          ]
+        }
+      }
+    case 'canary':
+      return {
+        title: 'Canary 배포 검증',
+        criteria: [
+          { name: 'Canary 환경 준비', condition: '새 버전 Canary 서버 준비 완료' },
+          { name: '부분 트래픽 라우팅', condition: `${formData.value.trafficPercent}% 트래픽이 Canary로 분산됨` },
+          { name: '성능 모니터링', condition: 'Canary 버전 성능이 기준치 이상 유지됨' },
+          { name: '오류율 검증', condition: 'Canary 버전 오류율이 Stable 버전과 동일 수준' },
+          { name: '점진적 확장', condition: '트래픽 비율을 100%까지 안전하게 확장됨' }
+        ]
+      }
+    case 'modelmesh':
+      return {
+        title: 'ModelMesh 모델 교체 검증',
+        criteria: [
+          { name: '새 모델 등록', condition: 'ModelMesh에 새 모델이 등록됨' },
+          { name: '모델 로딩', condition: '새 모델이 메모리에 로드됨' },
+          { name: '모델 전환 감지', condition: '추론 요청이 새 모델로 라우팅됨' },
+          { name: '이전 모델 정리', condition: '사용되지 않는 이전 모델이 언로드됨' }
+        ]
+      }
+    default:
+      return {
+        title: '기본 검증',
+        criteria: [
+          { name: '서비스 가용성', condition: '배포 과정에서 서비스 중단 없음' },
+          { name: '추론 정확성', condition: '새 모델이 정상적으로 추론 수행' }
+        ]
+      }
+  }
+})
+
+// 검증 진행 상황 (로그 기반으로 추정)
+const validationProgress = computed(() => {
+  if (!deploymentLogs.value.length) return {}
+
+  const criteria = getValidationCriteria.value.criteria
+  const progress: Record<string, boolean> = {}
+
+  criteria.forEach(criterion => {
+    const name = criterion.name
+    let isCompleted = false
+
+    // 로그 메시지 기반 검증 완료 여부 판단
+    for (const log of deploymentLogs.value) {
+      const message = log.message.toLowerCase()
+
+      switch (name) {
+        case 'Adapter 로딩':
+        case '모델 로딩':
+          isCompleted = message.includes('load') && message.includes('success') ||
+                       message.includes('로드') && message.includes('완료')
+          break
+        case 'Green 환경 준비':
+        case 'Canary 환경 준비':
+          isCompleted = message.includes('ready') || message.includes('준비')
+          break
+        case '트래픽 전환':
+          isCompleted = message.includes('traffic') && message.includes('switch') ||
+                       message.includes('트래픽') && message.includes('전환')
+          break
+        case '추론 검증':
+          isCompleted = message.includes('inference') && message.includes('success') ||
+                       message.includes('추론') && message.includes('성공')
+          break
+        case '헬스체크':
+          isCompleted = message.includes('health') && message.includes('pass') ||
+                       message.includes('헬스') && message.includes('통과')
+          break
+        case '모델 전환 감지':
+          isCompleted = message.includes('model') && message.includes('switch') ||
+                       message.includes('모델') && message.includes('전환')
+          break
+      }
+
+      if (isCompleted) break
+    }
+
+    progress[name] = isCompleted
+  })
+
+  return progress
+})
+
 // 액션 함수들
 const startRedeploy = async () => {
   if (!isFormValid.value) return
 
   loading.value = true
   deploymentStarted.value = true
-  deploymentStatus.value = '재배포 시작 중...'
+
+  // 로그 초기화 및 WebSocket 연결
+  clearLogs()
 
   try {
     // 재배포 설정 구성
@@ -816,17 +1051,16 @@ const startRedeploy = async () => {
     const response = await deployInferenceService(namespace, serviceName, formData.value.strategy, config)
 
     if (response.code === '200') {
-      deploymentStatus.value = '재배포 진행 중...'
-      deploymentProgress.value = 20
+      // WebSocket 연결 시작
+      connectDeploymentLogs(namespace, serviceName, response.result?.deploymentId)
+      connectPodLogs(namespace, serviceName, formData.value.strategy)
+      connectTrafficMetrics(namespace, serviceName)
 
-      // 배포 로그 추가
-      deploymentLogs.value.push({
-        timestamp: new Date().toISOString(),
-        level: 'info',
-        message: `${formData.value.strategy} 재배포 시작됨`
-      })
+      // 추론 검증 시뮬레이션 시작 (실제로는 API에서 수행)
+      setTimeout(() => {
+        simulateInferenceValidation(namespace, serviceName)
+      }, 5000)
 
-      // TODO: WebSocket 연결로 실시간 모니터링 시작
       console.log('재배포 시작 성공:', response)
     } else {
       throw new Error(response.message || '재배포 시작 실패')
@@ -834,17 +1068,12 @@ const startRedeploy = async () => {
 
   } catch (error) {
     console.error('재배포 시작 실패:', error)
-    deploymentStatus.value = '재배포 실패'
-    deploymentLogs.value.push({
-      timestamp: new Date().toISOString(),
-      level: 'error',
-      message: `재배포 실패: ${error.message}`
-    })
     loading.value = false
   }
 }
 
 const cancelRedeploy = () => {
+  disconnectAll()
   router.push('/endpoints')
 }
 
@@ -1013,13 +1242,14 @@ onMounted(async () => {
     // 현재 설정 파싱
     parseCurrentSettings(endpointDetails, detectedServingType)
 
-    console.log('서비스 정보 로드 완료:', {
-      name: serviceName,
-      servingType: servingType.value,
-      status: currentStatus.value,
-      settings: currentSettings.value,
-      adaptersCount: currentSettings.value.adapters?.length || 0
-    })
+    // 서비스 정보 로드 완료
+    // console.log('서비스 정보 로드 완료:', {
+    //   name: serviceName,
+    //   servingType: servingType.value,
+    //   status: currentStatus.value,
+    //   settings: currentSettings.value,
+    //   adaptersCount: currentSettings.value.adapters?.length || 0
+    // })
   } catch (error) {
     console.error('서비스 정보 로드 실패:', error)
     // 기본값 유지
