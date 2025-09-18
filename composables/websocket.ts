@@ -48,10 +48,21 @@ export const useWebSocket = () => {
   const deploymentProgress = ref(0)
   const deploymentStatus = ref('재배포 준비 중...')
 
+  // 성능 최적화 상수
+  const MAX_LOGS = 1000
+  const LOG_TRIM_SIZE = 100
+
   // WebSocket URL 생성
   const getWebSocketUrl = (path: string): string => {
     const baseUrl = config.api.url.replace(/^http/, 'ws').replace(/\/$/, '')
     return `${baseUrl}${path}`
+  }
+
+  // 로그 메모리 관리
+  const trimLogs = (logs: Ref<any[]>) => {
+    if (logs.value.length > MAX_LOGS) {
+      logs.value = logs.value.slice(-MAX_LOGS + LOG_TRIM_SIZE)
+    }
   }
 
   // 배포 로그 WebSocket 연결
@@ -70,7 +81,13 @@ export const useWebSocket = () => {
     const ws = new WebSocket(url)
 
     ws.onopen = () => {
-      // console.log('배포 로그 WebSocket 연결됨')
+      // 연결 확인을 위한 초기 로그
+      deploymentLogs.value.push({
+        timestamp: new Date().toISOString(),
+        level: 'info',
+        message: `🔗 배포 로그 스트리밍 연결됨: ${serviceName}`,
+        source: 'websocket'
+      })
     }
 
     ws.onmessage = (event) => {
@@ -80,6 +97,19 @@ export const useWebSocket = () => {
         if (message.type === 'deployment_log') {
           const logEntry: LogEntry = message.data
           deploymentLogs.value.push(logEntry)
+          trimLogs(deploymentLogs)
+
+          // 추론 검증 로그는 inferenceLogs에도 추가 (백엔드 metadata 기반 + 키워드 매칭)
+          const inferenceKeywords = ['추론', 'inference', '검증', 'validation', '테스트', 'test', 'verify']
+          const isInferenceLog = logEntry.metadata?.type === 'inference' ||
+                                 inferenceKeywords.some(keyword =>
+                                   logEntry.message.toLowerCase().includes(keyword.toLowerCase())
+                                 )
+
+          if (isInferenceLog) {
+            inferenceLogs.value.push(logEntry)
+            trimLogs(inferenceLogs)
+          }
 
           // 진행률 업데이트 로직
           updateDeploymentProgress(logEntry)
@@ -91,20 +121,55 @@ export const useWebSocket = () => {
         } else if (message.type === 'deployment_complete') {
           deploymentProgress.value = 100
           deploymentStatus.value = '재배포 완료'
+
+          // 완료 로그 추가
+          deploymentLogs.value.push({
+            timestamp: new Date().toISOString(),
+            level: 'success',
+            message: `${serviceName} 재배포 완료`,
+            source: 'websocket'
+          })
         } else if (message.type === 'deployment_error') {
           deploymentStatus.value = '재배포 실패'
+
+          // 에러 로그 추가
+          deploymentLogs.value.push({
+            timestamp: new Date().toISOString(),
+            level: 'error',
+            message: `재배포 실패: ${message.data.error || '알 수 없는 오류'}`,
+            source: 'websocket'
+          })
         }
       } catch (error) {
         console.error('WebSocket 메시지 파싱 오류:', error)
+        // 파싱 오류도 로그로 표시
+        deploymentLogs.value.push({
+          timestamp: new Date().toISOString(),
+          level: 'error',
+          message: `메시지 파싱 오류: ${error.message}`,
+          source: 'websocket'
+        })
       }
     }
 
     ws.onerror = (error) => {
       console.error('배포 로그 WebSocket 오류:', error)
+      deploymentLogs.value.push({
+        timestamp: new Date().toISOString(),
+        level: 'error',
+        message: '❌ WebSocket 연결 오류 발생',
+        source: 'websocket'
+      })
     }
 
-    ws.onclose = () => {
-      // console.log('배포 로그 WebSocket 연결 종료')
+    ws.onclose = (event) => {
+      const isNormalClose = event.code === 1000
+      deploymentLogs.value.push({
+        timestamp: new Date().toISOString(),
+        level: isNormalClose ? 'info' : 'warning',
+        message: isNormalClose ? '✅ 배포 로그 연결이 정상 종료되었습니다' : '⚠️ 배포 로그 연결이 예상치 못하게 종료되었습니다',
+        source: 'websocket'
+      })
       connections.delete(key)
     }
 
@@ -128,7 +193,12 @@ export const useWebSocket = () => {
     const ws = new WebSocket(url)
 
     ws.onopen = () => {
-      // console.log('Pod 로그 WebSocket 연결됨')
+      deploymentLogs.value.push({
+        timestamp: new Date().toISOString(),
+        level: 'info',
+        message: `🔗 Pod 로그 연결됨: ${strategy} 전략`,
+        source: 'websocket'
+      })
     }
 
     ws.onmessage = (event) => {
@@ -138,6 +208,7 @@ export const useWebSocket = () => {
         if (message.type === 'pod_log') {
           const podLogEntry: PodLogEntry = message.data
           podLogs.value.push(podLogEntry)
+          trimLogs(podLogs)
         }
       } catch (error) {
         console.error('Pod 로그 WebSocket 메시지 파싱 오류:', error)
@@ -146,10 +217,22 @@ export const useWebSocket = () => {
 
     ws.onerror = (error) => {
       console.error('Pod 로그 WebSocket 오류:', error)
+      deploymentLogs.value.push({
+        timestamp: new Date().toISOString(),
+        level: 'error',
+        message: '❌ Pod 로그 연결 오류 발생',
+        source: 'websocket'
+      })
     }
 
-    ws.onclose = () => {
-      // console.log('Pod 로그 WebSocket 연결 종료')
+    ws.onclose = (event) => {
+      const isNormalClose = event.code === 1000
+      deploymentLogs.value.push({
+        timestamp: new Date().toISOString(),
+        level: isNormalClose ? 'info' : 'warning',
+        message: isNormalClose ? '✅ Pod 로그 연결이 정상 종료되었습니다' : '⚠️ Pod 로그 연결이 예상치 못하게 종료되었습니다',
+        source: 'websocket'
+      })
       connections.delete(key)
     }
 
@@ -166,10 +249,16 @@ export const useWebSocket = () => {
     }
 
     const url = getWebSocketUrl(`/inference-services/${namespace}/${serviceName}/traffic-metrics`)
+
     const ws = new WebSocket(url)
 
     ws.onopen = () => {
-      // console.log('트래픽 메트릭 WebSocket 연결됨')
+      deploymentLogs.value.push({
+        timestamp: new Date().toISOString(),
+        level: 'info',
+        message: `📊 트래픽 메트릭 연결됨: ${serviceName}`,
+        source: 'websocket'
+      })
     }
 
     ws.onmessage = (event) => {
@@ -186,10 +275,22 @@ export const useWebSocket = () => {
 
     ws.onerror = (error) => {
       console.error('트래픽 메트릭 WebSocket 오류:', error)
+      deploymentLogs.value.push({
+        timestamp: new Date().toISOString(),
+        level: 'error',
+        message: '❌ 트래픽 메트릭 연결 오류 발생',
+        source: 'websocket'
+      })
     }
 
-    ws.onclose = () => {
-      // console.log('트래픽 메트릭 WebSocket 연결 종료')
+    ws.onclose = (event) => {
+      const isNormalClose = event.code === 1000
+      deploymentLogs.value.push({
+        timestamp: new Date().toISOString(),
+        level: isNormalClose ? 'info' : 'warning',
+        message: isNormalClose ? '✅ 트래픽 메트릭 연결이 정상 종료되었습니다' : '⚠️ 트래픽 메트릭 연결이 예상치 못하게 종료되었습니다',
+        source: 'websocket'
+      })
       connections.delete(key)
     }
 
