@@ -1056,10 +1056,21 @@ const startRedeploy = async () => {
       connectPodLogs(namespace, serviceName, formData.value.strategy)
       connectTrafficMetrics(namespace, serviceName)
 
-      // 추론 검증 시뮬레이션 시작 (실제로는 API에서 수행)
+      // 추론 검증은 백엔드에서 WebSocket으로 자동 전송됨
+
+      // 타임아웃 처리 (10분)
       setTimeout(() => {
-        simulateInferenceValidation(namespace, serviceName)
-      }, 5000)
+        if (deploymentProgress.value < 100) {
+          // 타임아웃 경고 로그 추가
+          const timeoutLog = {
+            timestamp: new Date().toISOString(),
+            level: 'warning' as const,
+            message: '⏰ 배포 시간이 예상보다 오래 걸리고 있습니다 (10분 경과)',
+            source: 'frontend'
+          }
+          deploymentLogs.value.push(timeoutLog)
+        }
+      }, 600000) // 10분
 
       console.log('재배포 시작 성공:', response)
     } else {
