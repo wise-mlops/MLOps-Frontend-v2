@@ -1050,7 +1050,7 @@ const startRedeploy = async () => {
     // 재배포 API 호출
     const response = await deployInferenceService(namespace, serviceName, formData.value.strategy, config)
 
-    if (response.code === '200') {
+    if (response.code === 130200) {
       // WebSocket 연결 시작
       connectDeploymentLogs(namespace, serviceName, response.result?.deploymentId)
       connectPodLogs(namespace, serviceName, formData.value.strategy)
