@@ -343,3 +343,105 @@ export const isDirectArrayResult = (result: any): boolean => {
 export const isObjectResult = (result: any): boolean => {
   return !!(result && typeof result === 'object' && !Array.isArray(result));
 }
+
+// === 재배포 관련 함수들 ===
+
+// 서빙 방식 감지 함수
+export const detectServingType = (endpointDetails: any): 'standard' | 'vllm' | 'modelmesh' => {
+  const namespace = endpointDetails.result?.metadata?.namespace
+  if (namespace === 'modelmesh-serving') {
+    return 'modelmesh'
+  }
+
+  const predictor = endpointDetails.result?.spec?.predictor
+  if (predictor?.containers?.[0]?.image?.includes('vllm')) {
+    return 'vllm'
+  }
+
+  return 'standard'
+}
+
+// 트래픽 상태 확인 (단순화)
+export const getTrafficStatus = (endpointDetails: any): 'distributed' | 'single' => {
+  // revision별 트래픽 분산 여부 확인
+  const traffic = endpointDetails.result?.status?.traffic || []
+  const hasMultipleRevisions = traffic.filter((t: any) => t.percent > 0).length > 1
+
+  return hasMultipleRevisions ? 'distributed' : 'single'
+}
+
+// 재배포 실행
+export const deployInferenceService = async (
+  namespace: string,
+  name: string,
+  strategy: string,
+  config: any
+) => {
+  const deploymentRequest = {
+    strategy: strategy,
+    config: config,
+    testPayload: null // 기본 페이로드 사용
+  }
+
+  const response = await $fetch<ResponseBody>(`/inference-services/${namespace}/${name}/deploy`, {
+    method: 'POST',
+    baseURL: useAppConfig().api.url,
+    body: deploymentRequest,
+    headers: {
+      "Content-Type": "application/json"
+    }
+  })
+
+  return response
+}
+
+// 배포 상태 조회
+export const getDeploymentStatus = async (
+  namespace: string,
+  name: string,
+  deploymentId?: string
+) => {
+  let url = `/inference-services/${namespace}/${name}/deployment-status`
+  if (deploymentId) {
+    url += `?deployment_id=${deploymentId}`
+  }
+
+  const response = await $fetch<ResponseBody>(url, {
+    method: 'GET',
+    baseURL: useAppConfig().api.url
+  })
+
+  return response
+}
+
+// 배포 취소
+export const cancelDeployment = async (
+  namespace: string,
+  name: string,
+  deploymentId: string
+) => {
+  const response = await $fetch<ResponseBody>(`/inference-services/${namespace}/${name}/deployment/${deploymentId}`, {
+    method: 'DELETE',
+    baseURL: useAppConfig().api.url
+  })
+
+  return response
+}
+
+// 배포 롤백
+export const rollbackDeployment = async (
+  namespace: string,
+  name: string,
+  rollbackRequest: { reason?: string; force?: boolean }
+) => {
+  const response = await $fetch<ResponseBody>(`/inference-services/${namespace}/${name}/rollback`, {
+    method: 'POST',
+    baseURL: useAppConfig().api.url,
+    body: rollbackRequest,
+    headers: {
+      "Content-Type": "application/json"
+    }
+  })
+
+  return response
+}

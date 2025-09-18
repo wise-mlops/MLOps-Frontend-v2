@@ -20,6 +20,9 @@
     <template #predictor-data="{ row }">
       <UBadge :label="getPredictorType(row)" :color="getPredictorTypeColor(row)" />
     </template>
+    <template #servingType-data="{ row }">
+      <UBadge :label="getServingType(row)" :color="getServingTypeColor(row)" />
+    </template>
     <template #runtime-data="{ row }">
       <div>
         {{ getRuntime(row) }}
@@ -56,6 +59,14 @@
           <UButton
             @click="detail(row.name)"
             icon="i-heroicons-eye"
+            variant="ghost"
+            size="sm"
+          />
+        </UTooltip>
+        <UTooltip text="재배포">
+          <UButton
+            @click="redeploy(row.name)"
+            icon="i-heroicons-arrow-path"
             variant="ghost"
             size="sm"
           />
@@ -289,6 +300,40 @@ const runInference = (endpointName: string) => {
   navigateTo(`/endpoints/inference/${endpointName}`)
 }
 
+// 서빙 방식 감지 함수 (네임스페이스와 컨테이너 이미지 기반)
+const getServingType = (row: any) => {
+  // ModelMesh: modelmesh-serving 네임스페이스
+  if (row.namespace === 'modelmesh-serving') {
+    return 'ModelMesh'
+  }
+
+  const predictor = row.predictorSpec
+  // vLLM: 커스텀 컨테이너 + vllm 이미지
+  if (predictor?.containers?.[0]?.image?.includes('vllm')) {
+    return 'vLLM'
+  }
+
+  // 나머지는 Standard
+  return 'Standard'
+}
+
+// 서빙 방식별 색상
+const getServingTypeColor = (row: any) => {
+  const servingType = getServingType(row)
+  switch (servingType) {
+    case 'vLLM':
+      return 'blue'
+    case 'ModelMesh':
+      return 'purple'
+    default: // Standard
+      return 'gray'
+  }
+}
+
+const redeploy = (endpointName: string) => {
+  navigateTo(`/endpoints/redeploy/${endpointName}`)
+}
+
 onMounted(() => {
   loadEndpoints()
 })
@@ -325,6 +370,10 @@ const endpointColumns = ref([
   {
     key: 'predictor',
     label: 'Predictor'
+  },
+  {
+    key: 'servingType',
+    label: 'Serving Type'
   },
   {
     key: 'runtime',
