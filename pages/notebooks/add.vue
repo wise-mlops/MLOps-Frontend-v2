@@ -206,8 +206,8 @@ const images = ref([
     value: 'registry.gitlab.com/wisenut-research/research/2022-iitp-mlops/mlops-platform/mlops-api-v2/tensorflow:1.8.0'
   },
   {
-    label: 'jupyter-keras:v1.8.0',
-    value: 'registry.gitlab.com/wisenut-research/research/2022-iitp-mlops/mlops-platform/mlops-api-v2/keras:1.8.0'
+    label: 'jupyter-keras:v1.9.0',
+    value: 'registry.gitlab.com/wisenut-research/research/2022-iitp-mlops/mlops-platform/mlops-api-v2/keras:1.9.0'
   },
   {
     label: 'jupyter-mxnet:1.9.1',
