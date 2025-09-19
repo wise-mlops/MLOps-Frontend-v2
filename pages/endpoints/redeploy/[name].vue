@@ -389,18 +389,7 @@
                 </UFormGroup>
               </div>
 
-              <!-- ModelMesh 추가 설정 -->
-              <div v-if="formData.strategy === 'modelmesh'" class="space-y-4">
-                <UFormGroup label="모델 포맷">
-                  <USelectMenu
-                    v-model="formData.modelFormat"
-                    :options="modelFormatOptions"
-                    option-attribute="label"
-                    value-attribute="value"
-                    :disabled="loading"
-                  />
-                </UFormGroup>
-              </div>
+              <!-- ModelMesh는 추가 설정 없음 (기존 모델 포맷 유지) -->
             </div>
 
             <!-- 재배포 실행 버튼 -->
@@ -659,31 +648,70 @@
               </div>
             </div>
 
-            <!-- 추론 통계 -->
+            <!-- 배포 보고서 -->
             <div v-if="activeTab === 3" class="space-y-4">
-              <!-- 추론 통계 메트릭 -->
-              <div class="grid grid-cols-2 gap-4">
-                <div class="bg-white dark:bg-gray-700 p-4 rounded">
-                  <div class="text-sm text-gray-500">총 요청</div>
-                  <div class="text-2xl font-bold">{{ inferenceStats.total }}</div>
-                </div>
-                <div class="bg-white dark:bg-gray-700 p-4 rounded">
-                  <div class="text-sm text-gray-500">성공 요청</div>
-                  <div class="text-2xl font-bold text-green-600">{{ inferenceStats.success }}</div>
-                </div>
-                <div class="bg-white dark:bg-gray-700 p-4 rounded">
-                  <div class="text-sm text-gray-500">실패 요청</div>
-                  <div class="text-2xl font-bold text-red-600">{{ inferenceStats.error }}</div>
-                </div>
-                <div class="bg-white dark:bg-gray-700 p-4 rounded">
-                  <div class="text-sm text-gray-500">성공률</div>
-                  <div class="text-2xl font-bold" :class="getSuccessRateColor()">{{ inferenceStats.successRate }}%</div>
+              <!-- 배포 요약 -->
+              <div class="bg-white dark:bg-gray-700 p-6 rounded-lg">
+                <h4 class="text-lg font-semibold mb-4 flex items-center">
+                  <UIcon name="i-heroicons-chart-bar" class="w-5 h-5 mr-2 text-blue-500" />
+                  배포 요약
+                </h4>
+                <div class="grid grid-cols-2 gap-4">
+                  <div class="space-y-2">
+                    <div class="text-sm text-gray-500">배포 전략</div>
+                    <div class="text-lg font-medium">{{ formData.strategy || '선택 안됨' }}</div>
+                  </div>
+                  <div class="space-y-2">
+                    <div class="text-sm text-gray-500">서빙 방식</div>
+                    <div class="text-lg font-medium">{{ servingType }}</div>
+                  </div>
+                  <div class="space-y-2">
+                    <div class="text-sm text-gray-500">성공률</div>
+                    <div class="text-lg font-bold" :class="getSuccessRateColor()">{{ inferenceStats.successRate }}%</div>
+                  </div>
+                  <div class="space-y-2">
+                    <div class="text-sm text-gray-500">추론 검증</div>
+                    <div class="text-lg font-medium">{{ inferenceStats.total }}회 실행</div>
+                  </div>
                 </div>
               </div>
 
-              <!-- 검증 기준 -->
-              <div class="border-t pt-4">
-                <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-4">{{ getValidationCriteria.title }}</h4>
+              <!-- 배포 타임라인 -->
+              <div class="bg-white dark:bg-gray-700 p-6 rounded-lg">
+                <h4 class="text-lg font-semibold mb-4 flex items-center">
+                  <UIcon name="i-heroicons-clock" class="w-5 h-5 mr-2 text-green-500" />
+                  배포 타임라인
+                </h4>
+                <div class="space-y-3">
+                  <div
+                    v-for="(log, index) in deploymentLogs.slice(-5)"
+                    :key="index"
+                    class="flex items-center p-3 bg-gray-50 dark:bg-gray-800 rounded"
+                  >
+                    <UIcon
+                      :name="log.level === 'error' ? 'i-heroicons-exclamation-triangle' :
+                            log.level === 'warning' ? 'i-heroicons-exclamation-circle' :
+                            log.level === 'success' ? 'i-heroicons-check-circle' : 'i-heroicons-information-circle'"
+                      :class="getLogLevelClass(log.level)"
+                      class="w-4 h-4 mr-3 flex-shrink-0"
+                    />
+                    <div class="flex-1">
+                      <div class="text-sm font-medium">{{ log.message }}</div>
+                      <div class="text-xs text-gray-500">{{ formatTime(log.timestamp) }}</div>
+                    </div>
+                  </div>
+                  <div v-if="deploymentLogs.length === 0" class="text-gray-500 text-center py-4">
+                    배포 시작 후 타임라인이 표시됩니다
+                  </div>
+                </div>
+              </div>
+
+              <!-- 검증 결과 -->
+              <div class="bg-white dark:bg-gray-700 p-6 rounded-lg">
+                <h4 class="text-lg font-semibold mb-4 flex items-center">
+                  <UIcon name="i-heroicons-shield-check" class="w-5 h-5 mr-2 text-purple-500" />
+                  {{ getValidationCriteria.title }}
+                </h4>
                 <div class="space-y-2">
                   <div
                     v-for="criterion in getValidationCriteria.criteria"
@@ -705,8 +733,44 @@
                 </div>
               </div>
 
-              <div v-if="!metrics" class="text-gray-500 text-center py-8">
-                메트릭 데이터를 수집하는 중...
+              <!-- 문서 다운로드 -->
+              <div class="bg-white dark:bg-gray-700 p-6 rounded-lg">
+                <h4 class="text-lg font-semibold mb-4 flex items-center">
+                  <UIcon name="i-heroicons-document-arrow-down" class="w-5 h-5 mr-2 text-indigo-500" />
+                  보고서 다운로드
+                </h4>
+                <div class="flex gap-3">
+                  <UButton
+                    @click="downloadReport('json')"
+                    variant="outline"
+                    size="sm"
+                    icon="i-heroicons-code-bracket"
+                    :disabled="!deploymentStarted"
+                  >
+                    JSON 다운로드
+                  </UButton>
+                  <UButton
+                    @click="downloadReport('pdf')"
+                    variant="outline"
+                    size="sm"
+                    icon="i-heroicons-document-text"
+                    :disabled="!deploymentStarted"
+                  >
+                    PDF 다운로드
+                  </UButton>
+                  <UButton
+                    @click="downloadReport('excel')"
+                    variant="outline"
+                    size="sm"
+                    icon="i-heroicons-table-cells"
+                    :disabled="!deploymentStarted"
+                  >
+                    Excel 다운로드
+                  </UButton>
+                </div>
+                <div v-if="!deploymentStarted" class="text-xs text-gray-500 mt-2">
+                  배포 시작 후 다운로드가 가능합니다
+                </div>
               </div>
             </div>
           </div>
@@ -881,7 +945,7 @@ const isFormValid = computed(() => {
       }
       return formData.value.storageUri
     case 'modelmesh':
-      return formData.value.storageUri && formData.value.modelFormat
+      return formData.value.storageUri
     default:
       return formData.value.storageUri
   }
@@ -899,8 +963,6 @@ const {
   connectDeploymentLogs,
   connectPodLogs,
   connectInferenceLogs,
-  connectTrafficMetrics,
-  simulateInferenceValidation,
   disconnectAll,
   clearLogs
 } = useWebSocket()
@@ -911,7 +973,7 @@ const logTabs = [
   { label: '배포 로그' },
   { label: '추론 검증' },
   { label: 'Pod 로그' },
-  { label: '추론 통계' }
+  { label: '배포 보고서' }
 ]
 
 // 유틸리티 함수들
@@ -1261,8 +1323,7 @@ const startRedeploy = async () => {
         break
       case 'modelmesh':
         config = {
-          modelPath: formData.value.storageUri,
-          modelFormat: formData.value.modelFormat
+          modelPath: formData.value.storageUri
         }
         break
       case 'blue-green':
@@ -1297,22 +1358,19 @@ const startRedeploy = async () => {
     const namespace = servingType.value === 'ModelMesh' ? 'modelmesh-serving' : 'kubeflow-user-example-com'
 
     // 재배포 API 호출
-    console.log('🚀 재배포 API 호출 시작:', { namespace, serviceName, strategy: formData.value.strategy, config })
     const response = await deployInferenceService(namespace, serviceName, formData.value.strategy, config)
-    console.log('📡 재배포 API 응답:', response)
 
     if (response.code === 130200) {
-      console.log('✅ API 성공 - WebSocket 연결 시작:', response.result?.deploymentId)
-      // WebSocket 연결 시작
-      connectDeploymentLogs(namespace, serviceName, response.result?.deploymentId)
-      connectPodLogs(namespace, serviceName, formData.value.strategy)
-      connectInferenceLogs(namespace, serviceName)
-      connectTrafficMetrics(namespace, serviceName)
+      // 응답에서 deployment_id 추출
+      const deploymentId = response.result?.deploymentId
 
-      // 추론 검증은 백엔드에서 inference_log WebSocket으로 자동 전송됨
-      console.log('🎯 추론 로그 WebSocket 연결 완료 - 백엔드에서 실시간 데이터 수신 대기 중')
+      // WebSocket 연결 시작 (deployment_id 포함)
+      connectDeploymentLogs(namespace, serviceName, deploymentId)
+      connectPodLogs(namespace, serviceName, formData.value.strategy, deploymentId)
+      connectInferenceLogs(namespace, serviceName, deploymentId)
 
-      console.log('재배포 시작 성공:', response)
+      // 로딩 상태 해제
+      loading.value = false
     } else {
       throw new Error(response.message || '재배포 시작 실패')
     }
@@ -1503,8 +1561,9 @@ onMounted(async () => {
 // 추론 로그 자동 스크롤
 const logContainer = ref<HTMLElement>()
 
-// 추론 로그가 업데이트될 때 자동 스크롤
-watch(inferenceLogs, () => {
+// 추론 로그 자동 스크롤
+watch(inferenceLogs, (newLogs) => {
+  // 추론 로그가 업데이트될 때 자동 스크롤
   nextTick(() => {
     if (logContainer.value && activeTab.value === 1) {
       logContainer.value.scrollTop = logContainer.value.scrollHeight
@@ -1516,6 +1575,56 @@ const toolbarLinks = ref([
   [],
   []
 ])
+
+// 보고서 다운로드 함수
+const downloadReport = (format: 'json' | 'pdf' | 'excel') => {
+  // 보고서 데이터 생성
+  const reportData = {
+    serviceName: serviceName,
+    namespace: route.query.namespace || 'kubeflow-user-example-com',
+    strategy: formData.value.strategy,
+    servingType: servingType.value,
+    timestamp: new Date().toISOString(),
+    summary: {
+      deploymentStarted: deploymentStarted.value,
+      deploymentProgress: deploymentProgress.value,
+      deploymentStatus: deploymentStatus.value,
+      inferenceStats: inferenceStats.value
+    },
+    timeline: deploymentLogs.value.map(log => ({
+      timestamp: log.timestamp,
+      level: log.level,
+      message: log.message,
+      source: log.source
+    })),
+    validationCriteria: getValidationCriteria.value,
+    validationProgress: validationProgress.value,
+    podLogs: podLogs.value.slice(-50), // 최근 50개만
+    inferenceLogs: inferenceLogs.value.slice(-50) // 최근 50개만
+  }
+
+  const timestamp = new Date().toISOString().slice(0, 16).replace(/:/g, '-')
+  const filename = `deployment-report-${serviceName}-${timestamp}`
+
+  if (format === 'json') {
+    // JSON 다운로드
+    const blob = new Blob([JSON.stringify(reportData, null, 2)], {
+      type: 'application/json'
+    })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${filename}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  } else if (format === 'pdf') {
+    // PDF 다운로드 (추후 구현)
+    alert('PDF 다운로드는 추후 구현 예정입니다')
+  } else if (format === 'excel') {
+    // Excel 다운로드 (추후 구현)
+    alert('Excel 다운로드는 추후 구현 예정입니다')
+  }
+}
 </script>
 
 <style scoped>
