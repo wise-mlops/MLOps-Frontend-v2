@@ -150,7 +150,7 @@ const notebook = ref({
       }
     ],
     image_pull_secrets: [
-      "backend-image-pull-secret-v2","backend-image-pull-secret"
+      "backend-image-pull-secret-v2"
     ],
     volumes: [],
     service_account_name: "default"
