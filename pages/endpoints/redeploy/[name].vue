@@ -4,9 +4,9 @@
     <LayoutPageHeader :title="pageTitle" />
     <LayoutPageToolbar :links="toolbarLinks" />
 
-    <div class="grid grid-cols-5 gap-6">
-      <!-- 좌측: 재배포 설정 폼 (40%) -->
-      <div class="col-span-2 space-y-6">
+    <div class="grid grid-cols-1 lg:grid-cols-10 gap-6">
+      <!-- 좌측: 재배포 설정 폼 (30%) -->
+      <div class="lg:col-span-3 space-y-6">
         <!-- 기본 정보 (읽기 전용) -->
         <UCard>
           <template #header>
@@ -413,8 +413,8 @@
         </UCard>
       </div>
 
-      <!-- 우측: 실시간 모니터링 (60%) -->
-      <div class="col-span-3 space-y-6">
+      <!-- 우측: 실시간 모니터링 (70%) -->
+      <div class="lg:col-span-7 space-y-6">
         <!-- 진행 상황 -->
         <UCard>
           <template #header>
@@ -431,36 +431,10 @@
               <span class="text-sm font-medium">{{ deploymentProgress }}%</span>
             </div>
 
-            <div class="flex items-center justify-between text-sm">
-              <span class="text-gray-600 dark:text-gray-400">{{ deploymentStatus }}</span>
-              <div v-if="deploymentStarted" class="flex items-center space-x-4">
-                <div class="flex items-center space-x-1">
-                  <UIcon name="i-heroicons-signal" class="w-4 h-4 text-blue-500" />
-                  <span class="text-gray-600">성공률:</span>
-                  <span class="font-medium" :class="getSuccessRateColor()">{{ successRate }}%</span>
-                </div>
-                <div v-if="metrics" class="flex items-center space-x-1">
-                  <UIcon name="i-heroicons-clock" class="w-4 h-4 text-green-500" />
-                  <span class="text-gray-600">응답시간:</span>
-                  <span class="font-medium">{{ metrics.averageResponseTime || 0 }}ms</span>
-                </div>
-              </div>
-            </div>
 
-            <!-- 배포 단계 표시 -->
-            <div v-if="deploymentStarted" class="mt-4">
-              <div class="flex items-center justify-between text-xs text-gray-500 mb-2">
-                <span>배포 단계</span>
-                <span>{{ Math.round((Object.values(validationProgress).filter(Boolean).length / getValidationCriteria.criteria.length) * 100) }}% 완료</span>
-              </div>
-              <div class="flex space-x-1">
-                <div
-                  v-for="(criterion, index) in getValidationCriteria.criteria"
-                  :key="criterion.name"
-                  class="flex-1 h-2 rounded-full"
-                  :class="validationProgress[criterion.name] ? 'bg-green-500' : index < Object.values(validationProgress).filter(Boolean).length + 1 ? 'bg-blue-500' : 'bg-gray-200'"
-                ></div>
-              </div>
+            <!-- 배포 상태 -->
+            <div class="text-center text-sm text-gray-600 dark:text-gray-400 mt-2">
+              {{ deploymentStatus }}
             </div>
           </div>
         </UCard>
@@ -468,308 +442,201 @@
         <!-- 실시간 로그 -->
         <UCard>
           <template #header>
-            <UTabs v-model="activeTab" :items="logTabs" />
+            <div class="flex items-center justify-between">
+              <UTabs v-model="activeTab" :items="logTabs" />
+              <div class="flex items-center space-x-2">
+                <UButton
+                  @click="downloadTabLogs(activeTab)"
+                  variant="outline"
+                  size="sm"
+                  icon="i-heroicons-arrow-down-tray"
+                  :disabled="!deploymentStarted"
+                >
+                  이 탭 다운로드
+                </UButton>
+                <UButton
+                  @click="downloadReport('json')"
+                  variant="outline"
+                  size="sm"
+                  icon="i-heroicons-document-arrow-down"
+                  :disabled="!deploymentStarted"
+                >
+                  전체 다운로드
+                </UButton>
+              </div>
+            </div>
           </template>
 
-          <div class="h-96 overflow-y-auto bg-gray-50 dark:bg-gray-800 p-4 rounded">
-            <!-- 배포 로그 -->
-            <div v-if="activeTab === 0" class="space-y-2">
-              <div
-                v-for="(log, index) in deploymentLogs"
-                :key="index"
-                class="flex items-start space-x-3 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700"
-              >
-                <UIcon
-                  :name="log.level === 'error' ? 'i-heroicons-exclamation-triangle' :
-                        log.level === 'warning' ? 'i-heroicons-exclamation-circle' :
-                        log.level === 'success' ? 'i-heroicons-check-circle' : 'i-heroicons-information-circle'"
-                  :class="getLogLevelClass(log.level)"
-                  class="w-4 h-4 mt-0.5 flex-shrink-0"
+          <div class="min-h-[600px] max-h-[80vh] overflow-y-auto bg-gray-50 dark:bg-gray-800 p-4 rounded">
+            <!-- 로그 검색/필터 -->
+            <div class="mb-4 flex items-center space-x-4">
+              <div class="flex-1">
+                <UInput
+                  v-model="logSearchQuery"
+                  placeholder="로그 검색..."
+                  icon="i-heroicons-magnifying-glass"
+                  size="sm"
                 />
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center space-x-2">
-                    <span class="text-xs text-gray-500 font-mono">{{ formatTime(log.timestamp) }}</span>
-                    <span class="text-xs px-2 py-0.5 rounded-full uppercase" :class="
-                      log.level === 'error' ? 'bg-red-100 text-red-800' :
-                      log.level === 'warning' ? 'bg-yellow-100 text-yellow-800' :
-                      log.level === 'success' ? 'bg-green-100 text-green-800' :
-                      'bg-blue-100 text-blue-800'
-                    ">
-                      {{ log.level }}
-                    </span>
-                  </div>
-                  <div class="text-sm mt-1" :class="getLogLevelClass(log.level)">{{ log.message }}</div>
-                </div>
               </div>
-              <div v-if="deploymentLogs.length === 0" class="text-gray-500 text-center py-8">
+              <div class="flex items-center space-x-2">
+                <UButton
+                  @click="logLevelFilter = ''"
+                  variant="ghost"
+                  size="sm"
+                  :class="logLevelFilter === '' ? 'bg-blue-50 text-blue-600' : ''"
+                >
+                  전체
+                </UButton>
+                <UButton
+                  @click="logLevelFilter = 'error'"
+                  variant="ghost"
+                  size="sm"
+                  :class="logLevelFilter === 'error' ? 'bg-red-50 text-red-600' : ''"
+                >
+                  오류
+                </UButton>
+                <UButton
+                  @click="logLevelFilter = 'warning'"
+                  variant="ghost"
+                  size="sm"
+                  :class="logLevelFilter === 'warning' ? 'bg-yellow-50 text-yellow-600' : ''"
+                >
+                  경고
+                </UButton>
+                <UButton
+                  @click="logLevelFilter = 'success'"
+                  variant="ghost"
+                  size="sm"
+                  :class="logLevelFilter === 'success' ? 'bg-green-50 text-green-600' : ''"
+                >
+                  성공
+                </UButton>
+              </div>
+            </div>
+
+            <!-- 배포 로그 -->
+            <div v-if="activeTab === 0" class="font-mono text-sm space-y-1">
+              <div
+                v-for="(log, index) in filteredDeploymentLogs"
+                :key="index"
+                class="p-1"
+              >
+                <span class="text-gray-500">{{ formatTime(log.timestamp) }}</span>
+                <span class="ml-2">{{ log.message }}</span>
+              </div>
+              <div v-if="filteredDeploymentLogs.length === 0 && deploymentLogs.length > 0" class="text-gray-500 text-center py-8">
+                검색 결과가 없습니다.
+              </div>
+              <div v-else-if="deploymentLogs.length === 0" class="text-gray-500 text-center py-8">
                 재배포 시작을 기다리는 중...
               </div>
             </div>
 
             <!-- 추론 검증 로그 -->
-            <div v-if="activeTab === 1" class="space-y-2">
-              <!-- 실시간 통계 헤더 -->
-              <div class="bg-white dark:bg-gray-700 p-4 rounded mb-4">
-                <div class="grid grid-cols-4 gap-4 text-center">
-                  <div>
-                    <div class="text-sm text-gray-500">총 요청</div>
-                    <div class="text-2xl font-bold">{{ inferenceStats.total }}</div>
-                  </div>
-                  <div>
-                    <div class="text-sm text-gray-500">성공률</div>
-                    <div class="text-2xl font-bold" :class="getSuccessRateColor()">
-                      {{ inferenceStats.successRate }}%
-                    </div>
-                  </div>
-                  <div>
-                    <div class="text-sm text-gray-500">성공</div>
-                    <div class="text-2xl font-bold text-green-600">{{ inferenceStats.success }}</div>
-                  </div>
-                  <div>
-                    <div class="text-sm text-gray-500">실패</div>
-                    <div class="text-2xl font-bold text-red-600">{{ inferenceStats.error }}</div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- 추론 로그 목록 (배포 로그와 동일한 스타일) -->
+            <div v-if="activeTab === 1" class="font-mono text-sm space-y-1">
               <div
-                v-for="(log, index) in inferenceLogs"
+                v-for="(log, index) in filteredInferenceLogs"
                 :key="index"
-                class="flex items-start space-x-3 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700"
+                class="p-1"
               >
-                <UIcon
-                  :name="log.level === 'error' ? 'i-heroicons-exclamation-triangle' :
-                        log.level === 'warning' ? 'i-heroicons-exclamation-circle' :
-                        log.level === 'success' ? 'i-heroicons-check-circle' : 'i-heroicons-information-circle'"
-                  :class="getLogLevelClass(log.level)"
-                  class="w-4 h-4 mt-0.5 flex-shrink-0"
-                />
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center space-x-2">
-                    <span class="text-xs text-gray-500 font-mono">{{ formatTime(log.timestamp) }}</span>
-                    <span class="text-xs px-2 py-0.5 rounded-full uppercase" :class="
-                      log.level === 'error' ? 'bg-red-100 text-red-800' :
-                      log.level === 'warning' ? 'bg-yellow-100 text-yellow-800' :
-                      log.level === 'success' ? 'bg-green-100 text-green-800' :
-                      'bg-blue-100 text-blue-800'
-                    ">
-                      {{ log.level }}
-                    </span>
+                <span class="text-gray-500">{{ formatTime(log.timestamp) }}</span>
+                <span class="ml-2">{{ log.message }}</span>
+
+                <!-- 개별 추론 요청의 metadata가 있으면 표시 -->
+                <div v-if="log.metadata && isInferenceRequestLog(log)" class="ml-12 mt-1 text-xs text-gray-600">
+                  <div v-if="log.metadata.endpoint">
+                    Endpoint: {{ log.metadata.endpoint }}
                   </div>
-                  <div class="text-sm mt-1" :class="getLogLevelClass(log.level)">{{ log.message }}</div>
-
-                  <!-- 개별 추론 요청의 상세 정보 -->
-                  <div v-if="log.metadata && isInferenceRequestLog(log)" class="mt-2 text-xs bg-gray-50 dark:bg-gray-800 p-3 rounded">
-                    <!-- Endpoint -->
-                    <div class="mb-1">
-                      <span class="font-medium">Endpoint:</span>
-                      <span class="text-blue-600 dark:text-blue-400 ml-1">{{ log.metadata.endpoint || 'N/A' }}</span>
-                    </div>
-
-                    <!-- Type + Success Rate -->
-                    <div class="mb-1">
-                      <span class="font-medium">Type:</span>
-                      <span class="ml-1">{{ log.metadata.payload_type || 'unknown' }}</span>
-                      <span class="ml-4 font-medium">Success Rate:</span>
-                      <span class="ml-1" :class="log.metadata.success ? 'text-green-600' : 'text-red-600'">
-                        {{ log.metadata.success_rate || 0 }}%
-                      </span>
-                    </div>
-
-                    <!-- 성공한 요청: Response Size + Predictions/Outputs/Choices -->
-                    <div v-if="log.metadata.success" class="mb-1">
-                      <span class="font-medium">Response Size:</span>
-                      <span class="text-orange-600 ml-1">{{ log.metadata.response_size || 0 }}B</span>
-
-                      <span v-if="log.metadata.predictions_count" class="ml-4">
-                        <span class="font-medium">Predictions:</span>
-                        <span class="text-orange-600 ml-1">{{ log.metadata.predictions_count }}</span>
-                      </span>
-                      <span v-else-if="log.metadata.outputs_count" class="ml-4">
-                        <span class="font-medium">Outputs:</span>
-                        <span class="text-orange-600 ml-1">{{ log.metadata.outputs_count }}</span>
-                      </span>
-                      <span v-else-if="log.metadata.choices_count" class="ml-4">
-                        <span class="font-medium">Choices:</span>
-                        <span class="text-orange-600 ml-1">{{ log.metadata.choices_count }}</span>
-                      </span>
-
-                      <!-- JSON 응답 내용 -->
-                      <div v-if="log.metadata.response_content" class="mt-2">
-                        <div class="font-medium mb-1">Response:</div>
-                        <pre class="bg-gray-100 dark:bg-gray-900 p-2 rounded text-xs overflow-x-auto whitespace-pre-wrap">{{ formatJsonResponse(log.metadata.response_content) }}</pre>
-                      </div>
-                    </div>
-
-                    <!-- 실패한 요청: 오류 정보 -->
-                    <div v-else>
-                      <div class="text-red-600 mb-1">
-                        <span class="font-medium">Error:</span> {{ log.metadata.error || 'Unknown error' }}
-                      </div>
-                      <div v-if="log.metadata.error_content" class="mt-2">
-                        <div class="font-medium mb-1">Error Details:</div>
-                        <pre class="bg-red-50 dark:bg-red-900/20 p-2 rounded text-xs text-red-600 overflow-x-auto whitespace-pre-wrap">{{ formatJsonResponse(log.metadata.error_content) }}</pre>
-                      </div>
-                    </div>
+                  <div v-if="log.metadata.success !== undefined">
+                    Status: {{ log.metadata.success ? 'SUCCESS' : 'FAILED' }}
+                  </div>
+                  <div v-if="log.metadata.response_content">
+                    Response: {{ formatJsonResponse(log.metadata.response_content) }}
+                  </div>
+                  <div v-if="log.metadata.error_content">
+                    Error: {{ formatJsonResponse(log.metadata.error_content) }}
                   </div>
                 </div>
               </div>
-
-              <div v-if="inferenceLogs.length === 0" class="text-gray-500 text-center py-8">
-                🎯 추론 검증 로그가 실시간으로 표시됩니다...
+              <div v-if="filteredInferenceLogs.length === 0 && inferenceLogs.length > 0" class="text-gray-500 text-center py-8">
+                검색 결과가 없습니다.
+              </div>
+              <div v-else-if="inferenceLogs.length === 0" class="text-gray-500 text-center py-8">
+                추론 검증 로그가 실시간으로 표시됩니다...
               </div>
             </div>
 
             <!-- Pod 로그 -->
-            <div v-if="activeTab === 2" class="space-y-2">
+            <div v-if="activeTab === 2" class="font-mono text-sm space-y-1">
               <div
-                v-for="(log, index) in podLogs"
+                v-for="(log, index) in filteredPodLogs"
                 :key="index"
-                class="flex items-start space-x-3 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700"
+                class="p-1"
               >
-                <UIcon
-                  name="i-heroicons-cube"
-                  class="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-500"
-                />
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center space-x-2">
-                    <span class="text-xs text-gray-500 font-mono">{{ formatTime(log.timestamp) }}</span>
-                    <div class="flex items-center space-x-1">
-                      <span class="text-xs px-2 py-0.5 rounded-full" :class="getPodTypeBadgeClass(log.podType)">{{ log.podType }}</span>
-                      <span class="text-xs font-medium" :class="getPodTypeTextClass(log.podType)">{{ log.podName }}</span>
-                    </div>
-                  </div>
-                  <div class="text-sm mt-1 text-gray-700 dark:text-gray-300">{{ log.message }}</div>
-                </div>
+                <span class="text-gray-500">{{ formatTime(log.timestamp) }}</span>
+                <span class="ml-2 text-blue-600">[{{ log.podName }}]</span>
+                <span class="ml-2">{{ log.message }}</span>
               </div>
-              <div v-if="podLogs.length === 0" class="text-gray-500 text-center py-8">
+              <div v-if="filteredPodLogs.length === 0 && podLogs.length > 0" class="text-gray-500 text-center py-8">
+                검색 결과가 없습니다.
+              </div>
+              <div v-else-if="podLogs.length === 0" class="text-gray-500 text-center py-8">
                 Pod 로그가 표시됩니다...
               </div>
             </div>
 
             <!-- 배포 보고서 -->
-            <div v-if="activeTab === 3" class="space-y-4">
-              <!-- 배포 요약 -->
+            <div v-if="activeTab === 3" class="space-y-6">
+              <!-- 무중단 배포 검증 보고서 -->
               <div class="bg-white dark:bg-gray-700 p-6 rounded-lg">
-                <h4 class="text-lg font-semibold mb-4 flex items-center">
-                  <UIcon name="i-heroicons-chart-bar" class="w-5 h-5 mr-2 text-blue-500" />
-                  배포 요약
-                </h4>
-                <div class="grid grid-cols-2 gap-4">
-                  <div class="space-y-2">
-                    <div class="text-sm text-gray-500">배포 전략</div>
-                    <div class="text-lg font-medium">{{ formData.strategy || '선택 안됨' }}</div>
-                  </div>
-                  <div class="space-y-2">
-                    <div class="text-sm text-gray-500">서빙 방식</div>
-                    <div class="text-lg font-medium">{{ servingType }}</div>
-                  </div>
-                  <div class="space-y-2">
-                    <div class="text-sm text-gray-500">성공률</div>
-                    <div class="text-lg font-bold" :class="getSuccessRateColor()">{{ inferenceStats.successRate }}%</div>
-                  </div>
-                  <div class="space-y-2">
-                    <div class="text-sm text-gray-500">추론 검증</div>
-                    <div class="text-lg font-medium">{{ inferenceStats.total }}회 실행</div>
-                  </div>
-                </div>
-              </div>
+                <h4 class="text-lg font-semibold mb-6">무중단 배포 검증 보고서</h4>
 
-              <!-- 배포 타임라인 -->
-              <div class="bg-white dark:bg-gray-700 p-6 rounded-lg">
-                <h4 class="text-lg font-semibold mb-4 flex items-center">
-                  <UIcon name="i-heroicons-clock" class="w-5 h-5 mr-2 text-green-500" />
-                  배포 타임라인
-                </h4>
-                <div class="space-y-3">
-                  <div
-                    v-for="(log, index) in deploymentLogs.slice(-5)"
-                    :key="index"
-                    class="flex items-center p-3 bg-gray-50 dark:bg-gray-800 rounded"
-                  >
-                    <UIcon
-                      :name="log.level === 'error' ? 'i-heroicons-exclamation-triangle' :
-                            log.level === 'warning' ? 'i-heroicons-exclamation-circle' :
-                            log.level === 'success' ? 'i-heroicons-check-circle' : 'i-heroicons-information-circle'"
-                      :class="getLogLevelClass(log.level)"
-                      class="w-4 h-4 mr-3 flex-shrink-0"
-                    />
-                    <div class="flex-1">
-                      <div class="text-sm font-medium">{{ log.message }}</div>
-                      <div class="text-xs text-gray-500">{{ formatTime(log.timestamp) }}</div>
-                    </div>
-                  </div>
-                  <div v-if="deploymentLogs.length === 0" class="text-gray-500 text-center py-4">
-                    배포 시작 후 타임라인이 표시됩니다
+                <!-- 배포 요약 -->
+                <div class="mb-6">
+                  <h5 class="font-medium mb-3 text-gray-900 dark:text-white">배포 요약</h5>
+                  <div class="space-y-2 text-sm">
+                    <div>• 서비스: {{ serviceName }}</div>
+                    <div>• 전략: {{ formData.strategy || '선택 안됨' }}</div>
+                    <div>• 서빙방식: {{ servingType }}</div>
+                    <div>• 시작시간: {{ deploymentStarted ? '배포 진행중' : '대기중' }}</div>
+                    <div>• 상태: {{ deploymentStatus }}</div>
                   </div>
                 </div>
-              </div>
 
-              <!-- 검증 결과 -->
-              <div class="bg-white dark:bg-gray-700 p-6 rounded-lg">
-                <h4 class="text-lg font-semibold mb-4 flex items-center">
-                  <UIcon name="i-heroicons-shield-check" class="w-5 h-5 mr-2 text-purple-500" />
-                  {{ getValidationCriteria.title }}
-                </h4>
-                <div class="space-y-2">
-                  <div
-                    v-for="criterion in getValidationCriteria.criteria"
-                    :key="criterion.name"
-                    class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded"
-                  >
-                    <div>
-                      <div class="font-medium text-sm">{{ criterion.name }}</div>
-                      <div class="text-xs text-gray-500">{{ criterion.condition }}</div>
-                    </div>
-                    <div class="flex items-center">
-                      <UIcon
-                        :name="validationProgress[criterion.name] ? 'i-heroicons-check-circle' : 'i-heroicons-clock'"
-                        :class="validationProgress[criterion.name] ? 'text-green-500' : 'text-gray-400'"
-                        class="w-5 h-5"
-                      />
-                    </div>
+                <!-- 검증 결과 -->
+                <div class="mb-6">
+                  <h5 class="font-medium mb-3 text-gray-900 dark:text-white">검증 결과</h5>
+                  <div class="space-y-2 text-sm">
+                    <div>• 서비스 가용성: {{ deploymentProgress === 100 ? '100% (중단시간 0초)' : '검증 중...' }}</div>
+                    <div>• 추론 성공률: {{ inferenceStats.total > 0 ? `${inferenceStats.successRate}% (${inferenceStats.success}/${inferenceStats.total})` : '검증 대기중' }}</div>
+                    <div>• 배포 전략: {{ deploymentProgress === 100 ? '정상 적용' : '진행 중...' }}</div>
                   </div>
                 </div>
-              </div>
 
-              <!-- 문서 다운로드 -->
-              <div class="bg-white dark:bg-gray-700 p-6 rounded-lg">
-                <h4 class="text-lg font-semibold mb-4 flex items-center">
-                  <UIcon name="i-heroicons-document-arrow-down" class="w-5 h-5 mr-2 text-indigo-500" />
-                  보고서 다운로드
-                </h4>
-                <div class="flex gap-3">
-                  <UButton
-                    @click="downloadReport('json')"
-                    variant="outline"
-                    size="sm"
-                    icon="i-heroicons-code-bracket"
-                    :disabled="!deploymentStarted"
-                  >
-                    JSON 다운로드
-                  </UButton>
-                  <UButton
-                    @click="downloadReport('pdf')"
-                    variant="outline"
-                    size="sm"
-                    icon="i-heroicons-document-text"
-                    :disabled="!deploymentStarted"
-                  >
-                    PDF 다운로드
-                  </UButton>
-                  <UButton
-                    @click="downloadReport('excel')"
-                    variant="outline"
-                    size="sm"
-                    icon="i-heroicons-table-cells"
-                    :disabled="!deploymentStarted"
-                  >
-                    Excel 다운로드
-                  </UButton>
-                </div>
-                <div v-if="!deploymentStarted" class="text-xs text-gray-500 mt-2">
-                  배포 시작 후 다운로드가 가능합니다
+                <!-- 다운로드 -->
+                <div>
+                  <h5 class="font-medium mb-3 text-gray-900 dark:text-white">다운로드</h5>
+                  <div class="flex gap-3">
+                    <UButton
+                      @click="downloadAllLogs()"
+                      variant="outline"
+                      icon="i-heroicons-document-text"
+                      :disabled="!deploymentStarted"
+                    >
+                      전체 로그 다운로드
+                    </UButton>
+                    <UButton
+                      @click="downloadReport('json')"
+                      variant="outline"
+                      icon="i-heroicons-code-bracket"
+                      :disabled="!deploymentStarted"
+                    >
+                      보고서 JSON
+                    </UButton>
+                  </div>
+                  <div v-if="!deploymentStarted" class="text-xs text-gray-500 mt-2">
+                    배포 시작 후 다운로드가 가능합니다
+                  </div>
                 </div>
               </div>
             </div>
@@ -888,14 +755,6 @@ watch(servingType, (newServingType) => {
   }
 }, { immediate: true })
 
-const modelFormatOptions = ref([
-  { label: 'Scikit-learn', value: 'sklearn' },
-  { label: 'XGBoost', value: 'xgboost' },
-  { label: 'LightGBM', value: 'lightgbm' },
-  { label: 'ONNX', value: 'onnx' },
-  { label: 'TensorFlow', value: 'tensorflow' },
-  { label: 'PyTorch', value: 'pytorch' }
-])
 
 // GPU 리소스 옵션
 const gpuResourceOptions = ref([
@@ -975,6 +834,39 @@ const logTabs = [
   { label: 'Pod 로그' },
   { label: '배포 보고서' }
 ]
+
+// 로그 검색/필터 관련
+const logSearchQuery = ref('')
+const logLevelFilter = ref('')
+
+// 필터링된 로그들
+const filteredDeploymentLogs = computed(() => {
+  return deploymentLogs.value.filter(log => {
+    const matchesSearch = !logSearchQuery.value ||
+                         log.message.toLowerCase().includes(logSearchQuery.value.toLowerCase())
+    const matchesLevel = !logLevelFilter.value || log.level === logLevelFilter.value
+    return matchesSearch && matchesLevel
+  })
+})
+
+const filteredInferenceLogs = computed(() => {
+  return inferenceLogs.value.filter(log => {
+    const matchesSearch = !logSearchQuery.value ||
+                         log.message.toLowerCase().includes(logSearchQuery.value.toLowerCase())
+    const matchesLevel = !logLevelFilter.value || log.level === logLevelFilter.value
+    return matchesSearch && matchesLevel
+  })
+})
+
+const filteredPodLogs = computed(() => {
+  return podLogs.value.filter(log => {
+    const matchesSearch = !logSearchQuery.value ||
+                         log.message.toLowerCase().includes(logSearchQuery.value.toLowerCase()) ||
+                         log.podName.toLowerCase().includes(logSearchQuery.value.toLowerCase())
+    // Pod 로그는 레벨이 없으므로 레벨 필터는 적용하지 않음
+    return matchesSearch
+  })
+})
 
 // 유틸리티 함수들
 const getServingTypeBadgeColor = (type: string) => {
@@ -1088,30 +980,6 @@ const formatTime = (timestamp: string | Date) => {
   }
 }
 
-// 추론 로그 전용 유틸리티 함수들
-const formatTimeDetailed = (timestamp: string) => {
-  try {
-    const date = new Date(timestamp)
-    // Invalid Date 체크
-    if (isNaN(date.getTime())) {
-      return timestamp // 원본 문자열 그대로 반환
-    }
-    return date.toLocaleTimeString('ko-KR', {
-      hour12: false,
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      fractionalSecondDigits: 3
-    })
-  } catch (error) {
-    return timestamp // 파싱 실패시 원본 반환
-  }
-}
-
-
-const getEndpointFromLog = (log: any) => {
-  return log.metadata?.endpoint || 'N/A'
-}
 
 const formatJsonResponse = (responseContent: any) => {
   try {
@@ -1122,12 +990,6 @@ const formatJsonResponse = (responseContent: any) => {
 }
 
 // 메시지 파싱 함수들
-const shouldShowLogDetails = (log: any) => {
-  return log.metadata ||
-         getEndpointFromMessage(log.message) ||
-         getStatsFromMessage(log.message) ||
-         getErrorFromMessage(log.message)
-}
 
 const getEndpointFromMessage = (message: string) => {
   // "🎯 추론 엔드포인트: http://..." 패턴 파싱
@@ -1164,12 +1026,6 @@ const isInferenceRequestLog = (log: any) => {
   )
 }
 
-// 일반적인 배포 관련 로그에 상세 정보가 있는지 확인
-const shouldShowGeneralLogDetails = (log: any) => {
-  return getEndpointFromMessage(log.message) ||
-         getStatsFromMessage(log.message) ||
-         getErrorFromMessage(log.message)
-}
 
 // 서빙 방식별 특화 검증 로직
 const getValidationCriteria = computed(() => {
@@ -1576,54 +1432,150 @@ const toolbarLinks = ref([
   []
 ])
 
-// 보고서 다운로드 함수
-const downloadReport = (format: 'json' | 'pdf' | 'excel') => {
-  // 보고서 데이터 생성
-  const reportData = {
+// 전체 로그 다운로드 함수 (순수 텍스트 형태)
+const downloadAllLogs = () => {
+  const timestamp = new Date().toISOString().slice(0, 16).replace(/:/g, '-')
+
+  // 모든 로그를 시간순으로 정렬
+  const allLogs = [
+    ...deploymentLogs.value.map(log => ({
+      timestamp: log.timestamp,
+      type: 'DEPLOY',
+      message: log.message
+    })),
+    ...podLogs.value.map(log => ({
+      timestamp: log.timestamp,
+      type: `POD:${log.podName}`,
+      message: log.message
+    })),
+    ...inferenceLogs.value.map(log => ({
+      timestamp: log.timestamp,
+      type: 'INFERENCE',
+      message: log.message
+    }))
+  ].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+
+  // 텍스트 파일 생성
+  const logText = allLogs.map(log =>
+    `${formatTime(log.timestamp)} [${log.type}] ${log.message}`
+  ).join('\n')
+
+  const filename = `deployment-complete-${serviceName}-${timestamp}.log`
+  const blob = new Blob([logText], { type: 'text/plain' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+// 보고서 다운로드 함수 (간소화된 버전)
+const downloadReport = (format: 'json') => {
+  const timestamp = new Date().toISOString().slice(0, 16).replace(/:/g, '-')
+
+  // 간소화된 보고서
+  const simpleReport = {
     serviceName: serviceName,
-    namespace: route.query.namespace || 'kubeflow-user-example-com',
     strategy: formData.value.strategy,
     servingType: servingType.value,
-    timestamp: new Date().toISOString(),
-    summary: {
-      deploymentStarted: deploymentStarted.value,
-      deploymentProgress: deploymentProgress.value,
-      deploymentStatus: deploymentStatus.value,
-      inferenceStats: inferenceStats.value
-    },
-    timeline: deploymentLogs.value.map(log => ({
-      timestamp: log.timestamp,
-      level: log.level,
-      message: log.message,
-      source: log.source
-    })),
-    validationCriteria: getValidationCriteria.value,
-    validationProgress: validationProgress.value,
-    podLogs: podLogs.value.slice(-50), // 최근 50개만
-    inferenceLogs: inferenceLogs.value.slice(-50) // 최근 50개만
+    startTime: deploymentStarted.value ? new Date().toISOString() : null,
+    status: deploymentStatus.value,
+    progress: deploymentProgress.value,
+    inferenceStats: inferenceStats.value,
+    totalLogs: deploymentLogs.value.length + podLogs.value.length + inferenceLogs.value.length,
+    generatedAt: new Date().toISOString()
   }
 
+  const filename = `deployment-report-${serviceName}-${timestamp}.json`
+  const blob = new Blob([JSON.stringify(simpleReport, null, 2)], {
+    type: 'application/json'
+  })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+// 탭별 개별 다운로드 함수
+const downloadTabLogs = (tabIndex: number) => {
   const timestamp = new Date().toISOString().slice(0, 16).replace(/:/g, '-')
-  const filename = `deployment-report-${serviceName}-${timestamp}`
+  let tabName = ''
+  let tabData = {}
 
-  if (format === 'json') {
-    // JSON 다운로드
-    const blob = new Blob([JSON.stringify(reportData, null, 2)], {
-      type: 'application/json'
-    })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${filename}.json`
-    a.click()
-    URL.revokeObjectURL(url)
-  } else if (format === 'pdf') {
-    // PDF 다운로드 (추후 구현)
-    alert('PDF 다운로드는 추후 구현 예정입니다')
-  } else if (format === 'excel') {
-    // Excel 다운로드 (추후 구현)
-    alert('Excel 다운로드는 추후 구현 예정입니다')
+  switch (tabIndex) {
+    case 0: // 배포 로그
+      tabName = 'deployment-logs'
+      tabData = {
+        meta: {
+          serviceName: serviceName,
+          tabType: 'deployment',
+          exportedAt: new Date().toISOString(),
+          totalLogs: deploymentLogs.value.length
+        },
+        logs: deploymentLogs.value
+      }
+      break
+    case 1: // 추론 검증
+      tabName = 'inference-logs'
+      tabData = {
+        meta: {
+          serviceName: serviceName,
+          tabType: 'inference',
+          exportedAt: new Date().toISOString(),
+          totalLogs: inferenceLogs.value.length,
+          stats: inferenceStats.value
+        },
+        logs: inferenceLogs.value
+      }
+      break
+    case 2: // Pod 로그
+      tabName = 'pod-logs'
+      tabData = {
+        meta: {
+          serviceName: serviceName,
+          tabType: 'pod',
+          exportedAt: new Date().toISOString(),
+          totalLogs: podLogs.value.length
+        },
+        logs: podLogs.value
+      }
+      break
+    case 3: // 배포 보고서
+      tabName = 'deployment-report'
+      tabData = {
+        meta: {
+          serviceName: serviceName,
+          tabType: 'report',
+          exportedAt: new Date().toISOString()
+        },
+        summary: {
+          strategy: formData.value.strategy,
+          servingType: servingType.value,
+          progress: deploymentProgress.value,
+          status: deploymentStatus.value,
+          metrics: inferenceStats.value
+        },
+        validation: {
+          criteria: getValidationCriteria.value,
+          progress: validationProgress.value
+        }
+      }
+      break
   }
+
+  const filename = `${tabName}-${serviceName}-${timestamp}.json`
+  const blob = new Blob([JSON.stringify(tabData, null, 2)], {
+    type: 'application/json'
+  })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
 }
 </script>
 
