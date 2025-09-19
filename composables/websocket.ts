@@ -480,13 +480,8 @@ export const useWebSocket = () => {
     }
 
     ws.onerror = (error) => {
-      console.error('트래픽 메트릭 WebSocket 오류:', error)
-      deploymentLogs.value.push({
-        timestamp: new Date().toISOString(),
-        level: 'error',
-        message: '❌ 트래픽 메트릭 연결 오류 발생',
-        source: 'websocket'
-      })
+      console.warn('트래픽 메트릭 WebSocket 연결 실패 (선택적 기능):', error)
+      // 에러 로그 추가하지 않음 (선택적 기능이므로)
     }
 
     ws.onclose = (event) => {
@@ -527,123 +522,6 @@ export const useWebSocket = () => {
     deploymentStatus.value = logEntry.message
   }
 
-  // 추론 검증 로그 생성 (mlops-deployment-certification 스타일 시뮬레이션)
-  const simulateInferenceValidation = (namespace: string, serviceName: string) => {
-    // 실제 백엔드 데이터 구조와 동일한 개별 추론 요청 시뮬레이션
-    const simulatedInferenceRequests = [
-      {
-        level: 'success',
-        message: '✅ 추론 성공 #1 (156.23ms)',
-        timestamp: new Date().toISOString(),
-        metadata: {
-          endpoint: `http://211.39.140.216:31894/v1/models/${serviceName}:predict`,
-          payload_type: 'sklearn',
-          success: true,
-          status_code: 200,
-          elapsed_time: 156.23,
-          response_size: 95,
-          success_rate: 100.0,
-          predictions_count: 1,
-          request_id: 1,
-          response_content: {
-            predictions: [[0.1, 0.7, 0.2]]
-          }
-        }
-      },
-      {
-        level: 'success',
-        message: '✅ 추론 성공 #2 (203.45ms)',
-        timestamp: new Date().toISOString(),
-        metadata: {
-          endpoint: `http://211.39.140.216:31894/v1/models/${serviceName}:predict`,
-          payload_type: 'sklearn',
-          success: true,
-          status_code: 200,
-          elapsed_time: 203.45,
-          response_size: 98,
-          success_rate: 100.0,
-          predictions_count: 1,
-          request_id: 2,
-          response_content: {
-            predictions: [[0.3, 0.4, 0.3]]
-          }
-        }
-      },
-      {
-        level: 'error',
-        message: '❌ 추론 실패 #3 (5000ms)',
-        timestamp: new Date().toISOString(),
-        metadata: {
-          endpoint: `http://211.39.140.216:31894/v1/models/${serviceName}:predict`,
-          payload_type: 'sklearn',
-          success: false,
-          status_code: 500,
-          elapsed_time: 5000,
-          success_rate: 66.7,
-          request_id: 3,
-          error: 'Internal Server Error',
-          error_content: {
-            error: 'Model prediction failed',
-            details: 'Connection timeout'
-          }
-        }
-      },
-      {
-        level: 'success',
-        message: '✅ 추론 성공 #4 (189.67ms)',
-        timestamp: new Date().toISOString(),
-        metadata: {
-          endpoint: `http://211.39.140.216:31894/v1/models/${serviceName}:predict`,
-          payload_type: 'sklearn',
-          success: true,
-          status_code: 200,
-          elapsed_time: 189.67,
-          response_size: 102,
-          success_rate: 75.0,
-          predictions_count: 1,
-          request_id: 4,
-          response_content: {
-            predictions: [[0.2, 0.3, 0.5]]
-          }
-        }
-      }
-    ]
-
-    let index = 0
-    const intervalId = setInterval(() => {
-      if (index < simulatedInferenceRequests.length) {
-        const log = simulatedInferenceRequests[index] as LogEntry
-        inferenceLogs.value.push(log)
-        trimLogs(inferenceLogs)
-
-        // 통계 업데이트
-        if (log.metadata) {
-          updateInferenceStatsFromIndividualRequest(log.metadata)
-        }
-
-        index++
-      } else {
-        clearInterval(intervalId)
-      }
-    }, 3000) // 3초 간격으로 개별 요청 표시
-  }
-
-  // 개별 추론 요청 메타데이터로부터 통계 업데이트
-  const updateInferenceStatsFromIndividualRequest = (metadata: any) => {
-    if (metadata.request_id) {
-      inferenceStats.value.total = metadata.request_id
-      inferenceStats.value.successRate = Math.round(metadata.success_rate || 0)
-      inferenceStats.value.success = Math.round((inferenceStats.value.total * inferenceStats.value.successRate) / 100)
-      inferenceStats.value.error = inferenceStats.value.total - inferenceStats.value.success
-
-      console.log('📊 개별 요청 통계 업데이트:', {
-        total: inferenceStats.value.total,
-        success: inferenceStats.value.success,
-        error: inferenceStats.value.error,
-        successRate: inferenceStats.value.successRate
-      })
-    }
-  }
 
   // 모든 연결 종료
   const disconnectAll = () => {
@@ -697,10 +575,8 @@ export const useWebSocket = () => {
     connectPodLogs,
     connectInferenceLogs,
     connectTrafficMetrics,
-    simulateInferenceValidation,
     updateInferenceStats,
     updateInferenceStatsFromMessage,
-    updateInferenceStatsFromIndividualRequest,
     disconnectAll,
     clearLogs,
     sendPing

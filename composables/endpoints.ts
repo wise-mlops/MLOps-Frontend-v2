@@ -1,7 +1,8 @@
 const config = useAppConfig()
 
 export const getEndpoints = async ( namespace: string | null) => {
-  let url = encodeURI(`/inference-services/${namespace}`)
+  let url = encodeURI(`/inference-services`)
+  // 단순히 /inference-services로 조회 (백엔드 기본값 사용)
 
   const response = await $fetch<ResponseBody>(url, {
     method: 'GET',
@@ -445,3 +446,4 @@ export const rollbackDeployment = async (
 
   return response
 }
+

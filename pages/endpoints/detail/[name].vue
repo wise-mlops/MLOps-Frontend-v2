@@ -200,7 +200,7 @@ const breadcrumbs = ref([
 
 const pageTitle = ref('Endpoint details')
 const endpointName = ref(route.params.name)
-const namespace = ref('kubeflow-user-example-com')
+const namespace = ref(route.query.namespace as string || 'kubeflow-user-example-com')
 const data = ref({})
 
 // 상태 관리
@@ -607,6 +607,7 @@ watch(selectedContainer, async (newContainer, oldContainer) => {
 // 메인 로드 함수
 const loadEndpointDetails = async () => {
   try {
+    // query parameter로 받은 namespace 직접 사용
     const response = await getEndpointDetails(namespace.value, endpointName.value)
     data.value = response.result ? response.result : {}
 

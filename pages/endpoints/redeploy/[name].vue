@@ -1312,14 +1312,6 @@ const startRedeploy = async () => {
       // 추론 검증은 백엔드에서 inference_log WebSocket으로 자동 전송됨
       console.log('🎯 추론 로그 WebSocket 연결 완료 - 백엔드에서 실시간 데이터 수신 대기 중')
 
-      // 임시 시뮬레이션 (백엔드에서 개별 inference_log 전송 구현 완료시 제거)
-      setTimeout(() => {
-        console.log('🎯 개별 추론 요청 시뮬레이션 시작 (백엔드 inference_log 구현 대기 중)')
-        simulateInferenceValidation(namespace, serviceName)
-      }, 8000) // 8초 후 시뮬레이션 시작
-
-      // 타임아웃 처리는 WebSocket composable에서 처리됨
-
       console.log('재배포 시작 성공:', response)
     } else {
       throw new Error(response.message || '재배포 시작 실패')
@@ -1476,18 +1468,11 @@ const parseCurrentSettings = (endpointDetails: any, detectedServingType: string)
 // 현재 서비스 정보 로드
 onMounted(async () => {
   try {
-    // 네임스페이스 결정 (기본적으로 kubeflow, ModelMesh일 수도 있음)
-    let namespace = 'kubeflow-user-example-com'
+    // query parameter로 받은 namespace 사용
+    const namespace = route.query.namespace as string || 'kubeflow-user-example-com'
 
-    // 먼저 kubeflow에서 시도
-    let endpointDetails
-    try {
-      endpointDetails = await getEndpointDetails(namespace, serviceName)
-    } catch {
-      // kubeflow에서 실패하면 modelmesh에서 시도
-      namespace = 'modelmesh-serving'
-      endpointDetails = await getEndpointDetails(namespace, serviceName)
-    }
+    // 직접 해당 namespace에서 조회
+    const endpointDetails = await getEndpointDetails(namespace, serviceName)
 
     // 서빙 방식 감지
     const detectedServingType = detectServingType(endpointDetails)
