@@ -53,7 +53,7 @@
       <div class="flex items-center space-x-1">
         <UTooltip text="인퍼런스">
           <UButton
-            @click="runInference(row.name)"
+            @click="runInference(row)"
             icon="i-heroicons-play"
             variant="ghost"
             size="sm"
@@ -61,7 +61,7 @@
         </UTooltip>
         <UTooltip text="상세보기">
           <UButton
-            @click="detail(row.name)"
+            @click="detail(row)"
             icon="i-heroicons-eye"
             variant="ghost"
             size="sm"
@@ -69,7 +69,7 @@
         </UTooltip>
         <UTooltip text="재배포">
           <UButton
-            @click="redeploy(row.name)"
+            @click="redeploy(row)"
             icon="i-heroicons-arrow-path"
             variant="ghost"
             size="sm"
@@ -188,23 +188,23 @@ const getPredictorTypeColor = (row: any) => {
     case 'pytorch':
       return 'red'
     case 'sklearn':
-      return 'purple'
+      return 'yellow'
     case 'xgboost':
-      return 'amber'
+      return 'pink'
     case 'lightgbm':
-      return 'lime'
-    case 'onnx':
       return 'indigo'
+    case 'onnx':
+      return 'amber'
     case 'openvino_ir':
-      return 'teal'
+      return 'cyan'
     case 'tensorrt':
-      return 'emerald'
+      return 'fuchsia'
     case 'mlflow':
       return 'blue'
     case 'LLM':
-      return 'cyan'
+      return 'teal'
     case 'custom':
-      return 'green'
+      return 'lime'
     case 'pmml':
       return 'pink'
     case 'paddle':
@@ -369,7 +369,7 @@ const deleteEndpoint = async (row: any) => {
     selectedEndpoint.value = row
 
     try {
-      const namespace = 'kubeflow-user-example-com'
+      const namespace = row.namespace || 'kubeflow-user-example-com'
       const endpointName = row.name
 
       // DELETE 요청
@@ -394,17 +394,20 @@ const deleteEndpoint = async (row: any) => {
 
 const loadEndpoints = async () => {
   try {
-    const response = await getEndpoints('kubeflow-user-example-com')
+    // null을 전달하면 기본값으로 kubeflow-user-example-com,modelmesh-serving 모두 조회
+    const response = await getEndpoints(null)
     data.value = response.result ? response.result.result : []
 
     // 디버깅 (필요시 주석 해제)
-    // console.log('Full API response:', response)
-    // console.log('Extracted data:', data.value)
-    // if (data.value.length > 0) {
-    //   const firstEndpoint = data.value[0]
-    //   console.log('First endpoint structure:', firstEndpoint)
-    //   console.log('Ready status result:', getReadyStatus(firstEndpoint))
-    // }
+    console.log('Full API response:', response)
+    console.log('Extracted data:', data.value)
+    if (data.value.length > 0) {
+      const firstEndpoint = data.value[0]
+      console.log('First endpoint structure:', firstEndpoint)
+      console.log('Ready status result:', getReadyStatus(firstEndpoint))
+      console.log('Namespace:', firstEndpoint.namespace)
+      console.log('Serving type:', getServingType(firstEndpoint))
+    }
   } catch (error) {
     console.error('Failed to load endpoints:', error)
     data.value = []
@@ -419,12 +422,14 @@ const reloadEndpoints = () => {
   loadEndpoints()
 }
 
-const detail = (endpointName: string) => {
-  navigateTo(`/endpoints/detail/${endpointName}`)
+const detail = (row: any) => {
+  const namespace = row.namespace || 'kubeflow-user-example-com'
+  navigateTo(`/endpoints/detail/${row.name}?namespace=${namespace}`)
 }
 
-const runInference = (endpointName: string) => {
-  navigateTo(`/endpoints/inference/${endpointName}`)
+const runInference = (row: any) => {
+  const namespace = row.namespace || 'kubeflow-user-example-com'
+  navigateTo(`/endpoints/inference/${row.name}?namespace=${namespace}`)
 }
 
 // 서빙 방식 감지 함수 (네임스페이스와 컨테이너 이미지 기반)
@@ -457,8 +462,9 @@ const getServingTypeColor = (row: any) => {
   }
 }
 
-const redeploy = (endpointName: string) => {
-  navigateTo(`/endpoints/redeploy/${endpointName}`)
+const redeploy = (row: any) => {
+  const namespace = row.namespace || 'kubeflow-user-example-com'
+  navigateTo(`/endpoints/redeploy/${row.name}?namespace=${namespace}`)
 }
 
 onMounted(() => {
@@ -495,12 +501,12 @@ const endpointColumns = ref([
     label: 'Created at'
   },
   {
-    key: 'predictor',
-    label: 'Model Format'
-  },
-  {
     key: 'servingType',
     label: 'Serving Type'
+  },
+  {
+    key: 'predictor',
+    label: 'Model Format'
   },
   {
     key: 'runtime',
