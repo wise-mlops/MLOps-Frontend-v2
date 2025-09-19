@@ -519,6 +519,31 @@
 
             <!-- 추론 검증 로그 -->
             <div v-if="activeTab === 1" class="space-y-2">
+              <!-- 실시간 통계 헤더 -->
+              <div class="bg-white dark:bg-gray-700 p-4 rounded mb-4">
+                <div class="grid grid-cols-4 gap-4 text-center">
+                  <div>
+                    <div class="text-sm text-gray-500">총 요청</div>
+                    <div class="text-2xl font-bold">{{ inferenceStats.total }}</div>
+                  </div>
+                  <div>
+                    <div class="text-sm text-gray-500">성공률</div>
+                    <div class="text-2xl font-bold" :class="getSuccessRateColor()">
+                      {{ inferenceStats.successRate }}%
+                    </div>
+                  </div>
+                  <div>
+                    <div class="text-sm text-gray-500">성공</div>
+                    <div class="text-2xl font-bold text-green-600">{{ inferenceStats.success }}</div>
+                  </div>
+                  <div>
+                    <div class="text-sm text-gray-500">실패</div>
+                    <div class="text-2xl font-bold text-red-600">{{ inferenceStats.error }}</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 추론 로그 목록 (배포 로그와 동일한 스타일) -->
               <div
                 v-for="(log, index) in inferenceLogs"
                 :key="index"
@@ -534,14 +559,76 @@
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center space-x-2">
                     <span class="text-xs text-gray-500 font-mono">{{ formatTime(log.timestamp) }}</span>
-                    <UIcon name="i-heroicons-cpu-chip" class="w-3 h-3 text-purple-500" />
-                    <span class="text-xs text-purple-600 font-medium">INFERENCE</span>
+                    <span class="text-xs px-2 py-0.5 rounded-full uppercase" :class="
+                      log.level === 'error' ? 'bg-red-100 text-red-800' :
+                      log.level === 'warning' ? 'bg-yellow-100 text-yellow-800' :
+                      log.level === 'success' ? 'bg-green-100 text-green-800' :
+                      'bg-blue-100 text-blue-800'
+                    ">
+                      {{ log.level }}
+                    </span>
                   </div>
                   <div class="text-sm mt-1" :class="getLogLevelClass(log.level)">{{ log.message }}</div>
+
+                  <!-- 개별 추론 요청의 상세 정보 -->
+                  <div v-if="log.metadata && isInferenceRequestLog(log)" class="mt-2 text-xs bg-gray-50 dark:bg-gray-800 p-3 rounded">
+                    <!-- Endpoint -->
+                    <div class="mb-1">
+                      <span class="font-medium">Endpoint:</span>
+                      <span class="text-blue-600 dark:text-blue-400 ml-1">{{ log.metadata.endpoint || 'N/A' }}</span>
+                    </div>
+
+                    <!-- Type + Success Rate -->
+                    <div class="mb-1">
+                      <span class="font-medium">Type:</span>
+                      <span class="ml-1">{{ log.metadata.payload_type || 'unknown' }}</span>
+                      <span class="ml-4 font-medium">Success Rate:</span>
+                      <span class="ml-1" :class="log.metadata.success ? 'text-green-600' : 'text-red-600'">
+                        {{ log.metadata.success_rate || 0 }}%
+                      </span>
+                    </div>
+
+                    <!-- 성공한 요청: Response Size + Predictions/Outputs/Choices -->
+                    <div v-if="log.metadata.success" class="mb-1">
+                      <span class="font-medium">Response Size:</span>
+                      <span class="text-orange-600 ml-1">{{ log.metadata.response_size || 0 }}B</span>
+
+                      <span v-if="log.metadata.predictions_count" class="ml-4">
+                        <span class="font-medium">Predictions:</span>
+                        <span class="text-orange-600 ml-1">{{ log.metadata.predictions_count }}</span>
+                      </span>
+                      <span v-else-if="log.metadata.outputs_count" class="ml-4">
+                        <span class="font-medium">Outputs:</span>
+                        <span class="text-orange-600 ml-1">{{ log.metadata.outputs_count }}</span>
+                      </span>
+                      <span v-else-if="log.metadata.choices_count" class="ml-4">
+                        <span class="font-medium">Choices:</span>
+                        <span class="text-orange-600 ml-1">{{ log.metadata.choices_count }}</span>
+                      </span>
+
+                      <!-- JSON 응답 내용 -->
+                      <div v-if="log.metadata.response_content" class="mt-2">
+                        <div class="font-medium mb-1">Response:</div>
+                        <pre class="bg-gray-100 dark:bg-gray-900 p-2 rounded text-xs overflow-x-auto whitespace-pre-wrap">{{ formatJsonResponse(log.metadata.response_content) }}</pre>
+                      </div>
+                    </div>
+
+                    <!-- 실패한 요청: 오류 정보 -->
+                    <div v-else>
+                      <div class="text-red-600 mb-1">
+                        <span class="font-medium">Error:</span> {{ log.metadata.error || 'Unknown error' }}
+                      </div>
+                      <div v-if="log.metadata.error_content" class="mt-2">
+                        <div class="font-medium mb-1">Error Details:</div>
+                        <pre class="bg-red-50 dark:bg-red-900/20 p-2 rounded text-xs text-red-600 overflow-x-auto whitespace-pre-wrap">{{ formatJsonResponse(log.metadata.error_content) }}</pre>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
+
               <div v-if="inferenceLogs.length === 0" class="text-gray-500 text-center py-8">
-                추론 검증 로그가 표시됩니다...
+                🎯 추론 검증 로그가 실시간으로 표시됩니다...
               </div>
             </div>
 
@@ -560,8 +647,8 @@
                   <div class="flex items-center space-x-2">
                     <span class="text-xs text-gray-500 font-mono">{{ formatTime(log.timestamp) }}</span>
                     <div class="flex items-center space-x-1">
-                      <span class="text-xs px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full">{{ log.podType }}</span>
-                      <span class="text-xs text-blue-600 font-medium">{{ log.podName }}</span>
+                      <span class="text-xs px-2 py-0.5 rounded-full" :class="getPodTypeBadgeClass(log.podType)">{{ log.podType }}</span>
+                      <span class="text-xs font-medium" :class="getPodTypeTextClass(log.podType)">{{ log.podName }}</span>
                     </div>
                   </div>
                   <div class="text-sm mt-1 text-gray-700 dark:text-gray-300">{{ log.message }}</div>
@@ -572,25 +659,25 @@
               </div>
             </div>
 
-            <!-- 메트릭 -->
+            <!-- 추론 통계 -->
             <div v-if="activeTab === 3" class="space-y-4">
-              <!-- 성능 메트릭 -->
-              <div v-if="metrics" class="grid grid-cols-2 gap-4">
+              <!-- 추론 통계 메트릭 -->
+              <div class="grid grid-cols-2 gap-4">
                 <div class="bg-white dark:bg-gray-700 p-4 rounded">
                   <div class="text-sm text-gray-500">총 요청</div>
-                  <div class="text-2xl font-bold">{{ metrics.totalRequests }}</div>
+                  <div class="text-2xl font-bold">{{ inferenceStats.total }}</div>
                 </div>
                 <div class="bg-white dark:bg-gray-700 p-4 rounded">
                   <div class="text-sm text-gray-500">성공 요청</div>
-                  <div class="text-2xl font-bold text-green-600">{{ metrics.successfulRequests }}</div>
+                  <div class="text-2xl font-bold text-green-600">{{ inferenceStats.success }}</div>
                 </div>
                 <div class="bg-white dark:bg-gray-700 p-4 rounded">
-                  <div class="text-sm text-gray-500">평균 응답시간</div>
-                  <div class="text-2xl font-bold">{{ metrics.averageResponseTime || 0 }}ms</div>
+                  <div class="text-sm text-gray-500">실패 요청</div>
+                  <div class="text-2xl font-bold text-red-600">{{ inferenceStats.error }}</div>
                 </div>
                 <div class="bg-white dark:bg-gray-700 p-4 rounded">
                   <div class="text-sm text-gray-500">성공률</div>
-                  <div class="text-2xl font-bold" :class="getSuccessRateColor()">{{ successRate }}%</div>
+                  <div class="text-2xl font-bold" :class="getSuccessRateColor()">{{ inferenceStats.successRate }}%</div>
                 </div>
               </div>
 
@@ -806,10 +893,12 @@ const {
   podLogs,
   inferenceLogs,
   metrics,
+  inferenceStats,
   deploymentProgress,
   deploymentStatus,
   connectDeploymentLogs,
   connectPodLogs,
+  connectInferenceLogs,
   connectTrafficMetrics,
   simulateInferenceValidation,
   disconnectAll,
@@ -822,7 +911,7 @@ const logTabs = [
   { label: '배포 로그' },
   { label: '추론 검증' },
   { label: 'Pod 로그' },
-  { label: '메트릭' }
+  { label: '추론 통계' }
 ]
 
 // 유틸리티 함수들
@@ -834,11 +923,37 @@ const getServingTypeBadgeColor = (type: string) => {
   }
 }
 
-// 성공률 계산 (메트릭 기반)
+// Pod 타입별 배지 색상
+const getPodTypeBadgeClass = (podType: string) => {
+  switch (podType) {
+    case 'blue': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+    case 'green': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+    case 'stable': return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+    case 'canary': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+    case 'cleanup': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+    case 'runtime': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+    case 'base': return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200'
+    default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+  }
+}
+
+// Pod 타입별 텍스트 색상
+const getPodTypeTextClass = (podType: string) => {
+  switch (podType) {
+    case 'blue': return 'text-blue-600 dark:text-blue-400'
+    case 'green': return 'text-green-600 dark:text-green-400'
+    case 'stable': return 'text-gray-600 dark:text-gray-400'
+    case 'canary': return 'text-yellow-600 dark:text-yellow-400'
+    case 'cleanup': return 'text-red-600 dark:text-red-400'
+    case 'runtime': return 'text-purple-600 dark:text-purple-400'
+    case 'base': return 'text-indigo-600 dark:text-indigo-400'
+    default: return 'text-gray-600 dark:text-gray-400'
+  }
+}
+
+// 성공률 계산 (추론 통계 기반)
 const successRate = computed(() => {
-  if (!metrics.value) return 100
-  if (metrics.value.totalRequests === 0) return 100
-  return Math.round((metrics.value.successfulRequests / metrics.value.totalRequests) * 100)
+  return inferenceStats.value.successRate
 })
 
 const getSuccessRateColor = () => {
@@ -856,8 +971,142 @@ const getLogLevelClass = (level: string) => {
   }
 }
 
-const formatTime = (timestamp: string) => {
-  return new Date(timestamp).toLocaleTimeString()
+const formatTime = (timestamp: string | Date) => {
+  try {
+    let date: Date
+
+    // 이미 Date 객체인 경우
+    if (timestamp instanceof Date) {
+      date = timestamp
+    } else if (typeof timestamp === 'string') {
+      // 문자열인 경우 다양한 형식 시도
+      if (timestamp.includes('T') || timestamp.includes('Z')) {
+        // ISO 형식 (2024-01-01T12:00:00Z)
+        date = new Date(timestamp)
+      } else if (timestamp.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/)) {
+        // SQL 형식 (2024-01-01 12:00:00)
+        date = new Date(timestamp.replace(' ', 'T') + 'Z')
+      } else if (timestamp.match(/^\d+$/)) {
+        // Unix timestamp (밀리초)
+        date = new Date(parseInt(timestamp))
+      } else {
+        // 기본 Date 파싱 시도
+        date = new Date(timestamp)
+      }
+    } else {
+      // 현재 시간 사용
+      date = new Date()
+    }
+
+    // Invalid Date 체크
+    if (isNaN(date.getTime())) {
+      // 파싱 실패시 현재 시간 반환
+      return new Date().toLocaleTimeString('ko-KR', {
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      })
+    }
+
+    return date.toLocaleTimeString('ko-KR', {
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    })
+  } catch (error) {
+    // 에러 발생시 현재 시간 반환
+    return new Date().toLocaleTimeString('ko-KR', {
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    })
+  }
+}
+
+// 추론 로그 전용 유틸리티 함수들
+const formatTimeDetailed = (timestamp: string) => {
+  try {
+    const date = new Date(timestamp)
+    // Invalid Date 체크
+    if (isNaN(date.getTime())) {
+      return timestamp // 원본 문자열 그대로 반환
+    }
+    return date.toLocaleTimeString('ko-KR', {
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      fractionalSecondDigits: 3
+    })
+  } catch (error) {
+    return timestamp // 파싱 실패시 원본 반환
+  }
+}
+
+
+const getEndpointFromLog = (log: any) => {
+  return log.metadata?.endpoint || 'N/A'
+}
+
+const formatJsonResponse = (responseContent: any) => {
+  try {
+    return JSON.stringify(responseContent, null, 2)
+  } catch (error) {
+    return String(responseContent)
+  }
+}
+
+// 메시지 파싱 함수들
+const shouldShowLogDetails = (log: any) => {
+  return log.metadata ||
+         getEndpointFromMessage(log.message) ||
+         getStatsFromMessage(log.message) ||
+         getErrorFromMessage(log.message)
+}
+
+const getEndpointFromMessage = (message: string) => {
+  // "🎯 추론 엔드포인트: http://..." 패턴 파싱
+  const endpointMatch = message.match(/엔드포인트:\s*(https?:\/\/[^\s]+)/)
+  return endpointMatch ? endpointMatch[1] : null
+}
+
+const getStatsFromMessage = (message: string) => {
+  // "N회 요청, 성공률 X.X%" 패턴 파싱
+  const statsMatch = message.match(/(\d+)회 요청.*성공률[:\s]*(\d+\.?\d*)%/)
+  if (statsMatch) {
+    return {
+      requests: parseInt(statsMatch[1]),
+      successRate: parseFloat(statsMatch[2])
+    }
+  }
+  return null
+}
+
+const getErrorFromMessage = (message: string) => {
+  // "오류: ..." 또는 "Cannot connect to host..." 패턴 파싱
+  const errorMatch = message.match(/오류:\s*(.+)$/) || message.match(/(Cannot connect to host[^)]+)/)
+  return errorMatch ? errorMatch[1] : null
+}
+
+// 개별 추론 요청 로그인지 확인 (mlops-deployment-certification과 동일한 방식)
+const isInferenceRequestLog = (log: any) => {
+  return log.metadata && (
+    log.metadata.endpoint ||
+    log.metadata.response_content ||
+    log.metadata.error_content ||
+    log.metadata.payload_type ||
+    typeof log.metadata.success === 'boolean'
+  )
+}
+
+// 일반적인 배포 관련 로그에 상세 정보가 있는지 확인
+const shouldShowGeneralLogDetails = (log: any) => {
+  return getEndpointFromMessage(log.message) ||
+         getStatsFromMessage(log.message) ||
+         getErrorFromMessage(log.message)
 }
 
 // 서빙 방식별 특화 검증 로직
@@ -1057,9 +1306,17 @@ const startRedeploy = async () => {
       // WebSocket 연결 시작
       connectDeploymentLogs(namespace, serviceName, response.result?.deploymentId)
       connectPodLogs(namespace, serviceName, formData.value.strategy)
+      connectInferenceLogs(namespace, serviceName)
       connectTrafficMetrics(namespace, serviceName)
 
-      // 추론 검증은 백엔드에서 WebSocket으로 자동 전송됨
+      // 추론 검증은 백엔드에서 inference_log WebSocket으로 자동 전송됨
+      console.log('🎯 추론 로그 WebSocket 연결 완료 - 백엔드에서 실시간 데이터 수신 대기 중')
+
+      // 임시 시뮬레이션 (백엔드에서 개별 inference_log 전송 구현 완료시 제거)
+      setTimeout(() => {
+        console.log('🎯 개별 추론 요청 시뮬레이션 시작 (백엔드 inference_log 구현 대기 중)')
+        simulateInferenceValidation(namespace, serviceName)
+      }, 8000) // 8초 후 시뮬레이션 시작
 
       // 타임아웃 처리는 WebSocket composable에서 처리됨
 
@@ -1258,8 +1515,28 @@ onMounted(async () => {
   }
 })
 
+// 추론 로그 자동 스크롤
+const logContainer = ref<HTMLElement>()
+
+// 추론 로그가 업데이트될 때 자동 스크롤
+watch(inferenceLogs, () => {
+  nextTick(() => {
+    if (logContainer.value && activeTab.value === 1) {
+      logContainer.value.scrollTop = logContainer.value.scrollHeight
+    }
+  })
+}, { deep: true })
+
 const toolbarLinks = ref([
   [],
   []
 ])
 </script>
+
+<style scoped>
+/* JSON 응답 프리 블록 스타일링 */
+pre {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  line-height: 1.4;
+}
+</style>
