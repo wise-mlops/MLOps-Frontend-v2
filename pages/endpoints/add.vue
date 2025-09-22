@@ -363,8 +363,8 @@ const formData = ref({
 
   // Standard 설정
   storage_uri: '',
-  model_format: 'mlflow',
-  protocol_version: 'v2',
+  model_format: 'sklearn',
+  protocol_version: 'v1',
 
   // vLLM 설정
   vllm_image_tag: 'latest',
@@ -451,7 +451,9 @@ watch(() => formData.value.vllm_gpu, (newGpuResource) => {
 // 모델 포맷 변경시 프로토콜 버전 자동 조정
 watch(() => formData.value.model_format, (newModelFormat) => {
   if (newModelFormat === 'mlflow') {
-    formData.value.protocol_version = 'v2'
+    formData.value.protocol_version = 'v2'  // MLflow는 v2 기본값
+  } else {
+    formData.value.protocol_version = 'v1'  // sklearn, pytorch 등은 v1 기본값
   }
 })
 
