@@ -1351,6 +1351,9 @@ const parseCurrentSettings = (endpointDetails: any, detectedServingType: string)
   if (detectedServingType === 'standard') {
     formData.value.storageUri = currentSettings.value.storageUri
     formData.value.modelFormat = currentSettings.value.modelFormat
+
+    // 재배포에서는 기존 서비스의 프로토콜 버전을 백엔드에서 자동으로 판단함
+    // 프론트엔드에서는 modelFormat만 백엔드로 전달하고, 백엔드에서 적절한 프로토콜 버전 결정
   } else if (detectedServingType === 'vllm') {
     // vLLM Blue-Green용 설정
     formData.value.vllm_image_tag = currentSettings.value.vllmImageTag || 'latest'
