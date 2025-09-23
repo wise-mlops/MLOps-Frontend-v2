@@ -2,9 +2,6 @@
 
 
 export default defineNuxtConfig({
-  app: {
-    baseURL: process.env.APP_BASE_URL || '/'
-  },
   appConfig: {
     head: {
       title: 'WISE MLOps'
@@ -12,7 +9,7 @@ export default defineNuxtConfig({
     api: {
       // url : process.env.APP_BACKEND_URL || '',
       url: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/api-v2/'
-          }
+    }
   },
   colorMode: {
     preference: 'light'
