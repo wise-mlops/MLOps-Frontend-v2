@@ -1,6 +1,8 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 
 
+console.log(process.env.APP_BASE_URL)
+console.log(process.env.AUTH_ORIGIN)
 export default defineNuxtConfig({
   app: {
     baseURL: process.env.APP_BASE_URL || '/',
@@ -37,7 +39,7 @@ export default defineNuxtConfig({
   auth: {
     isEnabled: true,
     disableServerSideAuth: false,
-    // originEnvKey: 'AUTH_ORIGIN',
+    originEnvKey: 'AUTH_ORIGIN',
     baseURL: process.env.AUTH_ORIGIN  || '',
     provider: {  
       type:'authjs',
