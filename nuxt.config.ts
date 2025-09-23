@@ -7,7 +7,7 @@ export default defineNuxtConfig({
   app: {
     baseURL: process.env.APP_BASE_URL || '/',
     cdnURL: process.env.APP_BASE_URL || '/',
-    buildAssetsDir: '/_nuxt/',
+    buildAssetsDir: '_nuxt/',
     head: {
       base: { href: process.env.APP_BASE_URL || '/' }
     }
@@ -39,7 +39,7 @@ export default defineNuxtConfig({
   auth: {
     isEnabled: true,
     disableServerSideAuth: false,
-    originEnvKey: 'AUTH_ORIGIN',
+    // originEnvKey: 'AUTH_ORIGIN',
     baseURL: process.env.AUTH_ORIGIN  || '',
     provider: {  
       type:'authjs',
