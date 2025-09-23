@@ -2,12 +2,13 @@
 
 
 export default defineNuxtConfig({
-  router: {
-    base: process.env.APP_BASE_URL || '/'
-  },
-  // 정적 자산 경로 설정
-  build: {
-    publicPath: process.env.APP_BASE_URL ? `${process.env.APP_BASE_URL}_nuxt/` : '/_nuxt/'
+  app: {
+    baseURL: process.env.APP_BASE_URL || '/',
+    cdnURL: process.env.APP_BASE_URL || '/',
+    buildAssetsDir: '/_nuxt/',
+    head: {
+      base: { href: process.env.APP_BASE_URL || '/' }
+    }
   },
   appConfig: {
     head: {
