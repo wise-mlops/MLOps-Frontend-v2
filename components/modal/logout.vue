@@ -56,8 +56,7 @@ onMounted(() => {
 const handleLogout = async () => {
   try {
     isLoggingOut.value = true
-    const config = useRuntimeConfig()
-    await signOut({ callbackUrl: window.location.origin + config.public.baseURL + 'login' })
+    await signOut({ callbackUrl: window.location.origin + '/login' })
 
     isLoggingOut.value = false
     logoutSuccess.value = true
@@ -74,11 +73,11 @@ const cancelLogout = () => {
 }
 
 const goToHome = () => {
-  router.push('./')
+  router.push('/')
 }
 
 const goToLogin = () => {
-  router.push('./login')
+  router.push('/login')
 }
 
 // URL 파라미터에서 success 확인
