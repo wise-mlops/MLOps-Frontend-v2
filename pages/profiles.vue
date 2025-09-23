@@ -206,11 +206,11 @@ const formatDate = (timestamp) => {
 
 // 페이지 이동
 const navigateToLogin = () => {
-  router.push('/login')
+  router.push('./login')
 }
 
 const navigateToLogout = () => {
-  router.push('/logout')
+  router.push('./logout')
 }
 
 // toolbar links  
