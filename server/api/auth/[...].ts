@@ -27,7 +27,7 @@ export default NuxtAuthHandler({
       clientSecret: process.env.KEYCLOAK_CLIENT_SECRET || '',
       authorization: { params: { scope: 'openid email profile' } },
       idToken: true,
-      checks: ['state'],
+      checks: ['pkce', 'state'],
       profile(profile: any) {
         return {
           id: profile.sub,
