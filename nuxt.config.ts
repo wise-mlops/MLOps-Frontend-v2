@@ -1,8 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 
 
-console.log('APP_BASE_URL:', process.env.APP_BASE_URL)
-
 export default defineNuxtConfig({
   app: {
     baseURL: process.env.APP_BASE_URL || '/'
