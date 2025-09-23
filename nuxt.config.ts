@@ -7,7 +7,7 @@ export default defineNuxtConfig({
   app: {
     baseURL: process.env.APP_BASE_URL || '/',
     cdnURL: process.env.APP_BASE_URL || '/',
-    buildAssetsDir: '_nuxt/',
+    buildAssetsDir: process.env.APP_BASE_URL+'/_nuxt/',
     head: {
       base: { href: process.env.APP_BASE_URL || '/' }
     }
