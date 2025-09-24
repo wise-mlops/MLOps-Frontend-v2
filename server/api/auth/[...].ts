@@ -6,6 +6,7 @@ import { useRuntimeConfig } from '#imports'
 console.log('🔍 === NextAuth Handler 초기화 ===')
 console.log('📌 APP_BASE_URL:', process.env.APP_BASE_URL)
 console.log('📌 AUTH_ORIGIN:', process.env.AUTH_ORIGIN)
+console.log('📌 NEXTAUTH_URL:', process.env.NEXTAUTH_URL)
 console.log('📌 KEYCLOAK_URL:', process.env.KEYCLOAK_URL)
 console.log('📌 KEYCLOAK_REALM:', process.env.KEYCLOAK_REALM)
 console.log('📌 KEYCLOAK_CLIENT_ID:', process.env.KEYCLOAK_CLIENT_ID)
@@ -19,6 +20,9 @@ export default NuxtAuthHandler({
   // NextAuth.js 옵션
   debug: true,  // 디버그 모드 활성화
   secret: process.env.AUTH_SECRET || 'your-secret-key',
+  
+  // 명시적 URL 설정 (Nuxt Auth 오버라이드 방지)
+  url: process.env.AUTH_ORIGIN || 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/web-v2',
   pages: {
     signIn: `${process.env.APP_BASE_URL || '/'}login`,
     signOut: `${process.env.APP_BASE_URL || '/'}logout`,
@@ -38,10 +42,16 @@ export default NuxtAuthHandler({
       wellKnown: `${process.env.KEYCLOAK_URL}/realms/${process.env.KEYCLOAK_REALM}/.well-known/openid-configuration`,      
       clientId: process.env.KEYCLOAK_CLIENT_ID || '',
       clientSecret: process.env.KEYCLOAK_CLIENT_SECRET || '',
+      
       authorization: { params: { scope: 'openid email profile' } },
       idToken: true,
       checks: ['pkce', 'state'],
       profile(profile: any) {
+        console.log('🔐 === Keycloak Profile Callback ===')
+        console.log('🔐 Profile ID:', profile.sub)
+        console.log('🔐 Profile Email:', profile.email)
+        console.log('======================================')
+        
         return {
           id: profile.sub,
           name: profile.name || profile.preferred_username,
@@ -88,7 +98,16 @@ export default NuxtAuthHandler({
       console.log('🚀 Original URL:', url)
       console.log('🚀 Base URL:', baseUrl)
       
-      // 경로 손실 방지: /login으로 리다이렉트 시 APP_BASE_URL 추가
+      // 도메인만 있는 경우 (경로 손실된 경우) → login 페이지로 리다이렉트
+      if (url === 'https://labs.wisenut.kr' || url === baseUrl) {
+        const correctedUrl = `${process.env.APP_BASE_URL || '/'}login`
+        console.log('🔧 Domain-only URL detected, redirecting to login:', correctedUrl)
+        console.log('🚀 Final redirect to:', correctedUrl)
+        console.log('=========================')
+        return correctedUrl
+      }
+      
+      // /login으로 리다이렉트 시 APP_BASE_URL 추가
       if (url === '/login' || url.endsWith('/login')) {
         const correctedUrl = `${process.env.APP_BASE_URL || '/'}login`
         console.log('🔧 Correcting login URL to:', correctedUrl)
@@ -97,7 +116,7 @@ export default NuxtAuthHandler({
         return correctedUrl
       }
       
-      // 다른 경로도 체크
+      // 다른 상대경로도 체크
       if (url.startsWith('/') && !url.startsWith(process.env.APP_BASE_URL || '/')) {
         const correctedUrl = `${process.env.APP_BASE_URL || '/'}${url.substring(1)}`
         console.log('🔧 Correcting relative URL to:', correctedUrl)
