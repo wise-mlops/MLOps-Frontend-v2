@@ -6,7 +6,6 @@ import { useRuntimeConfig } from '#imports'
 console.log('🔍 === NextAuth Handler 초기화 ===')
 console.log('📌 APP_BASE_URL:', process.env.APP_BASE_URL)
 console.log('📌 AUTH_ORIGIN:', process.env.AUTH_ORIGIN)
-console.log('📌 NEXTAUTH_URL:', process.env.NEXTAUTH_URL)
 console.log('📌 KEYCLOAK_URL:', process.env.KEYCLOAK_URL)
 console.log('📌 KEYCLOAK_REALM:', process.env.KEYCLOAK_REALM)
 console.log('📌 KEYCLOAK_CLIENT_ID:', process.env.KEYCLOAK_CLIENT_ID)
