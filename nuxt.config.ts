@@ -10,7 +10,6 @@ export default defineNuxtConfig({
       base: { href: process.env.APP_BASE_URL || '/' }
     }
   },
-  
   nitro: {
     preset: 'node-server'
   },
@@ -42,12 +41,12 @@ export default defineNuxtConfig({
     isEnabled: true,
     disableServerSideAuth: false,
     // originEnvKey: 'AUTH_ORIGIN',
-    baseURL: process.env.AUTH_ORIGIN  || '',
+    // baseURL: process.env.AUTH_ORIGIN  || '',
     provider: {  
       type:'authjs',
       trustHost: false,
       defaultProvider: 'keycloak',
-      addDefaultCallbackUrl: true,
+      addDefaultCallbackUrl: false,
     },
     sessionRefresh: {
       enablePeriodically: true,
