@@ -1,14 +1,26 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 
-
 export default defineNuxtConfig({
+  app: {
+    // baseURL: process.env.APP_BASE_URL || '/',
+    baseURL: process.env.APP_BASE_URL || '/',
+    cdnURL: process.env.APP_BASE_URL || '/',
+    buildAssetsDir: '/_nuxt/',
+    head: {
+      base: { href: process.env.APP_BASE_URL || '/' }
+    }
+  },
+  
+  nitro: {
+    preset: 'node-server'
+  },
   appConfig: {
     head: {
       title: 'WISE MLOps'
     },
     api: {
-      // url : process.env.APP_BACKEND_URL || '',
-      url: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/api-v2/'
+      url : process.env.APP_BACKEND_URL || ''
+      // url: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/api-v2/'
     }
   },
   colorMode: {
