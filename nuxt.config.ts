@@ -1,17 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 
 
-console.log(process.env.APP_BASE_URL)
-console.log(process.env.AUTH_ORIGIN)
 export default defineNuxtConfig({
-  app: {
-    baseURL: process.env.APP_BASE_URL || '/',
-    cdnURL: process.env.APP_BASE_URL || '/',
-    buildAssetsDir: '/_nuxt/',
-    head: {
-      base: { href: process.env.APP_BASE_URL || '/' }
-    }
-  },
   appConfig: {
     head: {
       title: 'WISE MLOps'
