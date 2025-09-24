@@ -87,6 +87,25 @@ export default NuxtAuthHandler({
       console.log('🚀 === Redirect Callback ===')
       console.log('🚀 Original URL:', url)
       console.log('🚀 Base URL:', baseUrl)
+      
+      // 경로 손실 방지: /login으로 리다이렉트 시 APP_BASE_URL 추가
+      if (url === '/login' || url.endsWith('/login')) {
+        const correctedUrl = `${process.env.APP_BASE_URL || '/'}login`
+        console.log('🔧 Correcting login URL to:', correctedUrl)
+        console.log('🚀 Final redirect to:', correctedUrl)
+        console.log('=========================')
+        return correctedUrl
+      }
+      
+      // 다른 경로도 체크
+      if (url.startsWith('/') && !url.startsWith(process.env.APP_BASE_URL || '/')) {
+        const correctedUrl = `${process.env.APP_BASE_URL || '/'}${url.substring(1)}`
+        console.log('🔧 Correcting relative URL to:', correctedUrl)
+        console.log('🚀 Final redirect to:', correctedUrl)
+        console.log('=========================')
+        return correctedUrl
+      }
+      
       console.log('🚀 Final redirect to:', url)
       console.log('=========================')
       return url
