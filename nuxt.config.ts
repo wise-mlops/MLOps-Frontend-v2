@@ -1,5 +1,12 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 
+// 디버그용 환경변수 출력
+console.log('🌟 === Nuxt Config 로딩 ===')
+console.log('🌟 APP_BASE_URL:', process.env.APP_BASE_URL)
+console.log('🌟 AUTH_ORIGIN:', process.env.AUTH_ORIGIN)
+console.log('🌟 APP_BACKEND_URL:', process.env.APP_BACKEND_URL)
+console.log('============================')
+
 export default defineNuxtConfig({
   app: {
     // baseURL: process.env.APP_BASE_URL || '/',
