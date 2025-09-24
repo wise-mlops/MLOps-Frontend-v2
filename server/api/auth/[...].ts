@@ -2,9 +2,22 @@
 import { NuxtAuthHandler } from '#auth'
 import { useRuntimeConfig } from '#imports'
 
+// 디버그용 환경변수 및 URL 출력
+console.log('🔍 === NextAuth Handler 초기화 ===')
+console.log('📌 APP_BASE_URL:', process.env.APP_BASE_URL)
+console.log('📌 AUTH_ORIGIN:', process.env.AUTH_ORIGIN)
+console.log('📌 KEYCLOAK_URL:', process.env.KEYCLOAK_URL)
+console.log('📌 KEYCLOAK_REALM:', process.env.KEYCLOAK_REALM)
+console.log('📌 KEYCLOAK_CLIENT_ID:', process.env.KEYCLOAK_CLIENT_ID)
+console.log('🎯 Generated signIn URL:', `${process.env.APP_BASE_URL || '/'}login`)
+console.log('🎯 Generated signOut URL:', `${process.env.APP_BASE_URL || '/'}logout`)
+console.log('🎯 Generated error URL:', `${process.env.APP_BASE_URL || '/'}auth/error`)
+console.log('========================================')
+
 // next-auth/providers/keycloak 대신 아래와 같이 직접 Keycloak 제공자 정의
 export default NuxtAuthHandler({
   // NextAuth.js 옵션
+  debug: true,  // 디버그 모드 활성화
   secret: process.env.AUTH_SECRET || 'your-secret-key',
   pages: {
     signIn: `${process.env.APP_BASE_URL || '/'}login`,
@@ -44,8 +57,12 @@ export default NuxtAuthHandler({
   ],
   callbacks: {
     async jwt({ token, account, user }) {
+      console.log('🔑 === JWT Callback ===')
+      console.log('🔑 Account:', account ? 'Present' : 'None')
+      console.log('🔑 User:', user ? user.email || user.name : 'None')
+      
       if (account && user) {
-        
+        console.log('🔑 Setting token data for user:', user.email || user.name)
         token.accessToken = account.access_token
         token.refreshToken = account.refresh_token
         token.idToken = account.id_token
@@ -56,11 +73,23 @@ export default NuxtAuthHandler({
       return token
     },
     async session({ session, token }) {
+      console.log('📋 === Session Callback ===')
+      console.log('📋 Token present:', !!token)
+      console.log('📋 Session user:', session.user?.email || 'None')
+      
       if (token) {
         session.accessToken = token.accessToken
         session.user = token.userInfo
       }
       return session
+    },
+    async redirect({ url, baseUrl }) {
+      console.log('🚀 === Redirect Callback ===')
+      console.log('🚀 Original URL:', url)
+      console.log('🚀 Base URL:', baseUrl)
+      console.log('🚀 Final redirect to:', url)
+      console.log('=========================')
+      return url
     }
   },
 })
