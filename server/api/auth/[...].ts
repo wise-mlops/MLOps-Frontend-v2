@@ -24,7 +24,7 @@ export default NuxtAuthHandler({
       type: 'oauth',
       wellKnown: `${process.env.NUXT_PUBLIC_KEYCLOAK_URL}/realms/${process.env.NUXT_PUBLIC_KEYCLOAK_REALM}/.well-known/openid-configuration`,      
       clientId: process.env.NUXT_PUBLIC_KEYCLOAK_CLIENT_ID || '',
-      clientSecret: process.env.KEYCLOAK_CLIENT_SECRET || '',
+      clientSecret: process.env.NUXT_KEYCLOAK_CLIENT_SECRET || '',
       authorization: { params: { scope: 'openid email profile' } },
       idToken: true,
       checks: ['pkce', 'state'],
