@@ -5,7 +5,7 @@ export default defineNuxtConfig({
 
   app: {
     baseURL: process.env.NUXT_APP_BASE_URL || '/',
-    cdnURL: process.env.NUXT_APP_BASE_URL || '/',
+    cdnURL: process.env.NUXT_APP_CDN_URL,
     buildAssetsDir: '/_nuxt/',
     head: {
       base: { href: process.env.NUXT_APP_BASE_URL || '/' }
@@ -69,7 +69,7 @@ export default defineNuxtConfig({
       keycloakClientSecret: process.env.NUXT_KEYCLOAK_CLIENT_SECRET,
     },
     public: {
-      baseURL: process.env.NUXT_APP_BASE_URL || "/",
+      baseURL: process.env.NUXT_APP_BASE_URL || "/clusters/local/namespaces/wise-mlops/services/web-v2/",
       enableDevAuth: process.env.NUXT_PUBLIC_ENABLE_DEV_AUTH === 'true',
       prometheusUrl: process.env.PROMETHEUS_URL || 'http://local.prometheus.web.labs.wisenut.com',
       keycloakUrl: process.env.NUXT_PUBLIC_KEYCLOAK_URL,
