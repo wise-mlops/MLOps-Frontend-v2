@@ -35,13 +35,20 @@ export default defineNuxtConfig({
     }
   },
   auth: {
+    // 인증 모듈 활성화 여부
+    // true: 인증 기능 사용, false: 인증 비활성화
     isEnabled: true,
-    disableServerSideAuth: false,
+
+    // HTTP HOST 헤더 신뢰 여부 설정
+    // false: HOST 헤더를 검증하여 보안 강화 (개발환경용)
+    // true: HOST 헤더를 신뢰 (프록시/인그레스 환경용)
+    // 쿠버네티스에서는 프록시를 통해 요청이 오므로 true 필요
+    disableServerSideAuth: true,
     // originEnvKey: 'AUTH_ORIGIN',
-    baseURL: process.env.NUXT_AUTH_ORIGIN  || '',
+    baseURL: process.env.AUTH_ORIGIN  || '',
     provider: {  
       type:'authjs',
-      trustHost: false,
+      trustHost: true,
       defaultProvider: 'keycloak',
       addDefaultCallbackUrl: true,
     },
@@ -65,8 +72,5 @@ export default defineNuxtConfig({
       keycloakRealm: process.env.NUXT_PUBLIC_KEYCLOAK_REALM,
       keycloakClientId: process.env.NUXT_PUBLIC_KEYCLOAK_CLIENT_ID
     },
-  },
-  nitro: {
-    preset: 'node-server'
   }
 })
