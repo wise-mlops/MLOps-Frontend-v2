@@ -45,7 +45,7 @@ export default defineNuxtConfig({
     // 쿠버네티스에서는 프록시를 통해 요청이 오므로 true 필요
     disableServerSideAuth: true,
     // originEnvKey: 'AUTH_ORIGIN',
-    baseURL: process.env.AUTH_ORIGIN  || '',
+    baseURL: process.env.NUXT_AUTH_ORIGIN  || '',
     provider: {  
       type:'authjs',
       trustHost: true,
@@ -60,7 +60,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     authJs: {
       secret: process.env.AUTH_SECRET,  
-      origin: process.env.AUTH_ORIGIN      
+      origin: process.env.NUXT_AUTH_ORIGIN
     },
     auth: {      
       keycloakUrl: process.env.NUXT_PUBLIC_KEYCLOAK_URL,
