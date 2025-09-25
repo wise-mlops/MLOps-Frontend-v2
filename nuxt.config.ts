@@ -61,7 +61,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     authJs: {
       secret: process.env.AUTH_SECRET,  
-      origin: 'https://labs.wisenut.kr'
+      origin: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/web-v2'
     },
     auth: {      
       keycloakUrl: process.env.NUXT_PUBLIC_KEYCLOAK_URL,
