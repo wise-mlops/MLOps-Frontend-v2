@@ -8,9 +8,8 @@ export default defineNuxtPlugin((nuxtApp) => {
 
   return {    
     provide: {
-      auth: {
-        // 필요한 경우 여기에 커스텀 메서드를 추가할 수 있습니다.
-        
+      authUtils: {
+        // 커스텀 도우미 메서드 작성 (필요 시)
       }
     }
   }
