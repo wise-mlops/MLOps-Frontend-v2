@@ -37,7 +37,7 @@ export default defineNuxtConfig({
   auth: {
     // 인증 모듈 활성화 여부
     // true: 인증 기능 사용, false: 인증 비활성화
-    isEnabled: false,
+    isEnabled: true,
 
     // HTTP HOST 헤더 신뢰 여부 설정
     // false: HOST 헤더를 검증하여 보안 강화 (개발환경용)
@@ -58,6 +58,10 @@ export default defineNuxtConfig({
     },
   },
   runtimeConfig: {
+    authJs: {
+      secret: process.env.AUTH_SECRET,  
+      origin: process.env.AUTH_ORIGIN      
+    },
     auth: {      
       keycloakUrl: process.env.NUXT_PUBLIC_KEYCLOAK_URL,
       keycloakRealm: process.env.NUXT_PUBLIC_KEYCLOAK_REALM,
