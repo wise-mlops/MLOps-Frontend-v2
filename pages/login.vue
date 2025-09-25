@@ -36,7 +36,7 @@
 
 <script setup>
 
-definePageMeta({ auth: false, layout: 'login' })
+definePageMeta({ auth: false, layout: false })
 
 const { signIn } = useAuth()
 import { useRouter } from 'vue-router'
