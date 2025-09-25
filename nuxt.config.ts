@@ -1,6 +1,8 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 
 export default defineNuxtConfig({
+  ssr: false,
+
   app: {
     baseURL: process.env.NUXT_APP_BASE_URL || '/',
     cdnURL: process.env.NUXT_APP_BASE_URL || '/',
@@ -24,7 +26,6 @@ export default defineNuxtConfig({
   compatibilityDate: '2024-04-03',
   devtools: { enabled: true },
   modules: ["@nuxt/ui", 'nuxt-monaco-editor', '@sidebase/nuxt-auth'],
-  ssr: false,
   monacoEditor: {
     // dest: '_monaco',
     locale: 'ko',
@@ -37,7 +38,7 @@ export default defineNuxtConfig({
     isEnabled: true,
     disableServerSideAuth: false,
     // originEnvKey: 'AUTH_ORIGIN',
-    baseURL: process.env.AUTH_ORIGIN  || '',
+    baseURL: process.env.NUXT_AUTH_ORIGIN  || '',
     provider: {  
       type:'authjs',
       trustHost: false,
