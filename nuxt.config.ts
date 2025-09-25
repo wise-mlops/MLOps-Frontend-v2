@@ -43,9 +43,10 @@ export default defineNuxtConfig({
     // false: HOST 헤더를 검증하여 보안 강화 (개발환경용)
     // true: HOST 헤더를 신뢰 (프록시/인그레스 환경용)
     // 쿠버네티스에서는 프록시를 통해 요청이 오므로 true 필요
-    disableServerSideAuth: true,
+    disableServerSideAuth: false,
     // originEnvKey: 'AUTH_ORIGIN',
-    baseURL: process.env.NUXT_AUTH_ORIGIN  || '',
+    // baseURL: process.env.NUXT_AUTH_ORIGIN  || '',
+    baseURL: 'https://labs.wisenut.kr/api/auth',
     provider: {  
       type:'authjs',
       trustHost: true,
@@ -60,7 +61,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     authJs: {
       secret: process.env.AUTH_SECRET,  
-      origin: process.env.NUXT_AUTH_ORIGIN
+      origin: 'https://labs.wisenut.kr'
     },
     auth: {      
       keycloakUrl: process.env.NUXT_PUBLIC_KEYCLOAK_URL,
@@ -74,7 +75,8 @@ export default defineNuxtConfig({
       prometheusUrl: process.env.PROMETHEUS_URL || 'http://local.prometheus.web.labs.wisenut.com',
       keycloakUrl: process.env.NUXT_PUBLIC_KEYCLOAK_URL,
       keycloakRealm: process.env.NUXT_PUBLIC_KEYCLOAK_REALM,
-      keycloakClientId: process.env.NUXT_PUBLIC_KEYCLOAK_CLIENT_ID
+      keycloakClientId: process.env.NUXT_PUBLIC_KEYCLOAK_CLIENT_ID,
+      authUrl: 'https://labs.wisenut.kr/api/auth'
     },
   }
 })
