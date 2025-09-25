@@ -8,6 +8,7 @@ console.log('🌟 APP_BACKEND_URL:', process.env.APP_BACKEND_URL)
 console.log('============================')
 
 export default defineNuxtConfig({
+<<<<<<< HEAD
   app: {
     // baseURL: process.env.APP_BASE_URL || '/',
     baseURL: process.env.APP_BASE_URL || '/',
@@ -16,6 +17,14 @@ export default defineNuxtConfig({
     head: {
       base: { href: process.env.APP_BASE_URL || '/' }
     }
+=======
+  router: {
+    base: process.env.APP_BASE_URL || '/'
+  },
+  // 정적 자산 경로 설정
+  build: {
+    publicPath: process.env.APP_BASE_URL ? `${process.env.APP_BASE_URL}_nuxt/` : '/_nuxt/'
+>>>>>>> parent of 6945f9d (fix: app 설정 추가)
   },
   nitro: {
     preset: 'node-server'
