@@ -2,11 +2,11 @@
 
 export default defineNuxtConfig({
   app: {
-    baseURL: process.env.APP_BASE_URL || '/',
-    cdnURL: process.env.APP_BASE_URL || '/',
+    baseURL: process.env.NUXT_APP_BASE_URL || '/',
+    cdnURL: process.env.NUXT_APP_BASE_URL || '/',
     buildAssetsDir: '/_nuxt/',
     head: {
-      base: { href: process.env.APP_BASE_URL || '/' }
+      base: { href: process.env.NUXT_APP_BASE_URL || '/' }
     }
   },
   appConfig: {
@@ -51,14 +51,21 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     auth: {      
-      keycloakUrl: process.env.KEYCLOAK_URL,
-      keycloakRealm: process.env.KEYCLOAK_REALM,
-      keycloakClientId: process.env.KEYCLOAK_CLIENT_ID,
+      keycloakUrl: process.env.NUXT_PUBLIC_KEYCLOAK_URL,
+      keycloakRealm: process.env.NUXT_PUBLIC_KEYCLOAK_REALM,
+      keycloakClientId: process.env.NUXT_PUBLIC_KEYCLOAK_CLIENT_ID,
       keycloakClientSecret: process.env.KEYCLOAK_CLIENT_SECRET,
     },
     public: {
       baseURL: process.env.APP_BASE_URL || "/",
-      prometheusUrl: process.env.PROMETHEUS_URL || 'http://local.prometheus.web.labs.wisenut.com'
+      enableDevAuth: process.env.NUXT_PUBLIC_ENABLE_DEV_AUTH === 'true',
+      prometheusUrl: process.env.PROMETHEUS_URL || 'http://local.prometheus.web.labs.wisenut.com',
+      keycloakUrl: process.env.NUXT_PUBLIC_KEYCLOAK_URL,
+      keycloakRealm: process.env.NUXT_PUBLIC_KEYCLOAK_REALM,
+      keycloakClientId: process.env.NUXT_PUBLIC_KEYCLOAK_CLIENT_ID
     },
+  },
+  nitro: {
+    preset: 'node-server'
   }
 })
