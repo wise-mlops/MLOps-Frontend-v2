@@ -61,6 +61,9 @@ export default NuxtAuthHandler({
         session.user = token.userInfo
       }
       return session
-    }
+    },
+    async redirect({ url, baseUrl }) {
+      return 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/web-v2'
+  }
   },
 })
