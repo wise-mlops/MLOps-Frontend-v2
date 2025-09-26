@@ -22,9 +22,9 @@ export default NuxtAuthHandler({
       id: 'keycloak',
       name: 'Keycloak',
       type: 'oauth',
-      wellKnown: `${process.env.NUXT_PUBLIC_KEYCLOAK_URL}/realms/${process.env.NUXT_PUBLIC_KEYCLOAK_REALM}/.well-known/openid-configuration`,      
-      clientId: process.env.NUXT_PUBLIC_KEYCLOAK_CLIENT_ID || '',
-      clientSecret: process.env.NUXT_KEYCLOAK_CLIENT_SECRET || '',
+      wellKnown: `${process.env.KEYCLOAK_URL}/realms/${process.env.KEYCLOAK_REALM}/.well-known/openid-configuration`,      
+      clientId: process.env.KEYCLOAK_CLIENT_ID || '',
+      clientSecret: process.env.KEYCLOAK_CLIENT_SECRET || '',
       authorization: { params: { scope: 'openid email profile' } },
       idToken: true,
       checks: ['pkce', 'state'],
@@ -61,9 +61,6 @@ export default NuxtAuthHandler({
         session.user = token.userInfo
       }
       return session
-    },
-    async redirect({ url, baseUrl }) {
-      return 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/web-v2'
-  }
+    }
   },
 })

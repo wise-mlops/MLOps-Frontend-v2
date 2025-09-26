@@ -35,8 +35,13 @@
 </template>
 
 <script setup>
+function enableCustomLayout() {
+  setPageLayout('login')
+}
 
-definePageMeta({ auth: false, layout: false })
+definePageMeta({
+  layout: false,
+});
 
 const { signIn } = useAuth()
 import { useRouter } from 'vue-router'
