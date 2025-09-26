@@ -542,6 +542,16 @@
                 <span class="text-gray-500">{{ formatTime(log.timestamp) }}</span>
                 <span class="ml-2">{{ log.message }}</span>
 
+                <!-- 완전한 추론 응답 데이터 JSON 뷰어 -->
+                <div v-if="log.source === 'inference_response' && log.metadata" class="ml-12 mt-2">
+                  <details class="cursor-pointer">
+                    <summary class="text-xs text-blue-600 hover:text-blue-800">완전한 응답 데이터 보기</summary>
+                    <div class="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded border text-xs">
+                      <pre class="whitespace-pre-wrap overflow-x-auto">{{ JSON.stringify(log.metadata, null, 2) }}</pre>
+                    </div>
+                  </details>
+                </div>
+
                 <!-- 개별 추론 요청의 metadata가 있으면 표시 -->
                 <div v-if="log.metadata && isInferenceRequestLog(log)" class="ml-12 mt-1 text-xs text-gray-600">
                   <div v-if="log.metadata.endpoint">
@@ -571,11 +581,19 @@
               <div
                 v-for="(log, index) in filteredPodLogs"
                 :key="index"
-                class="p-1"
+                :class="[
+                  'p-1',
+                  log.isImportant ? 'bg-yellow-50 dark:bg-yellow-900/20 border-l-2 border-yellow-400 pl-3' : ''
+                ]"
               >
                 <span class="text-gray-500">{{ formatTime(log.timestamp) }}</span>
                 <span class="ml-2 text-blue-600">[{{ log.podName }}]</span>
-                <span class="ml-2">{{ log.message }}</span>
+                <span
+                  :class="[
+                    'ml-2',
+                    getHttpPatternClass(log.message)
+                  ]"
+                >{{ log.message }}</span>
               </div>
               <div v-if="filteredPodLogs.length === 0 && podLogs.length > 0" class="text-gray-500 text-center py-8">
                 검색 결과가 없습니다.
@@ -987,6 +1005,16 @@ const formatJsonResponse = (responseContent: any) => {
   } catch (error) {
     return String(responseContent)
   }
+}
+
+// HTTP 패턴 마커에 따른 색상 클래스 반환
+const getHttpPatternClass = (message: string) => {
+  if (message.includes('🔥 [INFERENCE]')) {
+    return 'text-red-600 font-medium'
+  } else if (message.includes('🌐 [HTTP]')) {
+    return 'text-blue-600 font-medium'
+  }
+  return ''
 }
 
 // 메시지 파싱 함수들
