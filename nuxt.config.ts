@@ -46,7 +46,6 @@ export default defineNuxtConfig({
     disableServerSideAuth: false,
     // originEnvKey: 'AUTH_ORIGIN',
     // baseURL: process.env.NUXT_AUTH_ORIGIN  || '',
-    baseURL: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/web-v2/api/auth',
     provider: {  
       type:'authjs',
       trustHost: true,
@@ -76,7 +75,7 @@ export default defineNuxtConfig({
       keycloakUrl: process.env.NUXT_PUBLIC_KEYCLOAK_URL,
       keycloakRealm: process.env.NUXT_PUBLIC_KEYCLOAK_REALM,
       keycloakClientId: process.env.NUXT_PUBLIC_KEYCLOAK_CLIENT_ID,
-      authUrl: 'https://labs.wisenut.kr/api/auth'
+      authUrl: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/web-v2/api/auth'
     },
   }
 })
