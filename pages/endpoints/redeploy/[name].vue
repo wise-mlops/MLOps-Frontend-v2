@@ -410,41 +410,70 @@
           </template>
 
           <div class="min-h-[500px] max-h-[70vh] overflow-y-auto bg-gray-50 dark:bg-gray-800 p-4 rounded font-mono text-sm">
-            <!-- 배포 로그 -->
-            <div v-if="activeTab === 0" class="space-y-1">
+            <!-- 동적 로그 표시 -->
+            <div class="space-y-1">
+              <!-- 현재 탭의 로그 표시 -->
               <div
-                v-for="(log, index) in deploymentLogs"
-                :key="index"
-                class="flex gap-2"
-              >
-                <span class="text-gray-500 flex-shrink-0">{{ formatTime(log.timestamp) }}</span>
-                <span :class="getLogLevelClass(log.level)">{{ log.message }}</span>
-              </div>
-              <div v-if="deploymentLogs.length === 0" class="text-gray-500 text-center py-8">
-                재배포를 시작하면 로그가 표시됩니다...
-              </div>
-            </div>
-
-            <!-- Pod 로그 -->
-            <div v-if="activeTab === 1" class="space-y-1">
-              <div
-                v-for="(log, index) in podLogs"
+                v-for="(log, index) in getCurrentTabLogs().slice(-100)"
                 :key="index"
                 class="flex gap-2"
                 :class="log.patterns ? 'bg-yellow-50 dark:bg-yellow-900/20 p-1 rounded' : ''"
               >
                 <span class="text-gray-500 flex-shrink-0">{{ formatTime(log.timestamp) }}</span>
-                <span class="text-blue-600 flex-shrink-0">[{{ log.pod_name }}]</span>
-                <span>{{ log.message }}</span>
+
+                <!-- Pod 로그인 경우 Pod 이름 표시 -->
+                <span
+                  v-if="log.pod_name"
+                  class="text-blue-600 flex-shrink-0"
+                >
+                  [{{ log.pod_name }}]
+                </span>
+
+                <!-- 추론 로그인 경우 확장 가능한 처리 -->
+                <div v-if="log.expandable" class="flex-1">
+                  <div class="flex items-center gap-2">
+                    <span :class="getLogLevelClass(log.level || 'info')">{{ log.message }}</span>
+                    <UButton
+                      @click="toggleLogExpansion(`${log.timestamp}-${index}`)"
+                      size="xs"
+                      variant="ghost"
+                      :icon="isLogExpanded(`${log.timestamp}-${index}`) ? 'i-heroicons-chevron-down' : 'i-heroicons-chevron-right'"
+                    >
+                      {{ isLogExpanded(`${log.timestamp}-${index}`) ? '접기' : '상세' }}
+                    </UButton>
+                  </div>
+
+                  <!-- 상세 내용 -->
+                  <div v-if="isLogExpanded(`${log.timestamp}-${index}`)" class="mt-2 p-2 bg-white dark:bg-gray-700 rounded text-xs">
+                    <div v-if="log.request" class="mb-2">
+                      <div class="font-semibold text-green-600">📤 요청:</div>
+                      <pre class="whitespace-pre-wrap">{{ JSON.stringify(log.request, null, 2) }}</pre>
+                    </div>
+                    <div v-if="log.response" class="mb-2">
+                      <div class="font-semibold text-blue-600">📥 응답:</div>
+                      <pre class="whitespace-pre-wrap">{{ JSON.stringify(log.response, null, 2) }}</pre>
+                    </div>
+                    <!-- response_body가 있는 경우 별도로 표시 -->
+                    <div v-if="log.response_body" class="mb-2">
+                      <div class="font-semibold text-purple-600">🎯 응답 본문:</div>
+                      <pre class="whitespace-pre-wrap bg-purple-50 dark:bg-purple-900/20 p-2 rounded">{{ JSON.stringify(log.response_body, null, 2) }}</pre>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 일반 로그 메시지 -->
+                <span v-else :class="getLogLevelClass(log.level || 'info')">{{ log.message }}</span>
               </div>
-              <div v-if="podLogs.length === 0" class="text-gray-500 text-center py-8">
-                Pod 로그가 표시됩니다...
+
+              <!-- 로그 없음 상태 -->
+              <div v-if="getCurrentTabLogs().length === 0" class="text-gray-500 text-center py-8">
+                {{ logTabs[activeTab]?.label }} 로그가 표시됩니다...
               </div>
             </div>
 
-            <!-- 추론 테스트 -->
-            <div v-if="activeTab === 2" class="space-y-4">
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- 추론 테스트 탭인 경우 통계 카드 표시 -->
+            <div v-if="logTabs[activeTab]?.key === 'inference'" class="mb-4">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div class="bg-white dark:bg-gray-700 p-4 rounded-lg border">
                   <div class="text-sm text-gray-600 dark:text-gray-400">총 요청</div>
                   <div class="text-2xl font-bold">{{ inferenceStats.totalRequests }}</div>
@@ -458,13 +487,10 @@
                   <div class="text-2xl font-bold">{{ inferenceStats.averageResponseTime?.toFixed(0) || 0 }}ms</div>
                 </div>
               </div>
-              <div v-if="inferenceStats.totalRequests === 0" class="text-gray-500 text-center py-8">
-                추론 테스트 결과가 표시됩니다...
-              </div>
             </div>
 
-            <!-- 보고서 -->
-            <div v-if="activeTab === 3" class="space-y-4">
+            <!-- 보고서 탭인 경우 보고서 표시 -->
+            <div v-if="logTabs[activeTab]?.key === 'report'" class="space-y-4">
               <div v-if="deploymentReport" class="space-y-6">
                 <!-- 배포 요약 -->
                 <div class="bg-white dark:bg-gray-700 p-6 rounded-lg border">
@@ -611,19 +637,66 @@ const {
   deploymentReport,
   deploymentProgress,
   deploymentStatus,
+  visibleLogs,
+  currentPage,
   connect3ChannelWebSocket,
   disconnect,
-  clearLogs
+  clearLogs,
+  getPodTypes,
+  getPodLogs,
+  getInferenceLogs,
+  getDeploymentLogCache
 } = useWebSocket()
 
-// 모니터링 탭 (4탭 구조)
+// 로그 확장 상태 관리 (reactive)
+const expandedLogs = ref<Set<string>>(new Set())
+
+// 동적 탭 구조
 const activeTab = ref(0)
-const logTabs = [
-  { label: '🚀 배포 로그', key: 'deployment' },
-  { label: '📊 Pod 로그', key: 'pod' },
-  { label: '🔍 추론 테스트', key: 'inference' },
-  { label: '📋 보고서', key: 'report' }
-]
+
+// Pod 타입별 라벨 생성 함수
+const getPodTypeLabel = (podType: string) => {
+  switch (podType) {
+    case 'stable': return 'Stable'
+    case 'canary': return 'Canary'
+    case 'blue': return 'Blue'
+    case 'green': return 'Green'
+    case 'predictor': return 'Predictor'
+    default: return podType.charAt(0).toUpperCase() + podType.slice(1)
+  }
+}
+
+// 고정 탭 구조 (기존 방식 유지)
+const logTabs = computed(() => {
+  return [
+    { label: '📋 배포 로그', key: 'deployment' },
+    { label: '📊 Pod 로그', key: 'pod' },
+    { label: '🔍 추론 테스트', key: 'inference' },
+    { label: '📋 보고서', key: 'report' }
+  ]
+})
+
+// 현재 탭의 로그 가져오기
+const getCurrentTabLogs = () => {
+  const currentTabKey = logTabs.value[activeTab.value]?.key
+  console.log(`🔗 현재 탭: ${currentTabKey}`) // 디버깅
+
+  if (currentTabKey === 'deployment') {
+    const logs = getDeploymentLogCache()
+    console.log(`📋 배포 로그 개수: ${logs.length}`)
+    return logs
+  } else if (currentTabKey === 'pod') {
+    const logs = getPodLogs() // 모든 Pod 로그 가져오기
+    console.log(`📊 Pod 로그 개수: ${logs.length}`)
+    return logs
+  } else if (currentTabKey === 'inference') {
+    const logs = getInferenceLogs()
+    console.log(`🔍 추론 로그 개수: ${logs.length}`)
+    return logs
+  }
+
+  return []
+}
 
 // 브레드크럼
 const breadcrumbs = [
@@ -677,6 +750,18 @@ const formatTime = (timestamp: string) => {
   }
 }
 
+// 로그 확장 토글 함수
+const toggleLogExpansion = (logId: string) => {
+  if (expandedLogs.value.has(logId)) {
+    expandedLogs.value.delete(logId)
+  } else {
+    expandedLogs.value.add(logId)
+  }
+  console.log(`🔄 로그 확장 토글: ${logId}, 현재 확장된 로그들:`, Array.from(expandedLogs.value))
+}
+
+const isLogExpanded = (logId: string) => expandedLogs.value.has(logId)
+
 // 액션 함수들
 const startRedeploy = async () => {
   console.log('재배포 버튼 클릭됨')
@@ -691,6 +776,7 @@ const startRedeploy = async () => {
   loading.value = true
   deploymentStarted.value = true
   clearLogs()
+  expandedLogs.value.clear() // 로그 확장 상태도 초기화
 
   console.log('🚀 재배포 시작 요청:', {
     namespace: namespace.value,
