@@ -37,6 +37,18 @@
                   required
                 />
               </UFormGroup>
+
+              <UFormGroup label="배포 전략" name="deployment_strategy" required>
+                <USelectMenu
+                  v-model="formData.deployment_strategy"
+                  :options="availableStrategies"
+                  option-attribute="label"
+                  value-attribute="value"
+                  size="md"
+                  :disabled="loading"
+                  required
+                />
+              </UFormGroup>
             </div>
           </UCard>
         </div>
@@ -360,6 +372,7 @@ const formData = ref({
   // 기본 정보
   inference_service_name: '',
   serving_type: 'standard',
+  deployment_strategy: 'blue-green',
 
   // Standard 설정
   storage_uri: '',
@@ -396,6 +409,34 @@ const servingTypeOptions = ref([
   { label: 'vLLM', value: 'vllm' },
   { label: 'Model Mesh', value: 'modelmesh' }
 ])
+
+// 서빙 타입별 사용 가능한 배포 전략
+const availableStrategies = computed(() => {
+  switch (formData.value.serving_type) {
+    case 'vllm':
+      return [
+        { label: 'Blue-Green (기본)', value: 'blue-green' },
+        { label: 'LoRA Adapter', value: 'lora-adapter' }
+      ]
+    case 'modelmesh':
+      return [
+        { label: 'ModelMesh (기본)', value: 'modelmesh' }
+      ]
+    default: // standard
+      return [
+        { label: 'Blue-Green (기본)', value: 'blue-green' },
+        { label: 'Canary', value: 'canary' }
+      ]
+  }
+})
+
+// 서빙 타입 변경 시 기본 전략 설정
+watch(() => formData.value.serving_type, (newType) => {
+  const strategies = availableStrategies.value
+  if (strategies.length > 0) {
+    formData.value.deployment_strategy = strategies[0].value
+  }
+})
 
 // Standard 모델 포맷 옵션
 const standardModelFormatOptions = ref([
@@ -695,6 +736,7 @@ const saveEndpoint = async () => {
       }
     }
 
+    // Inference Service 생성 API 사용 (basic.py)
     const response = await createEndpoint(
       namespace,
       formData.value.inference_service_name,

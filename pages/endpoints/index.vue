@@ -27,6 +27,11 @@
         <UBadge :label="getServingType(row)" :color="getServingTypeColor(row)" />
       </div>
     </template>
+    <template #deploymentStatus-data="{ row }">
+      <div class="flex justify-center">
+        <UBadge :label="getDeploymentStatus(row)" :color="getDeploymentStatusColor(row)" />
+      </div>
+    </template>
     <template #runtime-data="{ row }">
       <div>
         {{ getRuntime(row) }}
@@ -75,6 +80,14 @@
             size="sm"
           />
         </UTooltip>
+        <UTooltip text="배포">
+          <UButton
+            @click="openDeployModal(row)"
+            icon="i-heroicons-rocket-launch"
+            variant="ghost"
+            size="sm"
+          />
+        </UTooltip>
         <UTooltip text="삭제">
           <UButton
             @click="deleteEndpoint(row)"
@@ -87,6 +100,61 @@
       </div>
     </template>
   </ModuleDataTable>
+
+  <!-- 배포 모달 -->
+  <UModal v-model="deployModalOpen" :ui="{ width: 'sm:max-w-md' }">
+    <UCard>
+      <template #header>
+        <h3 class="text-lg font-semibold">배포: {{ selectedEndpoint?.name }}</h3>
+      </template>
+
+      <div class="space-y-4">
+        <UFormGroup label="서빙 타입">
+          <USelect
+            v-model="deployConfig.serving_type"
+            :options="servingTypeOptions"
+            :disabled="deploying"
+          />
+        </UFormGroup>
+
+        <UFormGroup label="배포 전략">
+          <USelect
+            v-model="deployConfig.deployment_strategy"
+            :options="deploymentStrategyOptions"
+            :disabled="deploying"
+          />
+        </UFormGroup>
+
+        <UFormGroup v-if="deployConfig.deployment_strategy === 'canary'" label="트래픽 비율 (%)">
+          <URange
+            v-model="deployConfig.canary_traffic_percent"
+            :min="10"
+            :max="90"
+            :disabled="deploying"
+          />
+          <div class="text-sm text-gray-500 mt-1">{{ deployConfig.canary_traffic_percent }}%</div>
+        </UFormGroup>
+      </div>
+
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <UButton
+            variant="outline"
+            @click="deployModalOpen = false"
+            :disabled="deploying"
+          >
+            취소
+          </UButton>
+          <UButton
+            @click="deploy"
+            :loading="deploying"
+          >
+            배포
+          </UButton>
+        </div>
+      </template>
+    </UCard>
+  </UModal>
 </template>
 
 <script setup lang="ts">
@@ -107,6 +175,53 @@ const data = ref([])
 // 삭제 관련 상태
 const deleteLoading = ref(false)
 const selectedEndpoint = ref(null)
+
+// 배포 모달 관련 상태
+const deployModalOpen = ref(false)
+const deploying = ref(false)
+const deployConfig = ref({
+  serving_type: 'standard',
+  deployment_strategy: 'blue-green',
+  canary_traffic_percent: 20
+})
+
+// 서빙 타입 옵션
+const servingTypeOptions = [
+  { label: 'Standard', value: 'standard' },
+  { label: 'vLLM', value: 'vllm' },
+  { label: 'ModelMesh', value: 'modelmesh' }
+]
+
+// 배포 전략 옵션 (서빙 타입 기반)
+const deploymentStrategyOptions = computed(() => {
+  switch (deployConfig.value.serving_type) {
+    case 'vllm':
+      return [
+        { label: 'Blue-Green', value: 'blue-green' },
+        { label: 'LoRA Adapter', value: 'lora-adapter' }
+      ]
+    case 'modelmesh':
+      return [
+        { label: 'ModelMesh', value: 'modelmesh' }
+      ]
+    default: // standard
+      return [
+        { label: 'Blue-Green', value: 'blue-green' },
+        { label: 'Canary', value: 'canary' }
+      ]
+  }
+})
+
+// 배포 상태 표시
+const getDeploymentStatus = (row: any) => {
+  const ready = getReadyStatus(row)
+  return ready ? '준비됨' : '배포 중'
+}
+
+const getDeploymentStatusColor = (row: any) => {
+  const ready = getReadyStatus(row)
+  return ready ? 'green' : 'yellow'
+}
 
 // 상태 아이콘 가져오기 (안전한 상태 확인)
 const getStatusIcon = (row: any) => {
@@ -467,6 +582,78 @@ const redeploy = (row: any) => {
   navigateTo(`/endpoints/redeploy/${row.name}?namespace=${namespace}`)
 }
 
+// 배포 모달 열기
+const openDeployModal = (row: any) => {
+  selectedEndpoint.value = row
+
+  // 현재 서빙 타입 감지
+  const servingType = getServingType(row)
+  deployConfig.value.serving_type = servingType.toLowerCase()
+
+  // 기본 전략 설정
+  const strategies = deploymentStrategyOptions.value
+  if (strategies.length > 0) {
+    deployConfig.value.deployment_strategy = strategies[0].value
+  }
+
+  deployModalOpen.value = true
+}
+
+// 배포 실행
+const deploy = async () => {
+  if (!selectedEndpoint.value) return
+
+  deploying.value = true
+
+  try {
+    const namespace = selectedEndpoint.value.namespace || 'kubeflow-user-example-com'
+
+    // 기존 서비스 정보를 기반으로 InferenceServiceInfo 생성 (스키마에 맞게)
+    const inferenceServiceInfo = {
+      predictor: {
+        service_account_name: 'storage-system-minio-sa'
+        // 백엔드에서 기존 설정을 자동으로 채우기 때문에 최소한으로 설정
+      },
+      sidecar_inject: false
+    }
+
+    // 전략별 파라미터 선별 전달
+    const canaryPercent = deployConfig.value.deployment_strategy === 'canary'
+      ? deployConfig.value.canary_traffic_percent
+      : undefined
+
+    const response = await deployInferenceService(
+      namespace,
+      selectedEndpoint.value.name,
+      inferenceServiceInfo,
+      deployConfig.value.serving_type,
+      deployConfig.value.deployment_strategy,
+      canaryPercent // canary 전략일 때만 전달
+    )
+
+    if (response.code === 130200) {
+      // 배포 성공
+      deployModalOpen.value = false
+
+      // deployment_id가 있으면 모니터링 페이지로 이동
+      const deploymentId = response.result?.deployment_id
+      if (deploymentId) {
+        navigateTo(`/endpoints/redeploy/${selectedEndpoint.value.name}?namespace=${namespace}&deployment_id=${deploymentId}`)
+      } else {
+        // 목록 새로고침
+        await loadEndpoints()
+      }
+    } else {
+      alert(`배포 실패: ${response.message}`)
+    }
+  } catch (error) {
+    console.error('배포 실패:', error)
+    alert('배포 중 오류가 발생했습니다.')
+  } finally {
+    deploying.value = false
+  }
+}
+
 onMounted(() => {
   loadEndpoints()
 })
@@ -503,6 +690,10 @@ const endpointColumns = ref([
   {
     key: 'servingType',
     label: 'Serving Type'
+  },
+  {
+    key: 'deploymentStatus',
+    label: 'Deployment Status'
   },
   {
     key: 'predictor',
