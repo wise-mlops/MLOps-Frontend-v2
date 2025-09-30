@@ -398,7 +398,10 @@
             </div>
           </template>
 
-          <div class="min-h-[600px] max-h-[80vh] overflow-y-auto bg-gray-50 dark:bg-gray-800 p-4 rounded">
+          <div
+            ref="logContainer"
+            class="min-h-[600px] max-h-[80vh] overflow-y-auto bg-gray-50 dark:bg-gray-800 p-4 rounded"
+          >
             <!-- 로그 검색/필터 -->
             <div class="mb-4 flex items-center space-x-4">
               <div class="flex-1">
@@ -505,10 +508,10 @@
                   </div>
                 </div>
               </div>
-              <div v-if="filteredInferenceLogs.length === 0 && getInferenceLogs().length > 0" class="text-gray-500 text-center py-8">
+              <div v-if="filteredInferenceLogs.length === 0 && inferenceLogs.length > 0" class="text-gray-500 text-center py-8">
                 검색 결과가 없습니다.
               </div>
-              <div v-else-if="getInferenceLogs().length === 0" class="text-gray-500 text-center py-8">
+              <div v-else-if="inferenceLogs.length === 0" class="text-gray-500 text-center py-8">
                 추론 검증 로그가 실시간으로 표시됩니다...
               </div>
             </div>
@@ -522,7 +525,12 @@
               >
                 <span class="text-gray-500">{{ formatTime(log.timestamp) }}</span>
                 <span class="ml-2 text-blue-600">[{{ log.pod_name }}]</span>
-                <span class="ml-2">{{ log.message }}</span>
+                <span
+                  class="ml-2"
+                  :class="getLogLevelClass(detectPodLogLevel(log.message))"
+                >
+                  {{ log.message }}
+                </span>
               </div>
               <div v-if="filteredPodLogs.length === 0 && podLogs.length > 0" class="text-gray-500 text-center py-8">
                 검색 결과가 없습니다.
@@ -597,6 +605,9 @@ const logTabs = [
 // 로그 검색/필터 관련
 const logSearchQuery = ref('')
 const logLevelFilter = ref('')
+
+// 로그 컨테이너 ref
+const logContainer = ref<HTMLElement>()
 
 // vLLM 현재 설정 (읽기 전용)
 const currentVllmSettings = ref({
@@ -690,6 +701,7 @@ const {
   connectionStatus,
   deploymentLogs,
   podLogs,
+  inferenceLogs,
   inferenceStats,
   deploymentReport,
   deploymentProgress,
@@ -716,8 +728,7 @@ const filteredDeploymentLogs = computed(() => {
 })
 
 const filteredInferenceLogs = computed(() => {
-  const inferenceLogs = getInferenceLogs()
-  return inferenceLogs.filter(log => {
+  return inferenceLogs.value.filter(log => {
     const matchesSearch = !logSearchQuery.value ||
                          log.message.toLowerCase().includes(logSearchQuery.value.toLowerCase())
     const matchesLevel = !logLevelFilter.value || log.level === logLevelFilter.value
@@ -730,8 +741,12 @@ const filteredPodLogs = computed(() => {
     const matchesSearch = !logSearchQuery.value ||
                          log.message.toLowerCase().includes(logSearchQuery.value.toLowerCase()) ||
                          log.pod_name.toLowerCase().includes(logSearchQuery.value.toLowerCase())
-    // Pod 로그는 레벨이 없으므로 레벨 필터는 적용하지 않음
-    return matchesSearch
+
+    // Pod 로그 메시지 기반 레벨 감지 및 필터링
+    const detectedLevel = detectPodLogLevel(log.message)
+    const matchesLevel = !logLevelFilter.value || detectedLevel === logLevelFilter.value
+
+    return matchesSearch && matchesLevel
   })
 })
 
@@ -749,6 +764,45 @@ const formatJsonResponse = (responseContent: any) => {
   } catch {
     return String(responseContent)
   }
+}
+
+// Pod 로그 메시지 기반 레벨 감지 함수
+const detectPodLogLevel = (message: string): 'error' | 'warning' | 'success' | 'info' => {
+  const lowerMessage = message.toLowerCase()
+
+  // 에러 키워드 체크
+  if (lowerMessage.includes('error') ||
+      lowerMessage.includes('failed') ||
+      lowerMessage.includes('fail') ||
+      lowerMessage.includes('exception') ||
+      lowerMessage.includes('traceback') ||
+      lowerMessage.includes('fatal') ||
+      lowerMessage.includes('crash')) {
+    return 'error'
+  }
+
+  // 경고 키워드 체크
+  if (lowerMessage.includes('warn') ||
+      lowerMessage.includes('warning') ||
+      lowerMessage.includes('deprecated') ||
+      lowerMessage.includes('timeout') ||
+      lowerMessage.includes('retry')) {
+    return 'warning'
+  }
+
+  // 성공 키워드 체크
+  if (lowerMessage.includes('success') ||
+      lowerMessage.includes('completed') ||
+      lowerMessage.includes('ready') ||
+      lowerMessage.includes('started') ||
+      lowerMessage.includes('loaded') ||
+      lowerMessage.includes('connected') ||
+      lowerMessage.includes('serving') ||
+      lowerMessage.includes('healthy')) {
+    return 'success'
+  }
+
+  return 'info'
 }
 
 // 현재 탭의 로그 가져오기
@@ -840,6 +894,10 @@ const startRedeploy = async () => {
   loading.value = true
   deploymentStarted.value = true
   clearLogs()
+
+  // 기본 상태 메시지
+  deploymentStatus.value = '재배포 시작 중...'
+  deploymentProgress.value = 10
 
   console.log('🚀 재배포 시작 요청:', {
     namespace: namespace.value,
@@ -948,6 +1006,10 @@ const startRedeploy = async () => {
       ? formData.value.canary_traffic_percent
       : undefined
 
+    // API 호출 상태 업데이트
+    deploymentStatus.value = 'API 호출 중...'
+    deploymentProgress.value = 20
+
     console.log('📡 API 호출 시작:', {
       inferenceServiceInfo,
       serving_type: formData.value.serving_type,
@@ -977,6 +1039,10 @@ const startRedeploy = async () => {
     console.log('📡 API 응답 받음:', response)
 
     if (response.code === 130200) {
+      // 성공 응답 상태 업데이트
+      deploymentStatus.value = 'WebSocket 연결 중...'
+      deploymentProgress.value = 30
+
       // deployment_id 추출하여 WebSocket 연결 (FRONTEND_INTEGRATION.md 스키마 따름)
       const deploymentId = response.result?.data?.deploymentId || response.result?.deploymentId
       console.log('재배포 API 응답:', response)

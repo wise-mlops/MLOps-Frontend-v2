@@ -84,6 +84,7 @@ export const useWebSocket = () => {
   // 기존 반응형 데이터 (가벼운 것들만 유지)
   const deploymentLogs = ref<LogEntry[]>([]) // 호환성을 위해 유지하되 사용 최소화
   const podLogs = ref<PodLogEntry[]>([]) // 호환성을 위해 유지하되 사용 최소화
+  const inferenceLogs = ref<LogEntry[]>([]) // 추론 로그 reactive 추가
   const inferenceStats = ref<InferenceStats>({
     totalRequests: 0,
     successfulRequests: 0,
@@ -101,33 +102,30 @@ export const useWebSocket = () => {
   const deploymentStatus = ref('준비 중...')
   const isCompleted = ref(false)
 
-  // 로그 관리 상수 (Pod 로그 최적화)
+  // 로그 관리 상수 (기본 방식)
   const MAX_LOGS = 200 // 전체 로그 수 제한
-  const MAX_POD_LOGS = 100 // Pod 로그는 더 적게 유지
-  const IMMEDIATE_CLEANUP_THRESHOLD = 300 // 즉시 정리 임계점 낮춤
+  const MAX_POD_LOGS = 100 // Pod 로그 수 제한
   let cleanupInterval: NodeJS.Timeout | null = null
 
-  // 실시간 개수 제한 함수
+  // 기본 로그 추가 함수
   const addLogWithLimit = (logs: any[], newLog: any) => {
     logs.push(newLog)
 
-    // 임계점 도달시 즉시 정리
-    if (logs.length > IMMEDIATE_CLEANUP_THRESHOLD) {
-      const removedCount = logs.length - MAX_LOGS
-      logs.splice(0, removedCount) // 앞에서부터 제거 (오래된 로그 제거)
-      console.log(`로그 즉시 정리: ${logs.length + removedCount} → ${logs.length}`)
+    // 기본 제한: 최대 개수 초과시 앞쪽 절반 제거
+    if (logs.length > MAX_LOGS) {
+      const removeCount = Math.floor(MAX_LOGS / 2)
+      logs.splice(0, removeCount)
     }
   }
 
-  // Pod 로그 전용 추가 함수 (더 적극적인 제한)
+  // Pod 로그 기본 추가 함수
   const addPodLogWithLimit = (logs: any[], newLog: any) => {
     logs.push(newLog)
 
-    // Pod 로그는 더 적게 유지
-    if (logs.length > MAX_POD_LOGS + 20) {
-      const removedCount = logs.length - MAX_POD_LOGS
-      logs.splice(0, removedCount)
-      console.log(`Pod 로그 즉시 정리: ${logs.length + removedCount} → ${logs.length}`)
+    // Pod 로그 제한
+    if (logs.length > MAX_POD_LOGS) {
+      const removeCount = Math.floor(MAX_POD_LOGS / 2)
+      logs.splice(0, removeCount)
     }
   }
 
@@ -144,34 +142,31 @@ export const useWebSocket = () => {
     return 'unknown'
   }
 
-  // 30초마다 시간 기반 정리 (더 자주)
+  // 기본 시간 기반 정리
   const timeBasedCleanup = () => {
-    const thirtySecondsAgo = Date.now() - 30 * 1000
+    const now = Date.now()
+    const fiveMinutesAgo = now - 5 * 60 * 1000 // 5분 전 로그만 정리
 
-    // Pod 로그 정리 (더 적극적)
-    const beforePod = fullLogCache.pods.length
-    fullLogCache.pods = fullLogCache.pods
-      .filter(log => new Date(log.timestamp).getTime() > thirtySecondsAgo)
-      .slice(-MAX_POD_LOGS) // Pod 로그 최대 개수로 제한
-
-    if (beforePod !== fullLogCache.pods.length) {
-      console.log(`Pod 시간 정리: ${beforePod} → ${fullLogCache.pods.length}`)
-    }
-
-    // 배포 로그 정리
+    // 배포 로그 정리 (5분 이상 된 로그만 제거)
     const beforeDeploy = fullLogCache.deployment.length
     fullLogCache.deployment = fullLogCache.deployment
-      .filter(log => new Date(log.timestamp).getTime() > oneMinuteAgo)
-      .slice(-300)
+      .filter(log => new Date(log.timestamp).getTime() > fiveMinutesAgo)
+      .slice(-MAX_LOGS)
+
+    // Pod 로그 정리
+    const beforePod = fullLogCache.pods.length
+    fullLogCache.pods = fullLogCache.pods
+      .filter(log => new Date(log.timestamp).getTime() > fiveMinutesAgo)
+      .slice(-MAX_POD_LOGS)
 
     // 추론 로그 정리
     const beforeInference = fullLogCache.inference.length
     fullLogCache.inference = fullLogCache.inference
-      .filter(log => new Date(log.timestamp).getTime() > oneMinuteAgo)
+      .filter(log => new Date(log.timestamp).getTime() > fiveMinutesAgo)
       .slice(-200)
 
-    if (beforeDeploy !== fullLogCache.deployment.length || beforeInference !== fullLogCache.inference.length) {
-      console.log(`시간 기반 정리 완료 - 배포: ${beforeDeploy}→${fullLogCache.deployment.length}, 추론: ${beforeInference}→${fullLogCache.inference.length}`)
+    if (beforeDeploy !== fullLogCache.deployment.length || beforePod !== fullLogCache.pods.length || beforeInference !== fullLogCache.inference.length) {
+      console.log(`시간 정리 - 배포: ${beforeDeploy}→${fullLogCache.deployment.length}, Pod: ${beforePod}→${fullLogCache.pods.length}, 추론: ${beforeInference}→${fullLogCache.inference.length}`)
     }
   }
 
@@ -313,7 +308,6 @@ export const useWebSocket = () => {
   }
 
   const handlePodLog = (message: WebSocketMessage) => {
-    const podType = detectPodType(message.data.podName || 'unknown') // 디버깅용으로만 사용
     const podLogEntry: PodLogEntry = {
       timestamp: message.timestamp,
       pod_name: message.data.podName || 'unknown',
@@ -322,15 +316,11 @@ export const useWebSocket = () => {
       patterns: message.data.patterns
     }
 
-    // Non-reactive 캐시에 단일 배열로 저장 (Pod 로그 전용 제한)
+    // 기본 방식으로 Pod 로그 추가
     addPodLogWithLimit(fullLogCache.pods, podLogEntry)
-    console.log(`📊 Pod 로그 추가됨 (총 ${fullLogCache.pods.length}개):`, podLogEntry.message)
+    addPodLogWithLimit(podLogs.value, podLogEntry)
 
-    // 호환성을 위해 기존 reactive 배열에도 추가 (더 제한적으로)
-    podLogs.value.push(podLogEntry)
-    if (podLogs.value.length > 30) { // Pod 로그는 reactive에서 30개만 유지
-      podLogs.value = podLogs.value.slice(-20)
-    }
+    console.log(`📊 Pod 로그 추가됨 (총 ${podLogs.value.length}개):`, podLogEntry.message.substring(0, 100))
 
     // 중요한 패턴이 감지되면 배포 로그에도 추가
     if (message.data.patterns && Object.keys(message.data.patterns).length > 0) {
@@ -380,12 +370,14 @@ export const useWebSocket = () => {
       }
 
       addLogWithLimit(fullLogCache.inference, logEntry)
+      addLogWithLimit(inferenceLogs.value, logEntry)
       console.log(`🔍 추론 상세 로그 추가됨:`, {
         success: result.success,
         hasRequest: !!result.request,
         hasResponse: !!result.response,
         level: logEntry.level,
-        totalInferenceLogs: fullLogCache.inference.length
+        totalInferenceLogs: fullLogCache.inference.length,
+        reactiveCount: inferenceLogs.value.length
       })
 
     } else {
@@ -399,6 +391,7 @@ export const useWebSocket = () => {
       }
 
       addLogWithLimit(fullLogCache.inference, basicLog)
+      addLogWithLimit(inferenceLogs.value, basicLog)
       console.log(`🔍 추론 기본 로그 추가됨:`, basicLog.message)
     }
   }
@@ -447,6 +440,7 @@ export const useWebSocket = () => {
     // Reactive 데이터 초기화
     deploymentLogs.value = []
     podLogs.value = []
+    inferenceLogs.value = []
     visibleLogs.value = []
     currentPage.value = 0
 
@@ -488,6 +482,7 @@ export const useWebSocket = () => {
     connectionStatus: readonly(connectionStatus),
     deploymentLogs: readonly(deploymentLogs),
     podLogs: readonly(podLogs),
+    inferenceLogs: readonly(inferenceLogs),
     inferenceStats: readonly(inferenceStats),
     deploymentReport: readonly(deploymentReport),
     deploymentProgress: readonly(deploymentProgress),
