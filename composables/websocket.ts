@@ -73,7 +73,7 @@ export const useWebSocket = () => {
   let fullLogCache: {
     deployment: LogEntry[]
     pods: PodLogEntry[] // 단일 배열로 단순화
-    inference: InferenceLogEntry[]
+    inference: LogEntry[] // LogEntry로 통일
   } = { deployment: [], pods: [], inference: [] }
 
   // 화면 표시용 반응형 데이터 (최소한으로)
@@ -101,9 +101,10 @@ export const useWebSocket = () => {
   const deploymentStatus = ref('준비 중...')
   const isCompleted = ref(false)
 
-  // 로그 관리 상수
-  const MAX_LOGS = 500
-  const IMMEDIATE_CLEANUP_THRESHOLD = 600
+  // 로그 관리 상수 (Pod 로그 최적화)
+  const MAX_LOGS = 200 // 전체 로그 수 제한
+  const MAX_POD_LOGS = 100 // Pod 로그는 더 적게 유지
+  const IMMEDIATE_CLEANUP_THRESHOLD = 300 // 즉시 정리 임계점 낮춤
   let cleanupInterval: NodeJS.Timeout | null = null
 
   // 실시간 개수 제한 함수
@@ -115,6 +116,18 @@ export const useWebSocket = () => {
       const removedCount = logs.length - MAX_LOGS
       logs.splice(0, removedCount) // 앞에서부터 제거 (오래된 로그 제거)
       console.log(`로그 즉시 정리: ${logs.length + removedCount} → ${logs.length}`)
+    }
+  }
+
+  // Pod 로그 전용 추가 함수 (더 적극적인 제한)
+  const addPodLogWithLimit = (logs: any[], newLog: any) => {
+    logs.push(newLog)
+
+    // Pod 로그는 더 적게 유지
+    if (logs.length > MAX_POD_LOGS + 20) {
+      const removedCount = logs.length - MAX_POD_LOGS
+      logs.splice(0, removedCount)
+      console.log(`Pod 로그 즉시 정리: ${logs.length + removedCount} → ${logs.length}`)
     }
   }
 
@@ -131,15 +144,15 @@ export const useWebSocket = () => {
     return 'unknown'
   }
 
-  // 1분마다 시간 기반 정리
+  // 30초마다 시간 기반 정리 (더 자주)
   const timeBasedCleanup = () => {
-    const oneMinuteAgo = Date.now() - 60 * 1000
+    const thirtySecondsAgo = Date.now() - 30 * 1000
 
-    // Pod 로그 정리
+    // Pod 로그 정리 (더 적극적)
     const beforePod = fullLogCache.pods.length
     fullLogCache.pods = fullLogCache.pods
-      .filter(log => new Date(log.timestamp).getTime() > oneMinuteAgo)
-      .slice(-400) // 추가 안전장치
+      .filter(log => new Date(log.timestamp).getTime() > thirtySecondsAgo)
+      .slice(-MAX_POD_LOGS) // Pod 로그 최대 개수로 제한
 
     if (beforePod !== fullLogCache.pods.length) {
       console.log(`Pod 시간 정리: ${beforePod} → ${fullLogCache.pods.length}`)
@@ -309,14 +322,14 @@ export const useWebSocket = () => {
       patterns: message.data.patterns
     }
 
-    // Non-reactive 캐시에 단일 배열로 저장
-    addLogWithLimit(fullLogCache.pods, podLogEntry)
+    // Non-reactive 캐시에 단일 배열로 저장 (Pod 로그 전용 제한)
+    addPodLogWithLimit(fullLogCache.pods, podLogEntry)
     console.log(`📊 Pod 로그 추가됨 (총 ${fullLogCache.pods.length}개):`, podLogEntry.message)
 
-    // 호환성을 위해 기존 reactive 배열에도 추가 (제한적으로)
+    // 호환성을 위해 기존 reactive 배열에도 추가 (더 제한적으로)
     podLogs.value.push(podLogEntry)
-    if (podLogs.value.length > 100) {
-      podLogs.value = podLogs.value.slice(-50) // 최소한으로 유지
+    if (podLogs.value.length > 30) { // Pod 로그는 reactive에서 30개만 유지
+      podLogs.value = podLogs.value.slice(-20)
     }
 
     // 중요한 패턴이 감지되면 배포 로그에도 추가
@@ -349,52 +362,40 @@ export const useWebSocket = () => {
     if (message.data.result) {
       const result = message.data.result
 
-      // 상세 정보 포함한 단일 로그로 생성 (expandable)
-      const detailLog: InferenceLogEntry = {
+      // LogEntry 형태로 추론 로그 생성
+      const logEntry: LogEntry = {
         timestamp: message.timestamp,
-        type: 'detail',
-        success: result.success,
-        responseTime: result.responseTime,
+        level: result.success ? 'success' : 'error',
         message: result.success
           ? `✅ 추론 성공 (${result.responseTime}ms)`
           : `❌ 추론 실패: ${result.errorMessage}`,
-        request: result.request || { test: "예시 요청 데이터", prompt: "테스트 프롬프트" }, // 임시 테스트 데이터
-        response: result.response || { test: "예시 응답 데이터", result: "테스트 결과" }, // 임시 테스트 데이터
-        expandable: true, // 임시로 모든 inference 로그를 expandable로 설정 (디버깅용)
-        expanded: false
+        source: 'inference_response',
+        metadata: {
+          success: result.success,
+          responseTime: result.responseTime,
+          request: result.request,
+          response: result.response,
+          ...result
+        }
       }
 
-      addLogWithLimit(fullLogCache.inference, detailLog)
+      addLogWithLimit(fullLogCache.inference, logEntry)
       console.log(`🔍 추론 상세 로그 추가됨:`, {
         success: result.success,
         hasRequest: !!result.request,
         hasResponse: !!result.response,
-        expandable: detailLog.expandable,
+        level: logEntry.level,
         totalInferenceLogs: fullLogCache.inference.length
       })
 
-      // 호환성을 위해 기존 배포 로그에도 간단한 로그 추가
-      const compatLogEntry: LogEntry = {
-        timestamp: message.timestamp,
-        level: result.success ? 'success' : 'error',
-        message: result.success
-          ? `추론 성공 (${result.responseTime}ms)`
-          : `추론 실패: ${result.errorMessage}`,
-        source: 'inference_test',
-        metadata: result
-      }
-      deploymentLogs.value.push(compatLogEntry)
-      if (deploymentLogs.value.length > 100) {
-        deploymentLogs.value = deploymentLogs.value.slice(-50)
-      }
     } else {
       // result가 없는 경우에도 기본 로그 생성 (일반 메시지)
-      const basicLog: InferenceLogEntry = {
+      const basicLog: LogEntry = {
         timestamp: message.timestamp,
-        type: 'summary',
+        level: 'info',
         message: message.data.message || JSON.stringify(message.data),
-        expandable: false,
-        expanded: false
+        source: 'inference',
+        metadata: message.data
       }
 
       addLogWithLimit(fullLogCache.inference, basicLog)
@@ -472,9 +473,9 @@ export const useWebSocket = () => {
       clearInterval(cleanupInterval)
     }
 
-    // 1분마다 정리 시작
-    cleanupInterval = setInterval(timeBasedCleanup, 60000)
-    console.log('로그 정리 타이머 시작 (1분 주기)')
+    // 30초마다 정리 시작 (더 자주)
+    cleanupInterval = setInterval(timeBasedCleanup, 30000)
+    console.log('로그 정리 타이머 시작 (30초 주기)')
   }
 
   // 정리

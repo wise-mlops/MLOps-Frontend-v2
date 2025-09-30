@@ -4,9 +4,9 @@
     <LayoutPageHeader :title="pageTitle" />
     <LayoutPageToolbar :links="toolbarLinks" />
 
-    <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
-      <!-- 좌측: 재배포 설정 폼 (40%) -->
-      <div class="lg:col-span-2 space-y-6">
+    <div class="grid grid-cols-1 lg:grid-cols-10 gap-6">
+      <!-- 좌측: 재배포 설정 폼 (30%) -->
+      <div class="lg:col-span-3 space-y-6">
         <!-- 기본 정보 -->
         <UCard>
           <template #header>
@@ -30,28 +30,17 @@
           </div>
         </UCard>
 
-        <!-- 재배포 설정 -->
+        <!-- 재배포 전략 선택 -->
         <UCard>
           <template #header>
             <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-white">
-              재배포 설정
+              재배포 전략
             </h3>
           </template>
 
           <div class="space-y-4">
-            <UFormGroup label="서빙 타입">
-              <UInput
-                :model-value="servingType"
-                disabled
-                variant="outline"
-              />
-              <template #help>
-                <span class="text-sm text-gray-500">재배포시 서빙 타입은 변경할 수 없습니다</span>
-              </template>
-            </UFormGroup>
-
-            <UFormGroup label="배포 전략">
-              <USelect
+            <UFormGroup label="배포 전략" name="strategy" required>
+              <URadioGroup
                 v-model="formData.deployment_strategy"
                 :options="availableStrategies"
                 :disabled="loading"
@@ -321,8 +310,8 @@
         </UCard>
       </div>
 
-      <!-- 우측: 실시간 모니터링 (60%) -->
-      <div class="lg:col-span-3 space-y-6">
+      <!-- 우측: 실시간 모니터링 (70%) -->
+      <div class="lg:col-span-7 space-y-6">
         <!-- 진행 상황 -->
         <UCard>
           <template #header>
@@ -409,88 +398,143 @@
             </div>
           </template>
 
-          <div class="min-h-[500px] max-h-[70vh] overflow-y-auto bg-gray-50 dark:bg-gray-800 p-4 rounded font-mono text-sm">
-            <!-- 동적 로그 표시 -->
-            <div class="space-y-1">
-              <!-- 현재 탭의 로그 표시 -->
-              <div
-                v-for="(log, index) in getCurrentTabLogs().slice(-100)"
-                :key="index"
-                class="flex gap-2"
-                :class="log.patterns ? 'bg-yellow-50 dark:bg-yellow-900/20 p-1 rounded' : ''"
-              >
-                <span class="text-gray-500 flex-shrink-0">{{ formatTime(log.timestamp) }}</span>
-
-                <!-- Pod 로그인 경우 Pod 이름 표시 -->
-                <span
-                  v-if="log.pod_name"
-                  class="text-blue-600 flex-shrink-0"
+          <div class="min-h-[600px] max-h-[80vh] overflow-y-auto bg-gray-50 dark:bg-gray-800 p-4 rounded">
+            <!-- 로그 검색/필터 -->
+            <div class="mb-4 flex items-center space-x-4">
+              <div class="flex-1">
+                <UInput
+                  v-model="logSearchQuery"
+                  placeholder="로그 검색..."
+                  icon="i-heroicons-magnifying-glass"
+                  size="sm"
+                />
+              </div>
+              <div class="flex items-center space-x-2">
+                <UButton
+                  @click="logLevelFilter = ''"
+                  variant="ghost"
+                  size="sm"
+                  :class="logLevelFilter === '' ? 'bg-blue-50 text-blue-600' : ''"
                 >
-                  [{{ log.pod_name }}]
-                </span>
-
-                <!-- 추론 로그인 경우 확장 가능한 처리 -->
-                <div v-if="log.expandable" class="flex-1">
-                  <div class="flex items-center gap-2">
-                    <span :class="getLogLevelClass(log.level || 'info')">{{ log.message }}</span>
-                    <UButton
-                      @click="toggleLogExpansion(`${log.timestamp}-${index}`)"
-                      size="xs"
-                      variant="ghost"
-                      :icon="isLogExpanded(`${log.timestamp}-${index}`) ? 'i-heroicons-chevron-down' : 'i-heroicons-chevron-right'"
-                    >
-                      {{ isLogExpanded(`${log.timestamp}-${index}`) ? '접기' : '상세' }}
-                    </UButton>
-                  </div>
-
-                  <!-- 상세 내용 -->
-                  <div v-if="isLogExpanded(`${log.timestamp}-${index}`)" class="mt-2 p-2 bg-white dark:bg-gray-700 rounded text-xs">
-                    <div v-if="log.request" class="mb-2">
-                      <div class="font-semibold text-green-600">📤 요청:</div>
-                      <pre class="whitespace-pre-wrap">{{ JSON.stringify(log.request, null, 2) }}</pre>
-                    </div>
-                    <div v-if="log.response" class="mb-2">
-                      <div class="font-semibold text-blue-600">📥 응답:</div>
-                      <pre class="whitespace-pre-wrap">{{ JSON.stringify(log.response, null, 2) }}</pre>
-                    </div>
-                    <!-- response_body가 있는 경우 별도로 표시 -->
-                    <div v-if="log.response_body" class="mb-2">
-                      <div class="font-semibold text-purple-600">🎯 응답 본문:</div>
-                      <pre class="whitespace-pre-wrap bg-purple-50 dark:bg-purple-900/20 p-2 rounded">{{ JSON.stringify(log.response_body, null, 2) }}</pre>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- 일반 로그 메시지 -->
-                <span v-else :class="getLogLevelClass(log.level || 'info')">{{ log.message }}</span>
-              </div>
-
-              <!-- 로그 없음 상태 -->
-              <div v-if="getCurrentTabLogs().length === 0" class="text-gray-500 text-center py-8">
-                {{ logTabs[activeTab]?.label }} 로그가 표시됩니다...
+                  전체
+                </UButton>
+                <UButton
+                  @click="logLevelFilter = 'error'"
+                  variant="ghost"
+                  size="sm"
+                  :class="logLevelFilter === 'error' ? 'bg-red-50 text-red-600' : ''"
+                >
+                  오류
+                </UButton>
+                <UButton
+                  @click="logLevelFilter = 'warning'"
+                  variant="ghost"
+                  size="sm"
+                  :class="logLevelFilter === 'warning' ? 'bg-yellow-50 text-yellow-600' : ''"
+                >
+                  경고
+                </UButton>
+                <UButton
+                  @click="logLevelFilter = 'success'"
+                  variant="ghost"
+                  size="sm"
+                  :class="logLevelFilter === 'success' ? 'bg-green-50 text-green-600' : ''"
+                >
+                  성공
+                </UButton>
               </div>
             </div>
 
-            <!-- 추론 테스트 탭인 경우 통계 카드 표시 -->
-            <div v-if="logTabs[activeTab]?.key === 'inference'" class="mb-4">
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div class="bg-white dark:bg-gray-700 p-4 rounded-lg border">
-                  <div class="text-sm text-gray-600 dark:text-gray-400">총 요청</div>
-                  <div class="text-2xl font-bold">{{ inferenceStats.totalRequests }}</div>
-                </div>
-                <div class="bg-white dark:bg-gray-700 p-4 rounded-lg border">
-                  <div class="text-sm text-gray-600 dark:text-gray-400">성공률</div>
-                  <div class="text-2xl font-bold text-green-600">{{ inferenceStats.successRate.toFixed(1) }}%</div>
-                </div>
-                <div class="bg-white dark:bg-gray-700 p-4 rounded-lg border">
-                  <div class="text-sm text-gray-600 dark:text-gray-400">평균 응답시간</div>
-                  <div class="text-2xl font-bold">{{ inferenceStats.averageResponseTime?.toFixed(0) || 0 }}ms</div>
-                </div>
+            <!-- 배포 로그 -->
+            <div v-if="activeTab === 0" class="font-mono text-sm space-y-1">
+              <div
+                v-for="(log, index) in filteredDeploymentLogs"
+                :key="index"
+                class="p-1"
+              >
+                <span class="text-gray-500">{{ formatTime(log.timestamp) }}</span>
+                <span class="ml-2">{{ log.message }}</span>
+              </div>
+              <div v-if="filteredDeploymentLogs.length === 0 && deploymentLogs.length > 0" class="text-gray-500 text-center py-8">
+                검색 결과가 없습니다.
+              </div>
+              <div v-else-if="deploymentLogs.length === 0" class="text-gray-500 text-center py-8">
+                재배포 시작을 기다리는 중...
               </div>
             </div>
+
+            <!-- 추론 검증 로그 -->
+            <div v-if="activeTab === 1" class="font-mono text-sm space-y-1">
+              <div
+                v-for="(log, index) in filteredInferenceLogs"
+                :key="index"
+                class="p-1"
+              >
+                <span class="text-gray-500">{{ formatTime(log.timestamp) }}</span>
+                <span class="ml-2">{{ log.message }}</span>
+
+                <!-- 개별 추론 요청의 metadata가 있으면 표시 -->
+                <div v-if="log.metadata && isInferenceRequestLog(log)" class="ml-4 mt-2 text-xs bg-gray-50 dark:bg-gray-800 p-3 rounded border">
+                  <div class="grid grid-cols-2 gap-2 mb-2">
+                    <div v-if="log.metadata.request_url" class="text-gray-600 dark:text-gray-400">
+                      <span class="font-medium">Endpoint:</span><br>
+                      <span class="text-blue-600 break-all">{{ log.metadata.request_url }}</span>
+                    </div>
+                    <div v-if="log.metadata.status_code" class="text-gray-600 dark:text-gray-400">
+                      <span class="font-medium">Status:</span>
+                      <span :class="log.metadata.status_code === 200 ? 'text-green-600' : 'text-red-600'" class="ml-1">
+                        {{ log.metadata.status_code }}
+                      </span>
+                    </div>
+                    <div v-if="log.metadata.success !== undefined" class="text-gray-600 dark:text-gray-400">
+                      <span class="font-medium">Result:</span>
+                      <span :class="log.metadata.success ? 'text-green-600' : 'text-red-600'" class="ml-1">
+                        {{ log.metadata.success ? 'SUCCESS' : 'FAILED' }}
+                      </span>
+                    </div>
+                    <div v-if="log.metadata.responseTime" class="text-gray-600 dark:text-gray-400">
+                      <span class="font-medium">Response Time:</span>
+                      <span class="ml-1">{{ log.metadata.responseTime.toFixed(2) }}ms</span>
+                    </div>
+                  </div>
+                  <div v-if="log.metadata.response_body" class="text-gray-600 dark:text-gray-400">
+                    <span class="font-medium">Response:</span>
+                    <div class="mt-1 p-2 bg-white dark:bg-gray-700 rounded text-xs">
+                      <pre class="whitespace-pre-wrap">{{ formatJsonResponse(log.metadata.response_body) }}</pre>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div v-if="filteredInferenceLogs.length === 0 && getInferenceLogs().length > 0" class="text-gray-500 text-center py-8">
+                검색 결과가 없습니다.
+              </div>
+              <div v-else-if="getInferenceLogs().length === 0" class="text-gray-500 text-center py-8">
+                추론 검증 로그가 실시간으로 표시됩니다...
+              </div>
+            </div>
+
+            <!-- Pod 로그 -->
+            <div v-if="activeTab === 2" class="font-mono text-sm space-y-1">
+              <div
+                v-for="(log, index) in filteredPodLogs"
+                :key="index"
+                class="p-1"
+              >
+                <span class="text-gray-500">{{ formatTime(log.timestamp) }}</span>
+                <span class="ml-2 text-blue-600">[{{ log.pod_name }}]</span>
+                <span class="ml-2">{{ log.message }}</span>
+              </div>
+              <div v-if="filteredPodLogs.length === 0 && podLogs.length > 0" class="text-gray-500 text-center py-8">
+                검색 결과가 없습니다.
+              </div>
+              <div v-else-if="podLogs.length === 0" class="text-gray-500 text-center py-8">
+                Pod 로그가 표시됩니다...
+              </div>
+            </div>
+
 
             <!-- 보고서 탭인 경우 보고서 표시 -->
-            <div v-if="logTabs[activeTab]?.key === 'report'" class="space-y-4">
+            <div v-if="activeTab === 3" class="space-y-4">
               <div v-if="deploymentReport" class="space-y-6">
                 <!-- 배포 요약 -->
                 <div class="bg-white dark:bg-gray-700 p-6 rounded-lg border">
@@ -540,6 +584,19 @@ const loading = ref(false)
 const deploymentStarted = ref(false)
 const servingType = ref('Standard')
 const namespace = ref('kubeflow-user-example-com')
+
+// 로그 관련
+const activeTab = ref(0)
+const logTabs = [
+  { label: '배포 로그' },
+  { label: '추론 검증' },
+  { label: 'Pod 로그' },
+  { label: '배포 보고서' }
+]
+
+// 로그 검색/필터 관련
+const logSearchQuery = ref('')
+const logLevelFilter = ref('')
 
 // vLLM 현재 설정 (읽기 전용)
 const currentVllmSettings = ref({
@@ -648,33 +705,51 @@ const {
   getDeploymentLogCache
 } = useWebSocket()
 
-// 로그 확장 상태 관리 (reactive)
-const expandedLogs = ref<Set<string>>(new Set())
+// 필터링된 로그들 (c13f282 스타일)
+const filteredDeploymentLogs = computed(() => {
+  return deploymentLogs.value.filter(log => {
+    const matchesSearch = !logSearchQuery.value ||
+                         log.message.toLowerCase().includes(logSearchQuery.value.toLowerCase())
+    const matchesLevel = !logLevelFilter.value || log.level === logLevelFilter.value
+    return matchesSearch && matchesLevel
+  })
+})
 
-// 동적 탭 구조
-const activeTab = ref(0)
+const filteredInferenceLogs = computed(() => {
+  const inferenceLogs = getInferenceLogs()
+  return inferenceLogs.filter(log => {
+    const matchesSearch = !logSearchQuery.value ||
+                         log.message.toLowerCase().includes(logSearchQuery.value.toLowerCase())
+    const matchesLevel = !logLevelFilter.value || log.level === logLevelFilter.value
+    return matchesSearch && matchesLevel
+  })
+})
 
-// Pod 타입별 라벨 생성 함수
-const getPodTypeLabel = (podType: string) => {
-  switch (podType) {
-    case 'stable': return 'Stable'
-    case 'canary': return 'Canary'
-    case 'blue': return 'Blue'
-    case 'green': return 'Green'
-    case 'predictor': return 'Predictor'
-    default: return podType.charAt(0).toUpperCase() + podType.slice(1)
-  }
+const filteredPodLogs = computed(() => {
+  return podLogs.value.filter(log => {
+    const matchesSearch = !logSearchQuery.value ||
+                         log.message.toLowerCase().includes(logSearchQuery.value.toLowerCase()) ||
+                         log.pod_name.toLowerCase().includes(logSearchQuery.value.toLowerCase())
+    // Pod 로그는 레벨이 없으므로 레벨 필터는 적용하지 않음
+    return matchesSearch
+  })
+})
+
+// c13f282에서 사용하는 유틸리티 함수들
+const isInferenceRequestLog = (log: any) => {
+  return log.metadata && (log.metadata.request_url || log.metadata.success !== undefined)
 }
 
-// 고정 탭 구조 (기존 방식 유지)
-const logTabs = computed(() => {
-  return [
-    { label: '📋 배포 로그', key: 'deployment' },
-    { label: '📊 Pod 로그', key: 'pod' },
-    { label: '🔍 추론 테스트', key: 'inference' },
-    { label: '📋 보고서', key: 'report' }
-  ]
-})
+const formatJsonResponse = (responseContent: any) => {
+  try {
+    if (typeof responseContent === 'string') {
+      return responseContent
+    }
+    return JSON.stringify(responseContent)
+  } catch {
+    return String(responseContent)
+  }
+}
 
 // 현재 탭의 로그 가져오기
 const getCurrentTabLogs = () => {
@@ -750,17 +825,6 @@ const formatTime = (timestamp: string) => {
   }
 }
 
-// 로그 확장 토글 함수
-const toggleLogExpansion = (logId: string) => {
-  if (expandedLogs.value.has(logId)) {
-    expandedLogs.value.delete(logId)
-  } else {
-    expandedLogs.value.add(logId)
-  }
-  console.log(`🔄 로그 확장 토글: ${logId}, 현재 확장된 로그들:`, Array.from(expandedLogs.value))
-}
-
-const isLogExpanded = (logId: string) => expandedLogs.value.has(logId)
 
 // 액션 함수들
 const startRedeploy = async () => {
@@ -776,7 +840,6 @@ const startRedeploy = async () => {
   loading.value = true
   deploymentStarted.value = true
   clearLogs()
-  expandedLogs.value.clear() // 로그 확장 상태도 초기화
 
   console.log('🚀 재배포 시작 요청:', {
     namespace: namespace.value,
