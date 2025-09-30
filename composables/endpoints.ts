@@ -1,9 +1,8 @@
 const config = useAppConfig()
 
-export const getEndpoints = async ( namespace: string | null) => {
-  let url = encodeURI(`/inference-services`)
-  // 단순히 /inference-services로 조회 (백엔드 기본값 사용)
-
+// 기본 CRUD 함수들
+export const getEndpoints = async (namespace: string | null) => {
+  const url = encodeURI(`/inference-services`)
   const response = await $fetch<ResponseBody>(url, {
     method: 'GET',
     baseURL: config.api.url,
@@ -11,9 +10,8 @@ export const getEndpoints = async ( namespace: string | null) => {
   return response
 }
 
-export const getEndpointDetails = async ( namespace: string | null, name: string | string[] ) => {
-  let url = encodeURI(`/inference-services/${namespace}/${name}`)
-
+export const getEndpointDetails = async (namespace: string | null, name: string | string[]) => {
+  const url = encodeURI(`/inference-services/${namespace}/${name}`)
   const response = await $fetch<ResponseBody>(url, {
     method: 'GET',
     baseURL: config.api.url,
@@ -21,69 +19,236 @@ export const getEndpointDetails = async ( namespace: string | null, name: string
   return response
 }
 
-export const createEndpoint = async (namespace: string, name: string, inferenceServiceInfo: any) => {
-  let url = encodeURI(`/inference-services/${namespace}/${name}`)
-  const options = {
-    headers: { "Content-Type": "application/json"},
-    method: "POST",
-    baseURL: config.api.url,
-    body: inferenceServiceInfo
-  }
-  const response = await $fetch<ResponseBody>(url, options as object)
-
-  return response;
-}
-
-export const removeEndpoint = async ( namespace: string | null, name: string | string[] ) => {
-  let url = encodeURI(`/inference-services/${namespace}/${name}`)
-  const options = {
-    headers: { "Content-Type": "application/json"},
+export const removeEndpoint = async (namespace: string | null, name: string | string[]) => {
+  const url = encodeURI(`/inference-services/${namespace}/${name}`)
+  const response = await $fetch<ResponseBody>(url, {
     method: "DELETE",
-    baseURL: config.api.url
-  }
-  const response = await $fetch<ResponseBody>(url, options as object)
-
-  return response;
+    baseURL: config.api.url,
+    headers: { "Content-Type": "application/json" }
+  })
+  return response
 }
 
-export const getEndpointPods = async (namespace: string, name: string) => {
-  let url = encodeURI(`/k8s-managements/namespaces/${namespace}/inference-services/${name}/pods`)
+// 새로운 배포 API 함수들
+export const deployInferenceService = async (
+  namespace: string,
+  name: string,
+  inferenceServiceInfo: any,
+  serving_type: string = "standard",
+  deployment_strategy: string = "blue-green",
+  canary_traffic_percent?: number,
+  additional_test_duration: number = 60
+) => {
+  const url = encodeURI(`/inference-services/${namespace}/${name}/deploy`)
+  const params = new URLSearchParams({
+    serving_type,
+    deployment_strategy,
+    additional_test_duration: additional_test_duration.toString()
+  })
 
+  // canary 전략일 때만 canary_traffic_percent 추가
+  if (deployment_strategy === 'canary' && canary_traffic_percent !== undefined) {
+    params.append('canary_traffic_percent', canary_traffic_percent.toString())
+  }
+
+  const response = await $fetch<ResponseBody>(`${url}?${params.toString()}`, {
+    method: 'POST',
+    baseURL: config.api.url,
+    headers: { "Content-Type": "application/json" },
+    body: inferenceServiceInfo
+  })
+  return response
+}
+
+// 전략별 Config 생성 함수
+const createDeploymentConfig = (
+  servingType: string,
+  strategy: string,
+  formData: any
+) => {
+  switch (strategy) {
+    case 'blue-green':
+      if (servingType === 'vllm') {
+        // vLLM Blue-Green 스키마 (FRONTEND_INTEGRATION.md 기준)
+        const adapters = (formData.adapters || []).map((adapter: any, index: number) => ({
+          adapterName: adapter.name || `adapter-${index}`,
+          adapterPath: adapter.storage_uri || adapter.path,
+          defaultAdapter: index === 0 // 첫 번째 어댑터를 기본값으로
+        }))
+
+        return {
+          baseModelPath: formData.base_model?.storage_uri || formData.storage_uri,
+          customContainer: formData.vllm_image_tag ? `vllm/vllm-openai:${formData.vllm_image_tag}` : 'vllm/vllm-openai:latest',
+          adapters,
+          maxModelLen: formData.vllm_max_model_len || formData.max_model_len,
+          tensorParallelSize: formData.vllm_tensor_parallel_size || formData.tensor_parallel_size || 1,
+          gpuMemoryUtilization: formData.vllm_gpu_memory_utilization || formData.gpu_memory_utilization || 0.9
+        }
+      } else {
+        return {
+          storageUri: formData.storage_uri,
+          modelFormat: formData.model_format || 'sklearn'
+        }
+      }
+    case 'canary':
+      return {
+        storageUri: formData.storage_uri,
+        modelFormat: formData.model_format || 'sklearn',
+        trafficPercent: formData.canary_traffic_percent || 20
+      }
+    case 'lora-adapter':
+      return {
+        loraName: formData.adapter_name,
+        loraPath: formData.adapter_path
+      }
+    case 'modelmesh':
+      return {
+        modelPath: formData.model_path || formData.storage_uri,
+        modelFormat: formData.model_format
+      }
+    default:
+      throw new Error(`Unknown deployment strategy: ${strategy}`)
+  }
+}
+
+export const redeployInferenceService = async (
+  namespace: string,
+  name: string,
+  formData: any,
+  servingType: string,
+  strategy: string
+) => {
+  const url = encodeURI(`/inference-services/${namespace}/${name}/deploy`)
+
+  // DeploymentRequest 구조로 변환
+  const deploymentRequest = {
+    servingType,
+    strategy,
+    config: createDeploymentConfig(servingType, strategy, formData),
+    testPayload: formData.test_payload || null
+  }
+
+  console.log('🌐 API 요청 URL:', `${config.api.url}${url}`)
+  console.log('📤 DeploymentRequest:', JSON.stringify(deploymentRequest, null, 2))
+
+  try {
+    console.log('⏳ $fetch 호출 시작...')
+    const response = await $fetch<ResponseBody>(url, {
+      method: 'POST',
+      baseURL: config.api.url,
+      headers: { "Content-Type": "application/json" },
+      body: deploymentRequest,
+      timeout: 60000 // 60초 타임아웃
+    })
+    console.log('✅ API 요청 성공:', response)
+    return response
+  } catch (error) {
+    console.error('❌ API 요청 실패 - 상세 정보:', {
+      error,
+      type: typeof error,
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    })
+    throw error
+  }
+}
+
+// 배포 보고서 API 함수들
+export const getDeploymentReport = async (
+  namespace: string,
+  name: string,
+  deployment_id: string
+) => {
+  const url = encodeURI(`/inference-services/${namespace}/${name}/deployment-report/${deployment_id}`)
+  const response = await $fetch<ResponseBody>(url, {
+    method: 'GET',
+    baseURL: config.api.url
+  })
+  return response
+}
+
+export const getDeploymentReports = async (namespace: string) => {
+  const url = encodeURI(`/inference-services/${namespace}/deployment-reports`)
+  const response = await $fetch<ResponseBody>(url, {
+    method: 'GET',
+    baseURL: config.api.url
+  })
+  return response
+}
+
+// 배포 상태 조회
+export const getDeploymentStatus = async (
+  namespace: string,
+  name: string
+) => {
+  const url = encodeURI(`/inference-services/${namespace}/${name}/deployment-status`)
+  const response = await $fetch<ResponseBody>(url, {
+    method: 'GET',
+    baseURL: config.api.url
+  })
+  return response
+}
+
+// Inference Service 생성 (basic.py API 사용)
+export const createEndpoint = async (namespace: string, name: string, inferenceServiceInfo: any) => {
+  const url = encodeURI(`/inference-services/${namespace}/${name}`)
+  const response = await $fetch<ResponseBody>(url, {
+    method: 'POST',
+    baseURL: config.api.url,
+    headers: { "Content-Type": "application/json" },
+    body: inferenceServiceInfo
+  })
+  return response
+}
+
+// Kubernetes 관리 함수들 (필요시 유지)
+export const getEndpointPods = async (namespace: string, name: string) => {
+  const url = encodeURI(`/k8s-managements/namespaces/${namespace}/inference-services/${name}/pods`)
   const response = await $fetch<ResponseBody>(url, {
     method: 'GET',
     baseURL: config.api.url,
   })
-
-  return response;
+  return response
 }
 
 export const getEndpointEvents = async (namespace: string, name: string) => {
-  let url = encodeURI(`/k8s-managements/namespaces/${namespace}/inference-services/${name}/events`)
-
+  const url = encodeURI(`/k8s-managements/namespaces/${namespace}/inference-services/${name}/events`)
   const response = await $fetch<ResponseBody>(url, {
     method: 'GET',
     baseURL: config.api.url,
   })
-
-  return response;
+  return response
 }
 
 export const getInferenceServiceStatus = async (namespace: string, name: string) => {
-  let url = encodeURI(`/k8s-managements/namespaces/${namespace}/inference-services/${name}/status`)
-
+  const url = encodeURI(`/k8s-managements/namespaces/${namespace}/inference-services/${name}/status`)
   const response = await $fetch<ResponseBody>(url, {
     method: 'GET',
     baseURL: config.api.url,
   })
+  return response
+}
 
-  return response;
+// 서빙 타입 감지 함수 (간소화)
+export const detectServingType = (endpointDetails: any): 'standard' | 'vllm' | 'modelmesh' => {
+  const namespace = endpointDetails.result?.metadata?.namespace
+  if (namespace === 'modelmesh-serving') {
+    return 'modelmesh'
+  }
+
+  const predictor = endpointDetails.result?.spec?.predictor
+  if (predictor?.containers?.[0]?.image?.includes('vllm')) {
+    return 'vllm'
+  }
+
+  return 'standard'
 }
 
 // MLmodel에서 dtype을 MLFlow 형식으로 매핑하는 함수
 export const mapDtypeToMLFlow = (dtype: string): string => {
   const dtypeMap: Record<string, string> = {
     'int64': 'INT64',
-    'int32': 'INT32', 
+    'int32': 'INT32',
     'float64': 'FP64',
     'float32': 'FP32',
     'double': 'FP64',
@@ -91,8 +256,8 @@ export const mapDtypeToMLFlow = (dtype: string): string => {
     'long': 'INT64',
     'int': 'INT32'
   }
-  
-  return dtypeMap[dtype.toLowerCase()] || 'FP64' // 기본값은 FP64
+
+  return dtypeMap[dtype.toLowerCase()] || 'FP64'
 }
 
 // MLmodel 파일에서 signature의 input dtype을 파싱하는 함수
@@ -345,105 +510,4 @@ export const isObjectResult = (result: any): boolean => {
   return !!(result && typeof result === 'object' && !Array.isArray(result));
 }
 
-// === 재배포 관련 함수들 ===
-
-// 서빙 방식 감지 함수
-export const detectServingType = (endpointDetails: any): 'standard' | 'vllm' | 'modelmesh' => {
-  const namespace = endpointDetails.result?.metadata?.namespace
-  if (namespace === 'modelmesh-serving') {
-    return 'modelmesh'
-  }
-
-  const predictor = endpointDetails.result?.spec?.predictor
-  if (predictor?.containers?.[0]?.image?.includes('vllm')) {
-    return 'vllm'
-  }
-
-  return 'standard'
-}
-
-// 트래픽 상태 확인 (단순화)
-export const getTrafficStatus = (endpointDetails: any): 'distributed' | 'single' => {
-  // revision별 트래픽 분산 여부 확인
-  const traffic = endpointDetails.result?.status?.traffic || []
-  const hasMultipleRevisions = traffic.filter((t: any) => t.percent > 0).length > 1
-
-  return hasMultipleRevisions ? 'distributed' : 'single'
-}
-
-// 재배포 실행
-export const deployInferenceService = async (
-  namespace: string,
-  name: string,
-  strategy: string,
-  config: any
-) => {
-  const deploymentRequest = {
-    strategy: strategy,
-    config: config,
-    testPayload: null // 기본 페이로드 사용
-  }
-
-  const response = await $fetch<ResponseBody>(`/inference-services/${namespace}/${name}/deploy`, {
-    method: 'POST',
-    baseURL: useAppConfig().api.url,
-    body: deploymentRequest,
-    headers: {
-      "Content-Type": "application/json"
-    }
-  })
-
-  return response
-}
-
-// 배포 상태 조회
-export const getDeploymentStatus = async (
-  namespace: string,
-  name: string,
-  deploymentId?: string
-) => {
-  let url = `/inference-services/${namespace}/${name}/deployment-status`
-  if (deploymentId) {
-    url += `?deployment_id=${deploymentId}`
-  }
-
-  const response = await $fetch<ResponseBody>(url, {
-    method: 'GET',
-    baseURL: useAppConfig().api.url
-  })
-
-  return response
-}
-
-// 배포 취소
-export const cancelDeployment = async (
-  namespace: string,
-  name: string,
-  deploymentId: string
-) => {
-  const response = await $fetch<ResponseBody>(`/inference-services/${namespace}/${name}/deployment/${deploymentId}`, {
-    method: 'DELETE',
-    baseURL: useAppConfig().api.url
-  })
-
-  return response
-}
-
-// 배포 롤백
-export const rollbackDeployment = async (
-  namespace: string,
-  name: string,
-  rollbackRequest: { reason?: string; force?: boolean }
-) => {
-  const response = await $fetch<ResponseBody>(`/inference-services/${namespace}/${name}/rollback`, {
-    method: 'POST',
-    baseURL: useAppConfig().api.url,
-    body: rollbackRequest,
-    headers: {
-      "Content-Type": "application/json"
-    }
-  })
-
-  return response
-}
 

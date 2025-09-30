@@ -1,5 +1,6 @@
 interface WebSocketMessage {
-  type: 'deployment_log' | 'pod_log' | 'traffic_metrics' | 'deployment_status' | 'deployment_complete' | 'deployment_error' | 'inference_log' | 'pod_tab_created' | 'pod_tab_removed' | 'pod_log_pattern_matched' | 'deployment_phase_changed' | 'deployment_analysis' | 'strategy_validation_step' | 'strategy_validation_result' | 'complete_inference_response' | 'realtime_inference_metrics'
+  type: 'deployment_log' | 'pod_log' | 'inference_log'
+  subType?: string
   timestamp: string
   data: any
   serviceName?: string
@@ -16,529 +17,309 @@ interface LogEntry {
 
 interface PodLogEntry {
   timestamp: string
-  podName: string
-  podType: 'blue' | 'green' | 'stable' | 'canary' | 'runtime' | 'base'
-  containerName: string
+  pod_name: string
+  namespace: string
   message: string
-  isImportant?: boolean // HTTP 패턴 마커용
+  patterns?: any
 }
 
-interface TrafficMetrics {
+interface InferenceStats {
   totalRequests: number
   successfulRequests: number
   failedRequests: number
   successRate: number
-  averageResponseTime?: number
+  averageResponseTime: number
+  minResponseTime: number
+  maxResponseTime: number
+  lastUpdated: string
 }
 
-interface InferenceLogData {
-  message: string
-  level: 'success' | 'error' | 'warning' | 'info'
-  timestamp: string
-  source: string
-  response_data?: {
-    status_code: number
-    request_id: number
-    success: boolean
-    elapsed_time: number
-  }
-}
-
-interface InferenceStats {
-  total: number
-  success: number
-  error: number
-  warning: number
-  successRate: number
-}
-
-// 완전한 추론 응답 데이터용 인터페이스
-interface CompleteInferenceResponse {
-  request_id: number
-  timestamp: string
-  summary: {
-    status_code: number
-    response_time_ms: number
-    content_type: string
-    response_size_bytes: number
-    prediction_type?: string
-    prediction_count?: number
-    generated_text_length?: number
-  }
-  full_response: {
-    status_code: number
-    headers: Record<string, string>
-    response_time_ms: number
-    response_body: any
-    request_url: string
-    request_method: string
-    content_type: string
-  }
-}
-
-// 실시간 메트릭용 인터페이스
-interface RealtimeInferenceMetrics {
-  total_requests: number
-  successful_requests: number
-  failed_requests: number
-  success_rate: number
-  current_request_id: number
-  timestamp: string
+interface DeploymentReportData {
+  deploymentId: string
+  strategy: string
+  duration: number
+  overallSuccess: boolean
+  availability: number
+  trafficAnalysis: any
+  performanceMetrics: any
+  podEvents: any[]
+  validationResults: any
+  startTime: string
+  endTime: string
 }
 
 export const useWebSocket = () => {
   const config = useAppConfig()
 
-  // WebSocket 연결 맵
-  const connections = new Map<string, WebSocket>()
+  // 3채널 WebSocket 연결 관리
+  const deploymentWs = ref<WebSocket | null>(null)
+  const podWs = ref<WebSocket | null>(null)
+  const inferenceWs = ref<WebSocket | null>(null)
+  const connectionStatus = ref<'disconnected' | 'connecting' | 'connected'>('disconnected')
 
-  // 로그 저장소
+  // 채널별 데이터 저장소
   const deploymentLogs = ref<LogEntry[]>([])
   const podLogs = ref<PodLogEntry[]>([])
-  const inferenceLogs = ref<LogEntry[]>([])
-
-  // 메트릭 상태
-  const metrics = ref<TrafficMetrics | null>(null)
   const inferenceStats = ref<InferenceStats>({
-    total: 0,
-    success: 0,
-    error: 0,
-    warning: 0,
-    successRate: 0
+    totalRequests: 0,
+    successfulRequests: 0,
+    failedRequests: 0,
+    successRate: 0,
+    averageResponseTime: 0,
+    minResponseTime: 0,
+    maxResponseTime: 0,
+    lastUpdated: new Date().toISOString()
   })
+  const deploymentReport = ref<DeploymentReportData | null>(null)
 
   // 배포 상태
   const deploymentProgress = ref(0)
-  const deploymentStatus = ref('재배포 준비 중...')
+  const deploymentStatus = ref('준비 중...')
+  const isCompleted = ref(false)
 
-  // 로그 무제한 보존 (배포 기간 동안만이므로 메모리 문제 없음)
-
-  // WebSocket URL 생성
-  const getWebSocketUrl = (path: string): string => {
+  // 3채널 WebSocket URL 생성
+  const getWebSocketUrls = (namespace: string, serviceName: string, deployment_id: string) => {
     const baseUrl = config.api.url.replace(/^http/, 'ws').replace(/\/$/, '')
-    const fullUrl = `${baseUrl}${path}`
-    return fullUrl
-  }
+    const prefix = `${baseUrl}/inference-services/${namespace}/${serviceName}`
 
-  // 추론 통계 업데이트
-  const updateInferenceStats = (logData: InferenceLogData) => {
-    inferenceStats.value.total++
-
-    if (logData.level === 'success') {
-      inferenceStats.value.success++
-    } else if (logData.level === 'error') {
-      inferenceStats.value.error++
-    } else if (logData.level === 'warning') {
-      inferenceStats.value.warning++
-    }
-
-    // 성공률 계산
-    inferenceStats.value.successRate = inferenceStats.value.total > 0
-      ? Math.round((inferenceStats.value.success / inferenceStats.value.total) * 100)
-      : 0
-  }
-
-  // 배포 로그 메시지에서 추론 통계 파싱 및 업데이트
-  const updateInferenceStatsFromMessage = (logEntry: LogEntry) => {
-    const message = logEntry.message
-
-    // "N회 요청, 성공률 X.X%" 패턴 파싱
-    const statsMatch = message.match(/(\d+)회 요청.*성공률[:\s]*(\d+\.?\d*)%/)
-    if (statsMatch) {
-      const totalRequests = parseInt(statsMatch[1])
-      const successRate = parseFloat(statsMatch[2])
-
-      // 기존 통계 업데이트
-      inferenceStats.value.total = totalRequests
-      inferenceStats.value.success = Math.round((totalRequests * successRate) / 100)
-      inferenceStats.value.error = totalRequests - inferenceStats.value.success
-      inferenceStats.value.successRate = Math.round(successRate)
-    }
-
-    // 개별 요청 성공/실패 카운트
-    if (message.includes('✅') || message.includes('성공')) {
-      // 성공 로그는 이미 통계에 반영됨
-    } else if (message.includes('❌') || message.includes('실패') || message.includes('오류')) {
-      // 실패 로그는 이미 통계에 반영됨
+    return {
+      deploymentUrl: `${prefix}/deployment-logs?deployment_id=${deployment_id}`,
+      podUrl: `${prefix}/pod-logs?deployment_id=${deployment_id}`,
+      inferenceUrl: `${prefix}/inference-logs?deployment_id=${deployment_id}`
     }
   }
 
-  // 진행률 업데이트 로직
-  const updateDeploymentProgress = (logEntry: LogEntry) => {
-    const message = logEntry.message.toLowerCase()
+  // 3채널 WebSocket 연결
+  const connect3ChannelWebSocket = (namespace: string, serviceName: string, deployment_id: string) => {
+    // 기존 연결 종료
+    disconnect()
 
-    // 로그 메시지 기반 진행률 추정
-    if (message.includes('시작') || message.includes('start')) {
-      deploymentProgress.value = Math.max(deploymentProgress.value, 10)
-    } else if (message.includes('pod') && message.includes('생성')) {
-      deploymentProgress.value = Math.max(deploymentProgress.value, 30)
-    } else if (message.includes('ready') || message.includes('준비')) {
-      deploymentProgress.value = Math.max(deploymentProgress.value, 50)
-    } else if (message.includes('트래픽') || message.includes('traffic')) {
-      deploymentProgress.value = Math.max(deploymentProgress.value, 70)
-    } else if (message.includes('검증') || message.includes('validation')) {
-      deploymentProgress.value = Math.max(deploymentProgress.value, 90)
-    } else if (message.includes('완료') || message.includes('complete')) {
+    const urls = getWebSocketUrls(namespace, serviceName, deployment_id)
+    console.log('🔗 3채널 WebSocket 연결 시작:', urls)
+
+    connectionStatus.value = 'connecting'
+
+    // 1. 배포 로그 채널
+    deploymentWs.value = new WebSocket(urls.deploymentUrl)
+    setupWebSocketHandlers(deploymentWs.value, 'deployment')
+
+    // 2. Pod 로그 채널
+    podWs.value = new WebSocket(urls.podUrl)
+    setupWebSocketHandlers(podWs.value, 'pod')
+
+    // 3. 추론 테스트 채널
+    inferenceWs.value = new WebSocket(urls.inferenceUrl)
+    setupWebSocketHandlers(inferenceWs.value, 'inference')
+
+    return { deploymentWs: deploymentWs.value, podWs: podWs.value, inferenceWs: inferenceWs.value }
+  }
+
+  // WebSocket 핸들러 설정
+  const setupWebSocketHandlers = (ws: WebSocket, channel: string) => {
+    ws.onopen = () => {
+      console.log(`✅ ${channel} WebSocket 연결 성공`)
+      if (channel === 'deployment') {
+        connectionStatus.value = 'connected'
+      }
+    }
+
+    ws.onmessage = (event) => {
+      try {
+        console.log(`🔗 ${channel} raw 메시지 수신:`, event.data)
+        const message: WebSocketMessage = JSON.parse(event.data)
+        console.log(`📨 ${channel} 파싱된 메시지:`, {
+          type: message.type,
+          subType: message.subType,
+          timestamp: message.timestamp,
+          data: message.data
+        })
+        handleMessage(message)
+      } catch (error) {
+        console.error(`❌ ${channel} 메시지 파싱 오류:`, error, event.data)
+      }
+    }
+
+    ws.onerror = (error) => {
+      console.error(`❌ ${channel} WebSocket 오류:`, error)
+    }
+
+    ws.onclose = (event) => {
+      console.log(`🔌 ${channel} WebSocket 연결 종료: code ${event.code}`)
+      if (channel === 'deployment') {
+        connectionStatus.value = 'disconnected'
+      }
+    }
+  }
+
+  // 메시지 처리
+  const handleMessage = (message: WebSocketMessage) => {
+    console.log(`🎯 메시지 처리 시작:`, message.type, message.subType)
+
+    switch (message.type) {
+      case 'deployment_log':
+        console.log(`📋 deployment_log 처리:`, message)
+        handleDeploymentLog(message)
+        break
+      case 'pod_log':
+        console.log(`📊 pod_log 처리:`, message)
+        handlePodLog(message)
+        break
+      case 'inference_log':
+        console.log(`🔍 inference_log 처리:`, message)
+        handleInferenceLog(message)
+        break
+      default:
+        console.warn('❓ 알 수 없는 메시지 타입:', message.type, message)
+    }
+  }
+
+  // 채널별 메시지 처리 함수들
+  const handleDeploymentLog = (message: WebSocketMessage) => {
+    const logEntry: LogEntry = {
+      timestamp: message.timestamp,
+      level: message.data.level || 'info',
+      message: message.data.message || JSON.stringify(message.data),
+      source: message.subType || 'deployment',
+      metadata: message.data
+    }
+    deploymentLogs.value.push(logEntry)
+
+    // 상태 업데이트 처리
+    if (message.subType === 'status_update') {
+      if (message.data.status) deploymentStatus.value = message.data.status
+      if (message.data.progress !== undefined) deploymentProgress.value = message.data.progress
+    }
+
+    // 배포 완료 처리
+    if (message.subType === 'deployment_completed') {
+      isCompleted.value = true
       deploymentProgress.value = 100
-    }
 
-    // 상태 메시지 업데이트
-    deploymentStatus.value = logEntry.message
+      // 완료 후 보고서 로드
+      if (message.data.deploymentId) {
+        loadDeploymentReport(message.serviceName!, message.namespace!, message.data.deploymentId)
+      }
+    }
   }
 
-  // 모든 연결 종료
-  const disconnectAll = () => {
-    connections.forEach((ws) => {
-      ws.close()
-    })
-    connections.clear()
+  const handlePodLog = (message: WebSocketMessage) => {
+    const podLogEntry: PodLogEntry = {
+      timestamp: message.timestamp,
+      pod_name: message.data.podName || 'unknown',
+      namespace: message.namespace || 'unknown',
+      message: message.data.message || JSON.stringify(message.data),
+      patterns: message.data.patterns
+    }
+    podLogs.value.push(podLogEntry)
+
+    // 중요한 패턴이 감지되면 배포 로그에도 추가
+    if (message.data.patterns && Object.keys(message.data.patterns).length > 0) {
+      const logEntry: LogEntry = {
+        timestamp: message.timestamp,
+        level: 'info',
+        message: `Pod 패턴 감지: ${message.data.message}`,
+        source: 'pod_pattern',
+        metadata: message.data.patterns
+      }
+      deploymentLogs.value.push(logEntry)
+    }
+  }
+
+  const handleInferenceLog = (message: WebSocketMessage) => {
+    // 추론 통계 업데이트
+    if (message.data.stats) {
+      inferenceStats.value = {
+        ...message.data.stats,
+        lastUpdated: message.timestamp
+      }
+    }
+
+    // 개별 추론 결과 로그
+    if (message.data.result) {
+      const result = message.data.result
+      const level = result.success ? 'success' : 'error'
+      const logEntry: LogEntry = {
+        timestamp: message.timestamp,
+        level,
+        message: result.success
+          ? `추론 성공 (${result.responseTime}ms)`
+          : `추론 실패: ${result.errorMessage}`,
+        source: 'inference_test',
+        metadata: result
+      }
+      deploymentLogs.value.push(logEntry)
+    }
+  }
+
+  // 배포 보고서 로드
+  const loadDeploymentReport = async (serviceName: string, namespace: string, deploymentId: string) => {
+    try {
+      const { getDeploymentReport } = await import('~/composables/endpoints')
+      const response = await getDeploymentReport(namespace, serviceName, deploymentId)
+      if (response.success) {
+        deploymentReport.value = response.result
+      }
+    } catch (error) {
+      console.error('배포 보고서 로드 실패:', error)
+    }
+  }
+
+  // 연결 해제
+  const disconnect = () => {
+    if (deploymentWs.value) {
+      deploymentWs.value.close()
+      deploymentWs.value = null
+    }
+    if (podWs.value) {
+      podWs.value.close()
+      podWs.value = null
+    }
+    if (inferenceWs.value) {
+      inferenceWs.value.close()
+      inferenceWs.value = null
+    }
+    connectionStatus.value = 'disconnected'
   }
 
   // 로그 초기화
   const clearLogs = () => {
     deploymentLogs.value = []
     podLogs.value = []
-    inferenceLogs.value = []
-    metrics.value = null
     inferenceStats.value = {
-      total: 0,
-      success: 0,
-      error: 0,
-      warning: 0,
-      successRate: 0
+      totalRequests: 0,
+      successfulRequests: 0,
+      failedRequests: 0,
+      successRate: 0,
+      averageResponseTime: 0,
+      minResponseTime: 0,
+      maxResponseTime: 0,
+      lastUpdated: new Date().toISOString()
     }
+    deploymentReport.value = null
     deploymentProgress.value = 0
-    deploymentStatus.value = '재배포 준비 중...'
+    deploymentStatus.value = '준비 중...'
+    isCompleted.value = false
   }
 
-  // Ping 전송 (연결 유지)
-  const sendPing = (ws: WebSocket) => {
-    if (ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type: 'ping', timestamp: new Date().toISOString() }))
-    }
-  }
-
-  // 로그 트리밍 제거 - 모든 로그 보존
-
-  // 배포 로그 WebSocket 연결
-  const connectDeploymentLogs = (namespace: string, serviceName: string, deploymentId?: string) => {
-    const key = deploymentId
-      ? `deployment-${namespace}-${serviceName}-${deploymentId}`
-      : `deployment-${namespace}-${serviceName}`
-
-    if (connections.has(key)) {
-      connections.get(key)?.close()
-    }
-
-    let url = getWebSocketUrl(`/inference-services/${namespace}/${serviceName}/deployment-logs`)
-    if (deploymentId) {
-      url += `?deployment_id=${deploymentId}`
-    }
-    const ws = new WebSocket(url)
-
-    ws.onopen = () => {
-      // 연결 알림 제거 - 백엔드 로그만 표시
-    }
-
-    ws.onmessage = (event) => {
-      try {
-        const message: WebSocketMessage = JSON.parse(event.data)
-        if (message.type === 'inference_log') {
-          // 이 경우 inference logs로 라우팅
-          const logData: InferenceLogData = message.data
-          const logEntry: LogEntry = {
-            timestamp: logData.timestamp || new Date().toISOString(),
-            level: logData.level,
-            message: logData.message,
-            source: logData.source || 'inference',
-            metadata: logData.response_data
-          }
-          inferenceLogs.value.push(logEntry)
-          updateInferenceStats(logData)
-        } else if (message.type === 'deployment_log') {
-          const logEntry: LogEntry = message.data
-          deploymentLogs.value.push(logEntry)
-
-          // 진행 상황 로그 스팸 방지 - "📊 추론 테스트 진행" 메시지 필터링
-          const isProgressSpam = logEntry.message.includes('📊 추론 테스트 진행') ||
-                                 logEntry.message.includes('가용성 테스트 진행')
-
-          if (!isProgressSpam) {
-            // 추론 검증 로그는 inferenceLogs에도 추가 (백엔드 metadata 기반 + 키워드 매칭)
-            const inferenceKeywords = [
-              '추론', 'inference', '검증', 'validation', '테스트', 'test', 'verify',
-              '응답', 'response', '가용성', 'availability', '엔드포인트', 'endpoint',
-              '요청', 'request', '성공률', 'success rate', '시뮬레이션', 'simulation'
-            ]
-            const isInferenceLog = logEntry.metadata?.type === 'inference' ||
-                                   inferenceKeywords.some(keyword =>
-                                     logEntry.message.toLowerCase().includes(keyword.toLowerCase())
-                                   )
-
-            if (isInferenceLog) {
-              inferenceLogs.value.push(logEntry)
-
-              // 추론 통계 업데이트 (성공률 파싱)
-              updateInferenceStatsFromMessage(logEntry)
-            }
-          } else {
-            // 진행 상황 로그는 통계만 업데이트하고 로그에는 추가하지 않음
-            updateInferenceStatsFromMessage(logEntry)
-          }
-
-          // 진행률 업데이트 로직
-          updateDeploymentProgress(logEntry)
-        } else if (message.type === 'deployment_status') {
-          deploymentStatus.value = message.data.message || deploymentStatus.value
-          if (message.data.progress !== undefined) {
-            deploymentProgress.value = message.data.progress
-          }
-        } else if (message.type === 'deployment_complete') {
-          deploymentProgress.value = 100
-          deploymentStatus.value = '재배포 완료'
-
-          // 자동 연결 해제 (배포 완료)
-          setTimeout(() => {
-            disconnectAll()
-          }, 2000) // 2초 후 연결 해제
-        } else if (message.type === 'deployment_error') {
-          deploymentStatus.value = '재배포 실패'
-
-          // 자동 연결 해제 (배포 실패)
-          setTimeout(() => {
-            disconnectAll()
-          }, 2000) // 2초 후 연결 해제
-        } else if (message.type === 'deployment_analysis') {
-          // 배포 완료 후 분석 결과
-          deploymentLogs.value.push({
-            timestamp: new Date().toISOString(),
-            level: 'success',
-            message: `📊 배포 분석 완료: ${message.data.summary || '분석 결과 확인'}`,
-            source: 'websocket',
-            metadata: message.data
-          })
-        } else if (message.type === 'strategy_validation_step') {
-          // 배포 전략 검증 단계
-          deploymentLogs.value.push({
-            timestamp: new Date().toISOString(),
-            level: 'info',
-            message: `🔍 검증 단계: ${message.data.step || '검증 진행 중'}`,
-            source: 'websocket',
-            metadata: message.data
-          })
-        } else if (message.type === 'strategy_validation_result') {
-          // 배포 전략 검증 결과
-          const level = message.data.success ? 'success' : 'warning'
-          deploymentLogs.value.push({
-            timestamp: new Date().toISOString(),
-            level: level,
-            message: `✅ 검증 결과: ${message.data.message || '검증 완료'}`,
-            source: 'websocket',
-            metadata: message.data
-          })
-        }
-      } catch (error) {
-        console.error('WebSocket message parsing error:', error)
-        // 파싱 오류 콘솔 로그만 유지
-        console.error('WebSocket message parsing error:', error)
-      }
-    }
-
-    ws.onerror = (error) => {
-      console.error('Deployment logs WebSocket error:', error)
-    }
-
-    ws.onclose = (event) => {
-      console.log(`WebSocket closed: ${key}, code: ${event.code}`)
-      connections.delete(key)
-    }
-
-    connections.set(key, ws)
-    return ws
-  }
-
-  // Pod 로그 WebSocket 연결
-  const connectPodLogs = (namespace: string, serviceName: string, strategy: string, deploymentId?: string, podType?: string) => {
-    const key = deploymentId
-      ? `pod-${namespace}-${serviceName}-${strategy}-${deploymentId}`
-      : `pod-${namespace}-${serviceName}-${strategy}`
-
-
-    if (connections.has(key)) {
-      connections.get(key)?.close()
-    }
-
-    // Pod 로그는 특정 pod_name이 필요하므로 임시로 strategy를 사용
-    let url = getWebSocketUrl(`/inference-services/${namespace}/${serviceName}/pod-logs/${strategy}`)
-    const params = new URLSearchParams()
-    if (deploymentId) {
-      params.append('deployment_id', deploymentId)
-    }
-    if (podType) {
-      params.append('pod_type', podType)
-    }
-    if (params.toString()) {
-      url += `?${params.toString()}`
-    }
-
-    const ws = new WebSocket(url)
-
-    ws.onopen = () => {
-      // Pod 로그 연결 알림 제거
-    }
-
-    ws.onmessage = (event) => {
-      try {
-        const message: WebSocketMessage = JSON.parse(event.data)
-
-        if (message.type === 'pod_log') {
-          const podLogEntry: PodLogEntry = message.data
-
-          // HTTP 패턴 마커 감지
-          if (podLogEntry.message.includes('🔥 [INFERENCE]') ||
-              podLogEntry.message.includes('🌐 [HTTP]')) {
-            // 중요한 HTTP 요청으로 분류
-            podLogEntry.isImportant = true
-          }
-
-          podLogs.value.push(podLogEntry)
-        } else if (message.type === 'deployment_phase_changed') {
-          // 배포 단계 변경만 상태 업데이트
-          if (message.data.phase) {
-            deploymentStatus.value = message.data.phase
-          }
-        }
-      } catch (error) {
-        console.error('Pod logs WebSocket message parsing error:', error)
-      }
-    }
-
-    ws.onerror = (error) => {
-      console.error('Pod logs WebSocket error:', error)
-    }
-
-    ws.onclose = (event) => {
-      console.log(`Pod logs WebSocket closed: ${key}, code: ${event.code}`)
-      connections.delete(key)
-    }
-
-    connections.set(key, ws)
-    return ws
-  }
-
-  // 추론 로그 WebSocket 연결
-  const connectInferenceLogs = (namespace: string, serviceName: string, deploymentId?: string) => {
-    const key = deploymentId
-      ? `inference-${namespace}-${serviceName}-${deploymentId}`
-      : `inference-${namespace}-${serviceName}`
-
-
-    if (connections.has(key)) {
-      connections.get(key)?.close()
-    }
-
-    let url = getWebSocketUrl(`/inference-services/${namespace}/${serviceName}/inference-logs`)
-    if (deploymentId) {
-      url += `?deployment_id=${deploymentId}`
-    }
-
-    const ws = new WebSocket(url)
-
-    ws.onopen = () => {
-      // 추론 로그 연결 알림 제거
-    }
-
-    ws.onmessage = (event) => {
-      try {
-        const message: WebSocketMessage = JSON.parse(event.data)
-
-        if (message.type === 'inference_log') {
-          const logData: InferenceLogData = message.data
-
-          // 추론 로그에 추가
-          const logEntry: LogEntry = {
-            timestamp: logData.timestamp || new Date().toISOString(),
-            level: logData.level,
-            message: logData.message,
-            source: logData.source || 'inference',
-            metadata: logData.response_data
-          }
-
-          inferenceLogs.value.push(logEntry)
-
-          // 통계 업데이트
-          updateInferenceStats(logData)
-        } else if (message.type === 'realtime_inference_metrics') {
-          // 실시간 메트릭 업데이트 - 배포 로그에서도 처리
-          const metricsData: RealtimeInferenceMetrics = message.data
-          if (metricsData) {
-            inferenceStats.value = {
-              total: metricsData.total_requests,
-              success: metricsData.successful_requests,
-              error: metricsData.failed_requests,
-              warning: 0, // 기본값
-              successRate: Math.round(metricsData.success_rate)
-            }
-          }
-        } else if (message.type === 'complete_inference_response') {
-          // 완전한 응답 데이터를 별도로 저장/처리
-          const completeResponseData: CompleteInferenceResponse = message.data
-
-          // 로그 엔트리로도 추가
-          const logEntry: LogEntry = {
-            timestamp: completeResponseData.timestamp || new Date().toISOString(),
-            level: 'info',
-            message: completeResponseData.summary ?
-              `📄 REQUEST #${completeResponseData.request_id} 완전한 응답 데이터` :
-              message.data.message,
-            source: 'inference_response',
-            metadata: completeResponseData.full_response
-          }
-
-          inferenceLogs.value.push(logEntry)
-        }
-      } catch (error) {
-        console.error('Inference logs WebSocket message parsing error:', error)
-      }
-    }
-
-    ws.onerror = (error) => {
-      console.error('Inference logs WebSocket error:', error)
-    }
-
-    ws.onclose = (event) => {
-      console.log(`Inference logs WebSocket closed: ${key}, code: ${event.code}`)
-      connections.delete(key)
-    }
-
-    connections.set(key, ws)
-    return ws
-  }
-
-
-  // 정리 함수
+  // 정리
   onUnmounted(() => {
-    disconnectAll()
+    disconnect()
   })
 
   return {
     // 상태
+    connectionStatus: readonly(connectionStatus),
     deploymentLogs: readonly(deploymentLogs),
     podLogs: readonly(podLogs),
-    inferenceLogs: readonly(inferenceLogs),
-    metrics: readonly(metrics),
     inferenceStats: readonly(inferenceStats),
+    deploymentReport: readonly(deploymentReport),
     deploymentProgress: readonly(deploymentProgress),
     deploymentStatus: readonly(deploymentStatus),
+    isCompleted: readonly(isCompleted),
 
     // 메소드
-    connectDeploymentLogs,
-    connectPodLogs,
-    connectInferenceLogs,
-    updateInferenceStats,
-    updateInferenceStatsFromMessage,
-    disconnectAll,
-    clearLogs,
-    sendPing
+    connect3ChannelWebSocket,
+    disconnect,
+    clearLogs
   }
 }
