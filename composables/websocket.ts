@@ -70,6 +70,7 @@ export const useWebSocket = () => {
   const inferenceWs = ref<WebSocket | null>(null)
   const connectionStatus = ref<'disconnected' | 'connecting' | 'connected'>('disconnected')
 
+
   // Non-reactive 캐시 시스템 (메모리 효율)
   let fullLogCache: {
     deployment: LogEntry[]
@@ -170,7 +171,7 @@ export const useWebSocket = () => {
     }
   }
 
-  // 3채널 WebSocket URL 생성
+  // 2채널 WebSocket URL 생성 (Pod 로그 제외)
   const getWebSocketUrls = (namespace: string, serviceName: string, deployment_id: string) => {
     // WebSocket은 프록시를 거치지 않고 직접 백엔드로 연결
     const backendUrl = runtimeConfig.public.backendUrl
@@ -180,13 +181,13 @@ export const useWebSocket = () => {
 
     return {
       deploymentUrl: `${prefix}/deployment-logs?deployment_id=${deployment_id}`,
-      podUrl: `${prefix}/pod-logs?deployment_id=${deployment_id}`,
       inferenceUrl: `${prefix}/inference-logs?deployment_id=${deployment_id}`
     }
   }
 
-  // 3채널 WebSocket 연결
-  const connect3ChannelWebSocket = (namespace: string, serviceName: string, deployment_id: string) => {
+
+  // 2채널 WebSocket 연결
+  const connect2ChannelWebSocket = (namespace: string, serviceName: string, deployment_id: string) => {
     // 기존 연결 종료
     disconnect()
 
@@ -197,18 +198,14 @@ export const useWebSocket = () => {
     deploymentWs.value = new WebSocket(urls.deploymentUrl)
     setupWebSocketHandlers(deploymentWs.value, 'deployment')
 
-    // 2. Pod 로그 채널
-    podWs.value = new WebSocket(urls.podUrl)
-    setupWebSocketHandlers(podWs.value, 'pod')
-
-    // 3. 추론 테스트 채널
+    // 2. 추론 테스트 채널
     inferenceWs.value = new WebSocket(urls.inferenceUrl)
     setupWebSocketHandlers(inferenceWs.value, 'inference')
 
     // 로그 정리 타이머 시작
     startCleanupTimer()
 
-    return { deploymentWs: deploymentWs.value, podWs: podWs.value, inferenceWs: inferenceWs.value }
+    return { deploymentWs: deploymentWs.value, inferenceWs: inferenceWs.value }
   }
 
   // WebSocket 핸들러 설정
@@ -232,7 +229,7 @@ export const useWebSocket = () => {
       console.error(`❌ ${channel} WebSocket 오류:`, error)
     }
 
-    ws.onclose = (event) => {
+    ws.onclose = () => {
       if (channel === 'deployment') {
         connectionStatus.value = 'disconnected'
       }
@@ -281,16 +278,20 @@ export const useWebSocket = () => {
       if (message.data.progress !== undefined) deploymentProgress.value = message.data.progress
     }
 
-    // 배포 완료 처리
-    if (message.subType === 'deployment_completed') {
+    // 배포 완료 처리 - 간단하게 처리
+    const isDeploymentCompleted =
+      message.subType === 'deployment_completed' ||
+      (logEntry.message && logEntry.message.includes('배포 보고서 생성 완료'))
+
+    if (isDeploymentCompleted) {
       isCompleted.value = true
       deploymentProgress.value = 100
-
-      // 완료 후 보고서 로드
-      if (message.data.deploymentId) {
-        loadDeploymentReport(message.serviceName!, message.namespace!, message.data.deploymentId)
-      }
     }
+  }
+
+  // 외부에서 배포 ID를 설정할 수 있는 함수
+  const setCurrentDeploymentId = (_deploymentId: string) => {
+    // 호환성을 위해 유지하지만 실제로는 사용하지 않음
   }
 
   const handlePodLog = (message: WebSocketMessage) => {
@@ -368,18 +369,6 @@ export const useWebSocket = () => {
     }
   }
 
-  // 배포 보고서 로드
-  const loadDeploymentReport = async (serviceName: string, namespace: string, deploymentId: string) => {
-    try {
-      const { getDeploymentReport } = await import('~/composables/endpoints')
-      const response = await getDeploymentReport(namespace, serviceName, deploymentId)
-      if (response.success) {
-        deploymentReport.value = response.result
-      }
-    } catch (error) {
-      console.error('배포 보고서 로드 실패:', error)
-    }
-  }
 
   // 연결 해제
   const disconnect = () => {
@@ -448,6 +437,11 @@ export const useWebSocket = () => {
     disconnect()
   })
 
+  // 수동 보고서 업데이트 함수
+  const updateDeploymentReport = (reportData: DeploymentReportData) => {
+    deploymentReport.value = reportData
+  }
+
   return {
     // 상태
     connectionStatus: readonly(connectionStatus),
@@ -465,9 +459,11 @@ export const useWebSocket = () => {
     currentPage: readonly(currentPage),
 
     // 메소드
-    connect3ChannelWebSocket,
+    connect3ChannelWebSocket: connect2ChannelWebSocket,
     disconnect,
     clearLogs,
+    updateDeploymentReport, // 수동 보고서 업데이트용
+    setCurrentDeploymentId, // 배포 ID 설정용
 
     // 새로운 캐시 접근 함수들
     getFullLogCache: () => fullLogCache,
