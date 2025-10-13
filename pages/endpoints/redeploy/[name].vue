@@ -323,36 +323,20 @@
           <div class="space-y-4">
             <div class="flex items-center gap-4">
               <div class="flex-1">
-                <UProgress :value="deploymentProgress" :max="100" />
+                <UProgress :value="localDeploymentProgress" :max="100" />
               </div>
-              <span class="text-sm font-medium">{{ deploymentProgress }}%</span>
+              <span class="text-sm font-medium">{{ localDeploymentProgress }}%</span>
             </div>
 
             <div class="text-center text-sm text-gray-600 dark:text-gray-400">
-              {{ deploymentStatus }}
+              {{ localDeploymentStatus }}
             </div>
 
-            <!-- 연결 상태 -->
-            <div class="flex items-center justify-center gap-2 text-xs">
-              <div
-                :class="[
-                  'w-2 h-2 rounded-full',
-                  connectionStatus === 'connected' ? 'bg-green-500' :
-                  connectionStatus === 'connecting' ? 'bg-yellow-500' : 'bg-red-500'
-                ]"
-              />
-              <span class="text-gray-500">
-                {{
-                  connectionStatus === 'connected' ? '연결됨' :
-                  connectionStatus === 'connecting' ? '연결 중...' : '연결 끊김'
-                }}
-              </span>
-            </div>
           </div>
         </UCard>
 
         <!-- 추론 통계 -->
-        <UCard v-if="deploymentStarted">
+        <UCard>
           <template #header>
             <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-white">
               추론 테스트 통계
@@ -386,15 +370,27 @@
           <template #header>
             <div class="flex items-center justify-between">
               <UTabs v-model="activeTab" :items="logTabs" />
-              <UButton
-                @click="downloadLogs"
-                variant="outline"
-                size="sm"
-                icon="i-heroicons-arrow-down-tray"
-                :disabled="!deploymentStarted"
-              >
-                로그 다운로드
-              </UButton>
+              <!-- 배포 완료 후 보고서 관련 버튼들 -->
+              <div v-if="isCompleted && deploymentId" class="flex gap-2">
+                <UButton
+                  @click="viewDeploymentReport"
+                  :loading="reportLoading"
+                  variant="outline"
+                  size="sm"
+                  icon="i-heroicons-document-text"
+                >
+                  배포 보고서 보기
+                </UButton>
+                <UButton
+                  @click="downloadReportDirectly"
+                  :loading="reportDownloadLoading"
+                  variant="outline"
+                  size="sm"
+                  icon="i-heroicons-arrow-down-tray"
+                >
+                  보고서 다운로드
+                </UButton>
+              </div>
             </div>
           </template>
 
@@ -516,67 +512,93 @@
               </div>
             </div>
 
-            <!-- Pod 로그 -->
-            <div v-if="activeTab === 2" class="font-mono text-sm space-y-1">
-              <div
-                v-for="(log, index) in filteredPodLogs"
-                :key="index"
-                class="p-1"
-              >
-                <span class="text-gray-500">{{ formatTime(log.timestamp) }}</span>
-                <span class="ml-2 text-blue-600">[{{ log.pod_name }}]</span>
-                <span
-                  class="ml-2"
-                  :class="getLogLevelClass(detectPodLogLevel(log.message))"
-                >
-                  {{ log.message }}
-                </span>
-              </div>
-              <div v-if="filteredPodLogs.length === 0 && podLogs.length > 0" class="text-gray-500 text-center py-8">
-                검색 결과가 없습니다.
-              </div>
-              <div v-else-if="podLogs.length === 0" class="text-gray-500 text-center py-8">
-                Pod 로그가 표시됩니다...
-              </div>
-            </div>
-
-
-            <!-- 보고서 탭인 경우 보고서 표시 -->
-            <div v-if="activeTab === 3" class="space-y-4">
-              <div v-if="deploymentReport" class="space-y-6">
-                <!-- 배포 요약 -->
-                <div class="bg-white dark:bg-gray-700 p-6 rounded-lg border">
-                  <h3 class="text-lg font-semibold mb-4">배포 요약</h3>
-                  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
-                      <div class="text-sm text-gray-600 dark:text-gray-400">전략</div>
-                      <div class="font-medium">{{ deploymentReport.strategy }}</div>
-                    </div>
-                    <div>
-                      <div class="text-sm text-gray-600 dark:text-gray-400">소요시간</div>
-                      <div class="font-medium">{{ deploymentReport.duration.toFixed(1) }}초</div>
-                    </div>
-                    <div>
-                      <div class="text-sm text-gray-600 dark:text-gray-400">가용성</div>
-                      <div class="font-medium text-green-600">{{ deploymentReport.availability.toFixed(1) }}%</div>
-                    </div>
-                    <div>
-                      <div class="text-sm text-gray-600 dark:text-gray-400">성공 여부</div>
-                      <div :class="deploymentReport.overallSuccess ? 'text-green-600' : 'text-red-600'" class="font-medium">
-                        {{ deploymentReport.overallSuccess ? '성공' : '실패' }}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div v-else class="text-gray-500 text-center py-8">
-                배포 완료 후 상세 보고서가 표시됩니다...
-              </div>
-            </div>
           </div>
         </UCard>
       </div>
     </div>
+
+    <!-- 배포 보고서 모달 -->
+    <UModal v-model="isReportModalOpen" :ui="{ width: 'w-full max-w-4xl' }">
+      <UCard>
+        <template #header>
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold">배포 보고서</h3>
+            <UButton
+              @click="downloadReport"
+              variant="outline"
+              size="sm"
+              icon="i-heroicons-arrow-down-tray"
+            >
+              다운로드
+            </UButton>
+          </div>
+        </template>
+
+        <div v-if="manualReportData" class="space-y-6">
+          <!-- 배포 요약 -->
+          <div class="bg-white dark:bg-gray-700 p-6 rounded-lg border">
+            <h4 class="text-lg font-semibold mb-4">배포 요약</h4>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <div class="text-sm text-gray-600 dark:text-gray-400">전략</div>
+                <div class="font-medium">{{ manualReportData.strategy }}</div>
+              </div>
+              <div>
+                <div class="text-sm text-gray-600 dark:text-gray-400">소요시간</div>
+                <div class="font-medium">{{ manualReportData.duration?.toFixed(1) || 'N/A' }}초</div>
+              </div>
+              <div>
+                <div class="text-sm text-gray-600 dark:text-gray-400">가용성</div>
+                <div class="font-medium text-green-600">{{ manualReportData.availability?.toFixed(1) || 'N/A' }}%</div>
+              </div>
+              <div>
+                <div class="text-sm text-gray-600 dark:text-gray-400">성공 여부</div>
+                <div :class="manualReportData.overallSuccess ? 'text-green-600' : 'text-red-600'" class="font-medium">
+                  {{ manualReportData.overallSuccess ? '성공' : '실패' }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 상세 정보 -->
+          <div class="bg-white dark:bg-gray-700 p-6 rounded-lg border">
+            <h4 class="text-lg font-semibold mb-4">상세 정보</h4>
+            <div class="space-y-3">
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <div class="text-sm text-gray-600 dark:text-gray-400">배포 ID</div>
+                  <div class="font-mono text-sm">{{ manualReportData.deploymentId || deploymentId }}</div>
+                </div>
+                <div>
+                  <div class="text-sm text-gray-600 dark:text-gray-400">시작 시간</div>
+                  <div class="text-sm">{{ formatDateTime(manualReportData.startTime) }}</div>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <div class="text-sm text-gray-600 dark:text-gray-400">종료 시간</div>
+                  <div class="text-sm">{{ formatDateTime(manualReportData.endTime) }}</div>
+                </div>
+                <div>
+                  <div class="text-sm text-gray-600 dark:text-gray-400">서비스명</div>
+                  <div class="font-medium">{{ serviceName }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- JSON 데이터 (개발자용) -->
+          <div class="bg-white dark:bg-gray-700 p-6 rounded-lg border">
+            <h4 class="text-lg font-semibold mb-4">전체 보고서 데이터</h4>
+            <pre class="bg-gray-100 dark:bg-gray-800 p-4 rounded text-xs overflow-auto max-h-64">{{ JSON.stringify(manualReportData, null, 2) }}</pre>
+          </div>
+        </div>
+
+        <div v-else class="text-center py-8">
+          <div class="text-gray-500">보고서를 로드하는 중...</div>
+        </div>
+      </UCard>
+    </UModal>
   </div>
 </template>
 
@@ -589,17 +611,26 @@ const pageTitle = `재배포: ${serviceName}`
 
 // 기본 상태
 const loading = ref(false)
+const reportLoading = ref(false)
+const reportDownloadLoading = ref(false)
 const deploymentStarted = ref(false)
 const servingType = ref('Standard')
 const namespace = ref('kubeflow-user-example-com')
+const deploymentId = ref<string | null>(null)
+
+// 보고서 모달 관련
+const isReportModalOpen = ref(false)
+const manualReportData = ref<any>(null)
+
+// 로컬 배포 상태 (WebSocket readonly 상태 대신 사용)
+const localDeploymentStatus = ref('준비 중...')
+const localDeploymentProgress = ref(0)
 
 // 로그 관련
 const activeTab = ref(0)
 const logTabs = [
   { label: '배포 로그' },
-  { label: '추론 검증' },
-  { label: 'Pod 로그' },
-  { label: '배포 보고서' }
+  { label: '추론 검증' }
 ]
 
 // 로그 검색/필터 관련
@@ -700,19 +731,17 @@ const isFormValid = computed(() => {
 const {
   connectionStatus,
   deploymentLogs,
-  podLogs,
   inferenceLogs,
   inferenceStats,
   deploymentReport,
   deploymentProgress,
   deploymentStatus,
-  visibleLogs,
-  currentPage,
+  isCompleted,
   connect3ChannelWebSocket,
   disconnect,
   clearLogs,
-  getPodTypes,
-  getPodLogs,
+  updateDeploymentReport,
+  setCurrentDeploymentId,
   getInferenceLogs,
   getDeploymentLogCache
 } = useWebSocket()
@@ -736,19 +765,6 @@ const filteredInferenceLogs = computed(() => {
   })
 })
 
-const filteredPodLogs = computed(() => {
-  return podLogs.value.filter(log => {
-    const matchesSearch = !logSearchQuery.value ||
-                         log.message.toLowerCase().includes(logSearchQuery.value.toLowerCase()) ||
-                         log.pod_name.toLowerCase().includes(logSearchQuery.value.toLowerCase())
-
-    // Pod 로그 메시지 기반 레벨 감지 및 필터링
-    const detectedLevel = detectPodLogLevel(log.message)
-    const matchesLevel = !logLevelFilter.value || detectedLevel === logLevelFilter.value
-
-    return matchesSearch && matchesLevel
-  })
-})
 
 // c13f282에서 사용하는 유틸리티 함수들
 const isInferenceRequestLog = (log: any) => {
@@ -766,59 +782,7 @@ const formatJsonResponse = (responseContent: any) => {
   }
 }
 
-// Pod 로그 메시지 기반 레벨 감지 함수
-const detectPodLogLevel = (message: string): 'error' | 'warning' | 'success' | 'info' => {
-  const lowerMessage = message.toLowerCase()
 
-  // 에러 키워드 체크
-  if (lowerMessage.includes('error') ||
-      lowerMessage.includes('failed') ||
-      lowerMessage.includes('fail') ||
-      lowerMessage.includes('exception') ||
-      lowerMessage.includes('traceback') ||
-      lowerMessage.includes('fatal') ||
-      lowerMessage.includes('crash')) {
-    return 'error'
-  }
-
-  // 경고 키워드 체크
-  if (lowerMessage.includes('warn') ||
-      lowerMessage.includes('warning') ||
-      lowerMessage.includes('deprecated') ||
-      lowerMessage.includes('timeout') ||
-      lowerMessage.includes('retry')) {
-    return 'warning'
-  }
-
-  // 성공 키워드 체크
-  if (lowerMessage.includes('success') ||
-      lowerMessage.includes('completed') ||
-      lowerMessage.includes('ready') ||
-      lowerMessage.includes('started') ||
-      lowerMessage.includes('loaded') ||
-      lowerMessage.includes('connected') ||
-      lowerMessage.includes('serving') ||
-      lowerMessage.includes('healthy')) {
-    return 'success'
-  }
-
-  return 'info'
-}
-
-// 현재 탭의 로그 가져오기
-const getCurrentTabLogs = () => {
-  const currentTabKey = logTabs.value[activeTab.value]?.key
-
-  if (currentTabKey === 'deployment') {
-    return getDeploymentLogCache()
-  } else if (currentTabKey === 'pod') {
-    return getPodLogs() // 모든 Pod 로그 가져오기
-  } else if (currentTabKey === 'inference') {
-    return getInferenceLogs()
-  }
-
-  return []
-}
 
 // 브레드크럼
 const breadcrumbs = [
@@ -838,14 +802,6 @@ const getServingTypeBadgeColor = (type: string) => {
   }
 }
 
-const getLogLevelClass = (level: string) => {
-  switch (level) {
-    case 'error': return 'text-red-600'
-    case 'warning': return 'text-yellow-600'
-    case 'success': return 'text-green-600'
-    default: return 'text-gray-700 dark:text-gray-300'
-  }
-}
 
 const getSuccessRateColor = () => {
   const rate = inferenceStats.value.successRate
@@ -884,8 +840,8 @@ const startRedeploy = async () => {
   clearLogs()
 
   // 기본 상태 메시지
-  deploymentStatus.value = '재배포 시작 중...'
-  deploymentProgress.value = 10
+  localDeploymentStatus.value = '재배포 시작 중...'
+  localDeploymentProgress.value = 10
 
   try {
     // InferenceServiceInfo 객체 구성 (전략별)
@@ -982,16 +938,7 @@ const startRedeploy = async () => {
       }
     }
 
-    // 재배포 API 호출 (전략별 파라미터 선별 전달)
-    const canaryPercent = formData.value.deployment_strategy === 'canary'
-      ? formData.value.canary_traffic_percent
-      : undefined
-
-    // API 호출 상태 업데이트
-    deploymentStatus.value = 'API 호출 중...'
-    deploymentProgress.value = 20
-
-    // 타임아웃 없이 API 직접 호출 (백엔드에서 배포가 오래 걸릴 수 있음)
+    // API 호출
     const response = await redeployInferenceService(
       namespace.value,
       serviceName,
@@ -1001,15 +948,17 @@ const startRedeploy = async () => {
     )
 
     if (response.code === 130200) {
-      // 성공 응답 상태 업데이트
-      deploymentStatus.value = 'WebSocket 연결 중...'
-      deploymentProgress.value = 30
-
       // deployment_id 추출하여 WebSocket 연결
-      const deploymentId = response.result?.data?.deploymentId || response.result?.deploymentId
+      const responseDeploymentId = response.result?.data?.deploymentId || response.result?.deploymentId
 
-      if (deploymentId) {
-        connect3ChannelWebSocket(namespace.value, serviceName, deploymentId)
+      if (responseDeploymentId) {
+        deploymentId.value = responseDeploymentId
+
+        // WebSocket composable에 배포 ID 설정
+        setCurrentDeploymentId(responseDeploymentId)
+
+        // WebSocket 연결 (이후 진행 상황은 WebSocket 메시지로 관리)
+        connect3ChannelWebSocket(namespace.value, serviceName, responseDeploymentId)
       } else {
         console.error('deployment_id가 응답에 없습니다:', response.result)
         alert('deployment_id를 받지 못했습니다. 재배포는 시작되었지만 실시간 모니터링을 할 수 없습니다.')
@@ -1018,10 +967,6 @@ const startRedeploy = async () => {
       throw new Error(response.message || '재배포 시작 실패')
     }
   } catch (error) {
-    console.error('재배포 시작 실패:', error)
-    console.error('에러 타입:', typeof error)
-    console.error('에러 스택:', (error as Error).stack)
-
     let errorMessage = '알 수 없는 오류'
     if (error instanceof Error) {
       errorMessage = error.message
@@ -1042,21 +987,112 @@ const cancelRedeploy = () => {
   router.push('/endpoints')
 }
 
-const downloadLogs = () => {
+// 배포 보고서 보기 (모달 열기)
+const viewDeploymentReport = async () => {
+  if (!deploymentId.value) {
+    alert('배포 ID가 없습니다.')
+    return
+  }
+
+  reportLoading.value = true
+  isReportModalOpen.value = true
+  manualReportData.value = null
+
+  try {
+    const { getDeploymentReport } = await import('~/composables/endpoints')
+    const response = await getDeploymentReport(namespace.value, serviceName, deploymentId.value)
+
+    if (response.code === 130200) {
+      manualReportData.value = response.result
+    } else {
+      alert('보고서 로드에 실패했습니다: ' + (response.message || '알 수 없는 오류'))
+      isReportModalOpen.value = false
+    }
+  } catch (error) {
+    alert('보고서 로드 중 오류가 발생했습니다: ' + (error as Error).message)
+    isReportModalOpen.value = false
+  } finally {
+    reportLoading.value = false
+  }
+}
+
+// 모달에서 보고서 다운로드 (기존 데이터 사용)
+const downloadReport = () => {
+  if (!manualReportData.value) return
+
   const timestamp = new Date().toISOString().slice(0, 16).replace(/:/g, '-')
 
-  const allLogs = [
-    ...deploymentLogs.value.map(log => `${formatTime(log.timestamp)} [DEPLOY] ${log.message}`),
-    ...podLogs.value.map(log => `${formatTime(log.timestamp)} [POD:${log.pod_name}] ${log.message}`)
-  ].join('\n')
+  const reportData = {
+    serviceName,
+    namespace: namespace.value,
+    timestamp: new Date().toISOString(),
+    ...manualReportData.value
+  }
 
-  const blob = new Blob([allLogs], { type: 'text/plain' })
+  const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `redeploy-logs-${serviceName}-${timestamp}.log`
+  a.download = `deployment-report-${serviceName}-${timestamp}.json`
   a.click()
   URL.revokeObjectURL(url)
+}
+
+// 직접 보고서 다운로드 (API 호출)
+const downloadReportDirectly = async () => {
+  if (!deploymentId.value) {
+    alert('배포 ID가 없습니다.')
+    return
+  }
+
+  reportDownloadLoading.value = true
+
+  try {
+    const { getDeploymentReport } = await import('~/composables/endpoints')
+    const response = await getDeploymentReport(namespace.value, serviceName, deploymentId.value)
+
+    if (response.code === 130200) {
+      const timestamp = new Date().toISOString().slice(0, 16).replace(/:/g, '-')
+
+      const reportData = {
+        serviceName,
+        namespace: namespace.value,
+        timestamp: new Date().toISOString(),
+        ...response.result
+      }
+
+      const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `deployment-report-${serviceName}-${timestamp}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+    } else {
+      alert('보고서 다운로드에 실패했습니다: ' + (response.message || '알 수 없는 오류'))
+    }
+  } catch (error) {
+    alert('보고서 다운로드 중 오류가 발생했습니다: ' + (error as Error).message)
+  } finally {
+    reportDownloadLoading.value = false
+  }
+}
+
+// 날짜 포맷팅 함수
+const formatDateTime = (dateString: string) => {
+  if (!dateString) return 'N/A'
+  try {
+    return new Date(dateString).toLocaleString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    })
+  } catch {
+    return dateString
+  }
 }
 
 // 서비스 정보 로드
@@ -1200,6 +1236,33 @@ watch(() => formData.value.vllm_gpu, (newGpuResource) => {
     formData.value.vllm_target_node = 'wisenut-232'
   } else {
     formData.value.vllm_target_node = ''
+  }
+})
+
+// WebSocket 상태와 로컬 상태 동기화
+watch(deploymentStatus, (newStatus) => {
+  if (newStatus && newStatus !== '준비 중...') {
+    localDeploymentStatus.value = newStatus
+  }
+})
+
+watch(deploymentProgress, (newProgress) => {
+  if (newProgress > localDeploymentProgress.value) {
+    localDeploymentProgress.value = newProgress
+  }
+})
+
+// WebSocket 연결 상태 변화 감지
+watch(connectionStatus, (newStatus) => {
+  if (newStatus === 'connecting') {
+    localDeploymentStatus.value = 'WebSocket 연결 중...'
+    localDeploymentProgress.value = 50
+  } else if (newStatus === 'connected') {
+    localDeploymentStatus.value = '배포 모니터링 중...'
+    localDeploymentProgress.value = 60
+  } else if (newStatus === 'disconnected' && deploymentStarted.value) {
+    // 배포 시작 후 연결이 끊어진 경우에만 메시지 표시
+    localDeploymentStatus.value = '연결 끊어짐...'
   }
 })
 

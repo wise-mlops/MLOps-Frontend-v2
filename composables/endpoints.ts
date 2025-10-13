@@ -128,11 +128,7 @@ export const redeployInferenceService = async (
     testPayload: formData.test_payload || null
   }
 
-  console.log('🌐 API 요청 URL:', `${config.api.url}${url}`)
-  console.log('📤 DeploymentRequest:', JSON.stringify(deploymentRequest, null, 2))
-
   try {
-    console.log('⏳ $fetch 호출 시작...')
     const response = await $fetch<ResponseBody>(url, {
       method: 'POST',
       baseURL: config.api.url,
@@ -140,15 +136,8 @@ export const redeployInferenceService = async (
       body: deploymentRequest,
       timeout: 60000 // 60초 타임아웃
     })
-    console.log('✅ API 요청 성공:', response)
     return response
   } catch (error) {
-    console.error('❌ API 요청 실패 - 상세 정보:', {
-      error,
-      type: typeof error,
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
-    })
     throw error
   }
 }
