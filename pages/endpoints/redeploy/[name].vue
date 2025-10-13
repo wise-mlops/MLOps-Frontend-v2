@@ -24,9 +24,6 @@
               <UBadge :label="servingType" :color="getServingTypeBadgeColor(servingType)" />
             </UFormGroup>
 
-            <UFormGroup label="네임스페이스">
-              <UInput v-model="namespace" disabled />
-            </UFormGroup>
           </div>
         </UCard>
 
@@ -277,15 +274,6 @@
               </div>
             </div>
 
-            <UFormGroup label="추가 테스트 시간 (초)">
-              <UInput
-                v-model="formData.additional_test_duration"
-                type="number"
-                :min="30"
-                :max="300"
-                :disabled="loading"
-              />
-            </UFormGroup>
           </div>
 
           <!-- 버튼 -->
@@ -370,8 +358,8 @@
           <template #header>
             <div class="flex items-center justify-between">
               <UTabs v-model="activeTab" :items="logTabs" />
-              <!-- 배포 완료 후 보고서 관련 버튼들 -->
-              <div v-if="isCompleted && deploymentId" class="flex gap-2">
+              <!-- 배포 완료 후 보고서 관련 버튼들 (임시 비활성화) -->
+              <!-- <div v-if="isCompleted && deploymentId" class="flex gap-2">
                 <UButton
                   @click="viewDeploymentReport"
                   :loading="reportLoading"
@@ -390,7 +378,7 @@
                 >
                   보고서 다운로드
                 </UButton>
-              </div>
+              </div> -->
             </div>
           </template>
 
@@ -517,8 +505,8 @@
       </div>
     </div>
 
-    <!-- 배포 보고서 모달 -->
-    <UModal v-model="isReportModalOpen" :ui="{ width: 'w-full max-w-4xl' }">
+    <!-- 배포 보고서 모달 (임시 비활성화) -->
+    <!-- <UModal v-model="isReportModalOpen" :ui="{ width: 'w-full max-w-4xl' }">
       <UCard>
         <template #header>
           <div class="flex items-center justify-between">
@@ -535,7 +523,6 @@
         </template>
 
         <div v-if="manualReportData" class="space-y-6">
-          <!-- 배포 요약 -->
           <div class="bg-white dark:bg-gray-700 p-6 rounded-lg border">
             <h4 class="text-lg font-semibold mb-4">배포 요약</h4>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -560,7 +547,6 @@
             </div>
           </div>
 
-          <!-- 상세 정보 -->
           <div class="bg-white dark:bg-gray-700 p-6 rounded-lg border">
             <h4 class="text-lg font-semibold mb-4">상세 정보</h4>
             <div class="space-y-3">
@@ -587,7 +573,6 @@
             </div>
           </div>
 
-          <!-- JSON 데이터 (개발자용) -->
           <div class="bg-white dark:bg-gray-700 p-6 rounded-lg border">
             <h4 class="text-lg font-semibold mb-4">전체 보고서 데이터</h4>
             <pre class="bg-gray-100 dark:bg-gray-800 p-4 rounded text-xs overflow-auto max-h-64">{{ JSON.stringify(manualReportData, null, 2) }}</pre>
@@ -598,7 +583,7 @@
           <div class="text-gray-500">보고서를 로드하는 중...</div>
         </div>
       </UCard>
-    </UModal>
+    </UModal> -->
   </div>
 </template>
 
@@ -611,16 +596,16 @@ const pageTitle = `재배포: ${serviceName}`
 
 // 기본 상태
 const loading = ref(false)
-const reportLoading = ref(false)
-const reportDownloadLoading = ref(false)
+// const reportLoading = ref(false)
+// const reportDownloadLoading = ref(false)
 const deploymentStarted = ref(false)
 const servingType = ref('Standard')
 const namespace = ref('kubeflow-user-example-com')
 const deploymentId = ref<string | null>(null)
 
-// 보고서 모달 관련
-const isReportModalOpen = ref(false)
-const manualReportData = ref<any>(null)
+// 보고서 모달 관련 (임시 비활성화)
+// const isReportModalOpen = ref(false)
+// const manualReportData = ref<any>(null)
 
 // 로컬 배포 상태 (WebSocket readonly 상태 대신 사용)
 const localDeploymentStatus = ref('준비 중...')
@@ -987,7 +972,8 @@ const cancelRedeploy = () => {
   router.push('/endpoints')
 }
 
-// 배포 보고서 보기 (모달 열기)
+// 배포 보고서 관련 함수들 (임시 비활성화)
+/*
 const viewDeploymentReport = async () => {
   if (!deploymentId.value) {
     alert('배포 ID가 없습니다.')
@@ -1016,7 +1002,6 @@ const viewDeploymentReport = async () => {
   }
 }
 
-// 모달에서 보고서 다운로드 (기존 데이터 사용)
 const downloadReport = () => {
   if (!manualReportData.value) return
 
@@ -1038,7 +1023,6 @@ const downloadReport = () => {
   URL.revokeObjectURL(url)
 }
 
-// 직접 보고서 다운로드 (API 호출)
 const downloadReportDirectly = async () => {
   if (!deploymentId.value) {
     alert('배포 ID가 없습니다.')
@@ -1077,6 +1061,7 @@ const downloadReportDirectly = async () => {
     reportDownloadLoading.value = false
   }
 }
+*/
 
 // 날짜 포맷팅 함수
 const formatDateTime = (dateString: string) => {
