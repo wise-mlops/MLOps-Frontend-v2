@@ -65,7 +65,8 @@ export default defineNuxtConfig({
     },
     public: {
       baseURL: process.env.APP_BASE_URL || "/",
-      prometheusUrl: process.env.PROMETHEUS_URL || 'http://local.prometheus.web.labs.wisenut.com'
+      prometheusUrl: process.env.PROMETHEUS_URL || 'http://local.prometheus.web.labs.wisenut.com',
+      backendUrl: process.env.NUXT_BACKEND_URL || 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/api-v2'
     },
   }
 })
