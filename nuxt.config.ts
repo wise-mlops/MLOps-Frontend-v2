@@ -6,8 +6,7 @@ export default defineNuxtConfig({
       title: 'WISE MLOps'
     },
     api: {
-      // url : process.env.APP_BACKEND_URL || '',
-      url: 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/api-v2/'
+      url: '/api'
     }
   },
   colorMode: {
@@ -16,6 +15,22 @@ export default defineNuxtConfig({
   compatibilityDate: '2024-04-03',
   devtools: { enabled: true },
   modules: ["@nuxt/ui", 'nuxt-monaco-editor', '@sidebase/nuxt-auth'],
+  nitro: {
+    experimental: {
+      wasm: true
+    },
+    // API 요청을 백엔드로 프록시하면서 헤더 추가
+    routeRules: {
+      '/api/**': {
+        proxy: {
+          to: `${process.env.NUXT_BACKEND_URL || 'https://labs.wisenut.kr/clusters/local/namespaces/wise-mlops/services/api-v2'}/**`,
+          headers: process.env.WISENUT_AUTH_HEADER && process.env.WISENUT_AUTH_TOKEN ? {
+            [process.env.WISENUT_AUTH_HEADER]: process.env.WISENUT_AUTH_TOKEN
+          } : {}
+        }
+      }
+    }
+  },
   ssr: false,
   monacoEditor: {
     // dest: '_monaco',
@@ -42,7 +57,7 @@ export default defineNuxtConfig({
     },
   },
   runtimeConfig: {
-    auth: {      
+    auth: {
       keycloakUrl: process.env.KEYCLOAK_URL,
       keycloakRealm: process.env.KEYCLOAK_REALM,
       keycloakClientId: process.env.KEYCLOAK_CLIENT_ID,

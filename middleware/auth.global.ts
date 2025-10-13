@@ -1,5 +1,7 @@
 export default defineNuxtRouteMiddleware((to, from) => {
-  
+  // 인증 기능 임시 비활성화 - 나중에 이 return을 제거하면 다시 활성화됨
+  return
+
   const { status } = useAuth()
   console.log('status', status.value)
 
