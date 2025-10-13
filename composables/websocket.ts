@@ -129,10 +129,8 @@ export const useWebSocket = () => {
     }
   }
 
-  // Pod 타입 감지 함수 (디버깅용으로만 사용)
+  // Pod 타입 감지 함수
   const detectPodType = (podName: string): string => {
-    console.log(`🔍 Pod 로그 수신: "${podName}"`) // 디버깅용
-
     if (podName.includes('canary')) return 'canary'
     if (podName.includes('green')) return 'green'
     if (podName.includes('blue')) return 'blue'
@@ -165,8 +163,9 @@ export const useWebSocket = () => {
       .filter(log => new Date(log.timestamp).getTime() > fiveMinutesAgo)
       .slice(-200)
 
-    if (beforeDeploy !== fullLogCache.deployment.length || beforePod !== fullLogCache.pods.length || beforeInference !== fullLogCache.inference.length) {
-      console.log(`시간 정리 - 배포: ${beforeDeploy}→${fullLogCache.deployment.length}, Pod: ${beforePod}→${fullLogCache.pods.length}, 추론: ${beforeInference}→${fullLogCache.inference.length}`)
+    // 정리 상황이 많을 때만 로그 출력
+    if (beforeDeploy > fullLogCache.deployment.length + 50 || beforePod > fullLogCache.pods.length + 50) {
+      console.log(`로그 정리 완료 - 배포: ${beforeDeploy}→${fullLogCache.deployment.length}, Pod: ${beforePod}→${fullLogCache.pods.length}`)
     }
   }
 
@@ -188,8 +187,6 @@ export const useWebSocket = () => {
     disconnect()
 
     const urls = getWebSocketUrls(namespace, serviceName, deployment_id)
-    console.log('🔗 3채널 WebSocket 연결 시작:', urls)
-
     connectionStatus.value = 'connecting'
 
     // 1. 배포 로그 채널
@@ -213,7 +210,6 @@ export const useWebSocket = () => {
   // WebSocket 핸들러 설정
   const setupWebSocketHandlers = (ws: WebSocket, channel: string) => {
     ws.onopen = () => {
-      console.log(`✅ ${channel} WebSocket 연결 성공`)
       if (channel === 'deployment') {
         connectionStatus.value = 'connected'
       }
@@ -221,17 +217,10 @@ export const useWebSocket = () => {
 
     ws.onmessage = (event) => {
       try {
-        console.log(`🔗 ${channel} raw 메시지 수신:`, event.data)
         const message: WebSocketMessage = JSON.parse(event.data)
-        console.log(`📨 ${channel} 파싱된 메시지:`, {
-          type: message.type,
-          subType: message.subType,
-          timestamp: message.timestamp,
-          data: message.data
-        })
         handleMessage(message)
       } catch (error) {
-        console.error(`❌ ${channel} 메시지 파싱 오류:`, error, event.data)
+        console.error(`❌ ${channel} 메시지 파싱 오류:`, error)
       }
     }
 
@@ -240,7 +229,6 @@ export const useWebSocket = () => {
     }
 
     ws.onclose = (event) => {
-      console.log(`🔌 ${channel} WebSocket 연결 종료: code ${event.code}`)
       if (channel === 'deployment') {
         connectionStatus.value = 'disconnected'
       }
@@ -249,23 +237,18 @@ export const useWebSocket = () => {
 
   // 메시지 처리
   const handleMessage = (message: WebSocketMessage) => {
-    console.log(`🎯 메시지 처리 시작:`, message.type, message.subType)
-
     switch (message.type) {
       case 'deployment_log':
-        console.log(`📋 deployment_log 처리:`, message)
         handleDeploymentLog(message)
         break
       case 'pod_log':
-        console.log(`📊 pod_log 처리:`, message)
         handlePodLog(message)
         break
       case 'inference_log':
-        console.log(`🔍 inference_log 처리:`, message)
         handleInferenceLog(message)
         break
       default:
-        console.warn('❓ 알 수 없는 메시지 타입:', message.type, message)
+        console.warn('❓ 알 수 없는 메시지 타입:', message.type)
     }
   }
 
@@ -281,7 +264,6 @@ export const useWebSocket = () => {
 
     // Non-reactive 캐시에 저장 (메모리 효율)
     addLogWithLimit(fullLogCache.deployment, logEntry)
-    console.log(`📋 배포 로그 추가됨 (총 ${fullLogCache.deployment.length}개):`, logEntry.message)
 
     // 호환성을 위해 기존 reactive 배열에도 추가 (제한적으로)
     deploymentLogs.value.push(logEntry)
@@ -320,8 +302,6 @@ export const useWebSocket = () => {
     addPodLogWithLimit(fullLogCache.pods, podLogEntry)
     addPodLogWithLimit(podLogs.value, podLogEntry)
 
-    console.log(`📊 Pod 로그 추가됨 (총 ${podLogs.value.length}개):`, podLogEntry.message.substring(0, 100))
-
     // 중요한 패턴이 감지되면 배포 로그에도 추가
     if (message.data.patterns && Object.keys(message.data.patterns).length > 0) {
       const logEntry: LogEntry = {
@@ -337,15 +317,12 @@ export const useWebSocket = () => {
   }
 
   const handleInferenceLog = (message: WebSocketMessage) => {
-    console.log(`🔍 Inference 로그 수신:`, message.data) // 디버깅
-
     // 추론 통계 업데이트 (가벼우므로 reactive 유지)
     if (message.data.stats) {
       inferenceStats.value = {
         ...message.data.stats,
         lastUpdated: message.timestamp
       }
-      console.log(`📊 추론 통계 업데이트:`, inferenceStats.value)
     }
 
     // 상세 추론 결과 처리
@@ -371,14 +348,6 @@ export const useWebSocket = () => {
 
       addLogWithLimit(fullLogCache.inference, logEntry)
       addLogWithLimit(inferenceLogs.value, logEntry)
-      console.log(`🔍 추론 상세 로그 추가됨:`, {
-        success: result.success,
-        hasRequest: !!result.request,
-        hasResponse: !!result.response,
-        level: logEntry.level,
-        totalInferenceLogs: fullLogCache.inference.length,
-        reactiveCount: inferenceLogs.value.length
-      })
 
     } else {
       // result가 없는 경우에도 기본 로그 생성 (일반 메시지)
@@ -392,7 +361,6 @@ export const useWebSocket = () => {
 
       addLogWithLimit(fullLogCache.inference, basicLog)
       addLogWithLimit(inferenceLogs.value, basicLog)
-      console.log(`🔍 추론 기본 로그 추가됨:`, basicLog.message)
     }
   }
 
@@ -467,9 +435,8 @@ export const useWebSocket = () => {
       clearInterval(cleanupInterval)
     }
 
-    // 30초마다 정리 시작 (더 자주)
+    // 30초마다 정리 시작
     cleanupInterval = setInterval(timeBasedCleanup, 30000)
-    console.log('로그 정리 타이머 시작 (30초 주기)')
   }
 
   // 정리
