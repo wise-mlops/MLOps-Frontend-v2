@@ -808,20 +808,13 @@ const detectPodLogLevel = (message: string): 'error' | 'warning' | 'success' | '
 // 현재 탭의 로그 가져오기
 const getCurrentTabLogs = () => {
   const currentTabKey = logTabs.value[activeTab.value]?.key
-  console.log(`🔗 현재 탭: ${currentTabKey}`) // 디버깅
 
   if (currentTabKey === 'deployment') {
-    const logs = getDeploymentLogCache()
-    console.log(`📋 배포 로그 개수: ${logs.length}`)
-    return logs
+    return getDeploymentLogCache()
   } else if (currentTabKey === 'pod') {
-    const logs = getPodLogs() // 모든 Pod 로그 가져오기
-    console.log(`📊 Pod 로그 개수: ${logs.length}`)
-    return logs
+    return getPodLogs() // 모든 Pod 로그 가져오기
   } else if (currentTabKey === 'inference') {
-    const logs = getInferenceLogs()
-    console.log(`🔍 추론 로그 개수: ${logs.length}`)
-    return logs
+    return getInferenceLogs()
   }
 
   return []
@@ -882,12 +875,7 @@ const formatTime = (timestamp: string) => {
 
 // 액션 함수들
 const startRedeploy = async () => {
-  console.log('재배포 버튼 클릭됨')
-  console.log('폼 유효성 검사:', isFormValid.value)
-  console.log('현재 폼 데이터:', formData.value)
-
   if (!isFormValid.value) {
-    console.log('폼이 유효하지 않음. 재배포 중단.')
     return
   }
 
@@ -898,13 +886,6 @@ const startRedeploy = async () => {
   // 기본 상태 메시지
   deploymentStatus.value = '재배포 시작 중...'
   deploymentProgress.value = 10
-
-  console.log('🚀 재배포 시작 요청:', {
-    namespace: namespace.value,
-    serviceName,
-    strategy: formData.value.deployment_strategy,
-    servingType: formData.value.serving_type
-  })
 
   try {
     // InferenceServiceInfo 객체 구성 (전략별)
@@ -1010,23 +991,6 @@ const startRedeploy = async () => {
     deploymentStatus.value = 'API 호출 중...'
     deploymentProgress.value = 20
 
-    console.log('📡 API 호출 시작:', {
-      inferenceServiceInfo,
-      serving_type: formData.value.serving_type,
-      deployment_strategy: formData.value.deployment_strategy,
-      canaryPercent,
-      additional_test_duration: formData.value.additional_test_duration
-    })
-
-    console.log('⏳ API 응답 대기 중...')
-
-    console.log('📤 API 호출 전 formData 체크:', {
-      serving_type: formData.value.serving_type,
-      deployment_strategy: formData.value.deployment_strategy,
-      storage_uri: formData.value.storage_uri,
-      base_model: formData.value.base_model
-    })
-
     // 타임아웃 없이 API 직접 호출 (백엔드에서 배포가 오래 걸릴 수 있음)
     const response = await redeployInferenceService(
       namespace.value,
@@ -1036,20 +1000,15 @@ const startRedeploy = async () => {
       formData.value.deployment_strategy
     )
 
-    console.log('📡 API 응답 받음:', response)
-
     if (response.code === 130200) {
       // 성공 응답 상태 업데이트
       deploymentStatus.value = 'WebSocket 연결 중...'
       deploymentProgress.value = 30
 
-      // deployment_id 추출하여 WebSocket 연결 (FRONTEND_INTEGRATION.md 스키마 따름)
+      // deployment_id 추출하여 WebSocket 연결
       const deploymentId = response.result?.data?.deploymentId || response.result?.deploymentId
-      console.log('재배포 API 응답:', response)
-      console.log('deployment_id 추출됨:', deploymentId)
 
       if (deploymentId) {
-        console.log('3채널 WebSocket 연결 시도 중...')
         connect3ChannelWebSocket(namespace.value, serviceName, deploymentId)
       } else {
         console.error('deployment_id가 응답에 없습니다:', response.result)
