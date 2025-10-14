@@ -300,29 +300,6 @@
 
       <!-- 우측: 실시간 모니터링 (70%) -->
       <div class="lg:col-span-7 space-y-6">
-        <!-- 진행 상황 -->
-        <UCard>
-          <template #header>
-            <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-white">
-              재배포 진행 상황
-            </h3>
-          </template>
-
-          <div class="space-y-4">
-            <div class="flex items-center gap-4">
-              <div class="flex-1">
-                <UProgress :value="localDeploymentProgress" :max="100" />
-              </div>
-              <span class="text-sm font-medium">{{ localDeploymentProgress }}%</span>
-            </div>
-
-            <div class="text-center text-sm text-gray-600 dark:text-gray-400">
-              {{ localDeploymentStatus }}
-            </div>
-
-          </div>
-        </UCard>
-
         <!-- 추론 통계 -->
         <UCard>
           <template #header>
@@ -607,9 +584,7 @@ const deploymentId = ref<string | null>(null)
 // const isReportModalOpen = ref(false)
 // const manualReportData = ref<any>(null)
 
-// 로컬 배포 상태 (WebSocket readonly 상태 대신 사용)
-const localDeploymentStatus = ref('준비 중...')
-const localDeploymentProgress = ref(0)
+// 로컬 배포 상태 관련 변수 제거 (진행 상황 카드 제거로 인해 불필요)
 
 // 로그 관련
 const activeTab = ref(0)
@@ -824,9 +799,7 @@ const startRedeploy = async () => {
   deploymentStarted.value = true
   clearLogs()
 
-  // 기본 상태 메시지
-  localDeploymentStatus.value = '재배포 시작 중...'
-  localDeploymentProgress.value = 10
+  // 진행 상황 카드 제거로 상태 메시지 불필요
 
   try {
     // InferenceServiceInfo 객체 구성 (전략별)
@@ -1224,32 +1197,7 @@ watch(() => formData.value.vllm_gpu, (newGpuResource) => {
   }
 })
 
-// WebSocket 상태와 로컬 상태 동기화
-watch(deploymentStatus, (newStatus) => {
-  if (newStatus && newStatus !== '준비 중...') {
-    localDeploymentStatus.value = newStatus
-  }
-})
-
-watch(deploymentProgress, (newProgress) => {
-  if (newProgress > localDeploymentProgress.value) {
-    localDeploymentProgress.value = newProgress
-  }
-})
-
-// WebSocket 연결 상태 변화 감지
-watch(connectionStatus, (newStatus) => {
-  if (newStatus === 'connecting') {
-    localDeploymentStatus.value = 'WebSocket 연결 중...'
-    localDeploymentProgress.value = 50
-  } else if (newStatus === 'connected') {
-    localDeploymentStatus.value = '배포 모니터링 중...'
-    localDeploymentProgress.value = 60
-  } else if (newStatus === 'disconnected' && deploymentStarted.value) {
-    // 배포 시작 후 연결이 끊어진 경우에만 메시지 표시
-    localDeploymentStatus.value = '연결 끊어짐...'
-  }
-})
+// 진행 상황 카드 제거로 인해 관련 watcher들 제거
 
 // 정리
 onUnmounted(() => {

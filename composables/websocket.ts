@@ -278,14 +278,21 @@ export const useWebSocket = () => {
       if (message.data.progress !== undefined) deploymentProgress.value = message.data.progress
     }
 
-    // 배포 완료 처리 - 간단하게 처리
+    // 배포 완료 처리 - 다양한 완료 시그널 감지
     const isDeploymentCompleted =
       message.subType === 'deployment_completed' ||
-      (logEntry.message && logEntry.message.includes('배포 보고서 생성 완료'))
+      (logEntry.message && (
+        logEntry.message.includes('배포 보고서 생성 완료') ||
+        logEntry.message.includes('배포가 성공적으로 완료') ||
+        logEntry.message.includes('Deployment completed successfully') ||
+        logEntry.message.includes('재배포 완료') ||
+        logEntry.message.includes('✅ 배포 완료')
+      ))
 
     if (isDeploymentCompleted) {
       isCompleted.value = true
       deploymentProgress.value = 100
+      deploymentStatus.value = '배포 완료'
     }
   }
 
