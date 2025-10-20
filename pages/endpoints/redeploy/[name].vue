@@ -57,9 +57,9 @@
               </UFormGroup>
             </div>
 
-            <!-- Storage URI (필요한 전략만) -->
+            <!-- 모델 경로 (필요한 전략만) -->
             <div v-if="needsStorageUri && servingType !== 'vLLM'" class="space-y-4">
-              <UFormGroup label="Storage URI" required>
+              <UFormGroup label="모델 경로" required>
                 <UInput
                   v-model="formData.storage_uri"
                   placeholder="예: s3://bucket/path/to/model"
@@ -87,17 +87,10 @@
 
                 <h5 class="text-sm font-medium text-gray-900 dark:text-white mb-3">새 LoRA Adapter 추가</h5>
                 <div class="space-y-4">
-                  <UFormGroup label="새 어댑터 이름" required>
-                    <UInput
-                      v-model="formData.adapter_name"
-                      placeholder="예: new-adapter"
-                      :disabled="loading"
-                    />
-                  </UFormGroup>
-                  <UFormGroup label="새 어댑터 경로" required>
+                  <UFormGroup label="모델 경로" required>
                     <UInput
                       v-model="formData.adapter_path"
-                      placeholder="예: s3://bucket/path/to/adapter"
+                      placeholder="예: hf://organization/model-name"
                       :disabled="loading"
                     />
                   </UFormGroup>
@@ -180,7 +173,7 @@
                       />
                     </UFormGroup>
 
-                    <UFormGroup label="베이스 모델 Storage URI" required>
+                    <UFormGroup label="베이스 모델 경로" required>
                       <UInput
                         v-model="formData.base_model.storage_uri"
                         placeholder="예: s3://bucket/path/to/base_model"
@@ -235,7 +228,7 @@
                         />
                       </UFormGroup>
 
-                      <UFormGroup :label="`어댑터 ${index + 1} Storage URI`" required>
+                      <UFormGroup :label="`어댑터 ${index + 1} 모델 경로`" required>
                         <UInput
                           v-model="adapter.storage_uri"
                           placeholder="예: s3://bucket/path/to/adapter_model"
@@ -613,7 +606,6 @@ const formData = ref({
   deployment_strategy: 'blue-green',
   canary_traffic_percent: 20,
   storage_uri: '',
-  adapter_name: '',
   adapter_path: '',
   additional_test_duration: 60,
 
@@ -649,8 +641,7 @@ const availableStrategies = computed(() => {
   switch (formData.value.serving_type) {
     case 'vllm':
       return [
-        { label: 'LoRA Adapter (권장)', value: 'lora-adapter' },
-        { label: 'Blue-Green', value: 'blue-green' }
+        { label: 'LoRA Adapter', value: 'lora-adapter' }
       ]
     case 'modelmesh':
       return [
@@ -672,7 +663,7 @@ const needsStorageUri = computed(() => {
 // 폼 유효성 검사
 const isFormValid = computed(() => {
   if (formData.value.deployment_strategy === 'lora-adapter') {
-    return formData.value.adapter_name && formData.value.adapter_path
+    return !!formData.value.adapter_path
   }
   if (formData.value.deployment_strategy === 'blue-green' && servingType.value === 'vLLM') {
     // vLLM Blue-Green: 베이스 모델 필수, 어댑터들 유효성 검사
@@ -812,16 +803,25 @@ const startRedeploy = async () => {
 
     if (formData.value.deployment_strategy === 'lora-adapter') {
       // LoRA Adapter: 기존 설정 + 새 어댑터
+      let adapterPath = formData.value.adapter_path
+
+      // hf:// 경로인 경우 hf:// 제거
+      if (adapterPath.startsWith('hf://')) {
+        adapterPath = adapterPath.substring(5) // 'hf://' 제거
+      }
+
+      // JSON 형식으로 구성 (lora_name과 lora_path 동일)
+      const loraConfig = {
+        lora_name: adapterPath,
+        lora_path: adapterPath
+      }
+
       inferenceServiceInfo.predictor.containers = [{
         name: 'kserve-container',
         env: [
           {
-            name: 'NEW_ADAPTER_NAME',
-            value: formData.value.adapter_name
-          },
-          {
-            name: 'NEW_ADAPTER_PATH',
-            value: formData.value.adapter_path
+            name: 'LORA_CONFIG',
+            value: JSON.stringify(loraConfig)
           }
         ]
       }]
