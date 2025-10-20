@@ -42,6 +42,11 @@ const links = [
     to: '/endpoints'
   },
   {
+    label: 'EVALUATIONS',
+    icon: 'i-heroicons-chart-bar',
+    to: '/evaluations'
+  },
+  {
     label: 'NOTEBOOKS',
     icon: 'i-heroicons-document-text',
     to: '/notebooks'
