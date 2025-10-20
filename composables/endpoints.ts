@@ -181,11 +181,45 @@ export const getDeploymentStatus = async (
 // Inference Service 생성 (basic.py API 사용)
 export const createEndpoint = async (namespace: string, name: string, inferenceServiceInfo: any) => {
   const url = encodeURI(`/inference-services/${namespace}/${name}`)
+
+  // API가 predictor 부분만 기대하므로 spec.predictor 추출
+  const predictor = inferenceServiceInfo.spec?.predictor || inferenceServiceInfo.predictor || inferenceServiceInfo
+
+  // 필드명을 snake_case로 변환 (등록 API가 snake_case를 기대함)
+  const convertToSnakeCase = (obj: any): any => {
+    if (Array.isArray(obj)) {
+      return obj.map(convertToSnakeCase)
+    } else if (obj !== null && typeof obj === 'object') {
+      const converted: any = {}
+      for (const [key, value] of Object.entries(obj)) {
+        // camelCase → snake_case 변환
+        const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase()
+        converted[snakeKey] = convertToSnakeCase(value)
+      }
+      return converted
+    }
+    return obj
+  }
+
+  // predictor 전체를 snake_case로 변환
+  const convertedPredictor = convertToSnakeCase(predictor)
+
+  // 특별 처리: modelFormat → format (기존 로직 유지)
+  if (convertedPredictor.model?.model_format) {
+    convertedPredictor.model.format = convertedPredictor.model.model_format
+    delete convertedPredictor.model.model_format
+  }
+
+  const requestBody = {
+    predictor: convertedPredictor,
+    sidecar_inject: inferenceServiceInfo.spec?.sidecar_inject || false
+  }
+
   const response = await $fetch<ResponseBody>(url, {
     method: 'POST',
     baseURL: config.api.url,
     headers: { "Content-Type": "application/json" },
-    body: inferenceServiceInfo
+    body: requestBody
   })
   return response
 }

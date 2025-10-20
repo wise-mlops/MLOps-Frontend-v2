@@ -37,18 +37,6 @@
         {{ getProtocol(row) }}
       </div>
     </template>
-    <template #storageUri-data="{ row }">
-      <UPopover mode="hover">
-        <div class="truncate max-w-xs cursor-pointer">
-          {{ getStorageUri(row) }}
-        </div>
-        <template #panel>
-          <div class="text-wrap p-4 storage-uri-panel">
-            {{ getStorageUriFull(row) }}
-          </div>
-        </template>
-      </UPopover>
-    </template>
     <template #action-data="{ row }">
       <div class="flex items-center space-x-1">
         <UTooltip text="인퍼런스">
@@ -520,19 +508,9 @@ const endpointColumns = ref([
     label: 'Protocol'
   },
   {
-    key: 'storageUri',
-    label: 'Storage URI'
-  },
-  {
     key: 'action',
     label: 'Action'
   }
 ])
 </script>
 
-<style scoped>
-.storage-uri-panel {
-  white-space: pre-line !important;
-  max-width: 400px;
-}
-</style>
