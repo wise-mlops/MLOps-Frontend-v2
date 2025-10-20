@@ -388,16 +388,6 @@ const loadEndpoints = async () => {
     const response = await getEndpoints(null)
     data.value = response.result ? response.result.result : []
 
-    // 디버깅 (필요시 주석 해제)
-    console.log('Full API response:', response)
-    console.log('Extracted data:', data.value)
-    if (data.value.length > 0) {
-      const firstEndpoint = data.value[0]
-      console.log('First endpoint structure:', firstEndpoint)
-      console.log('Ready status result:', getReadyStatus(firstEndpoint))
-      console.log('Namespace:', firstEndpoint.namespace)
-      console.log('Serving type:', getServingType(firstEndpoint))
-    }
   } catch (error) {
     console.error('Failed to load endpoints:', error)
     data.value = []
