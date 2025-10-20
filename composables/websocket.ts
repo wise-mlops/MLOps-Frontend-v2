@@ -62,7 +62,6 @@ interface DeploymentReportData {
 
 export const useWebSocket = () => {
   const config = useAppConfig()
-  const runtimeConfig = useRuntimeConfig()
 
   // 3채널 WebSocket 연결 관리
   const deploymentWs = ref<WebSocket | null>(null)
@@ -173,11 +172,8 @@ export const useWebSocket = () => {
 
   // 2채널 WebSocket URL 생성 (Pod 로그 제외)
   const getWebSocketUrls = (namespace: string, serviceName: string, deployment_id: string) => {
-    // WebSocket은 프록시를 거치지 않고 직접 백엔드로 연결
-    const backendUrl = runtimeConfig.public.backendUrl
-      .replace(/^https:/, 'wss:')
-      .replace(/^http:/, 'ws:')
-    const prefix = `${backendUrl}/inference-services/${namespace}/${serviceName}`
+    const baseUrl = config.api.url.replace(/^http/, 'ws').replace(/\/$/, '')
+    const prefix = `${baseUrl}/inference-services/${namespace}/${serviceName}`
 
     return {
       deploymentUrl: `${prefix}/deployment-logs?deployment_id=${deployment_id}`,
