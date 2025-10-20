@@ -123,7 +123,7 @@
                 검색 결과가 없습니다.
               </div>
               <div v-else-if="logs.length === 0 && selectedModel" class="text-gray-500 text-center py-8">
-                {{ selectedModel }} 모델의 평가 로그가 실시간으로 표시됩니다...
+                {{ getSelectedModelInfo().label }} 모델의 평가 로그가 실시간으로 표시됩니다...
               </div>
             </div>
           </div>
@@ -162,8 +162,8 @@ const availableModels = ref([
   }
 ])
 
-// 선택된 모델
-const selectedModel = ref('')
+// 선택된 모델 (기본값: before)
+const selectedModel = ref('before')
 
 // 평가 상태 관련
 const operationLoading = ref(false)
@@ -182,13 +182,14 @@ const { logs, connectionStatus, error } = wsComposable
 // 모델 선택 변경시 상태 초기화
 watch(selectedModel, (newModel, oldModel) => {
   if (oldModel) {
-    // 기존 WebSocket 연결이 있다면 해제
-    if (currentPodName.value) {
-      wsComposable.disconnect()
-    }
+    // WebSocket 연결 해제
+    wsComposable.disconnect()
+
+    // 로그 초기화
+    wsComposable.clearLogs()
   }
 
-  // 상태 초기화 (모델 선택했을 때도 초기화)
+  // 상태 초기화
   jobInfo.value = null
   currentPodName.value = ''
   operationMessage.value = ''
@@ -264,6 +265,10 @@ const startEvaluationJob = async () => {
 
   operationLoading.value = true
   operationMessage.value = '평가를 시작하고 있습니다...'
+
+  // 기존 WebSocket 연결 해제 및 로그 초기화
+  wsComposable.disconnect()
+  wsComposable.clearLogs()
 
   try {
     const response = await startEvaluation(selectedModel.value)
