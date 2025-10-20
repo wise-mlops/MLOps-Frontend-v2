@@ -96,7 +96,6 @@ export const useEvaluationWebSocket = () => {
   // WebSocket 핸들러 설정 (websocket.ts 패턴 참고)
   const setupWebSocketHandlers = (ws: WebSocket) => {
     ws.onopen = () => {
-      console.log('평가 WebSocket 연결됨')
       connectionStatus.value = 'connected'
     }
 
@@ -116,7 +115,6 @@ export const useEvaluationWebSocket = () => {
     }
 
     ws.onclose = (event) => {
-      console.log('평가 WebSocket 연결 해제:', event.code, event.reason)
       connectionStatus.value = 'disconnected'
     }
   }

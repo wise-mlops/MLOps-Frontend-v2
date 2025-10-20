@@ -277,14 +277,10 @@ const scrollToBottom = async () => {
 const loadPods = async () => {
   try {
     podLoading.value = true
-    console.log('Loading pods for:', { namespace: namespace.value, endpointName: endpointName.value })
-
     const response = await getEndpointPods(namespace.value, endpointName.value)
-    console.log('Pods API response:', response)
 
     if (isSuccessResponse(response)) {
       const pods = response.result || []
-      console.log('Extracted pods:', pods)
 
       if (Array.isArray(pods) && pods.length > 0) {
         podOptions.value = pods.map(pod => {
@@ -298,8 +294,6 @@ const loadPods = async () => {
           }
         })
 
-        console.log('Pod options created:', podOptions.value)
-
         // 첫 번째 Pod 자동 선택
         if (pods.length > 0 && pods[0].name) {
           selectedPod.value = pods[0].name
@@ -311,17 +305,13 @@ const loadPods = async () => {
             value: container
           }))
 
-          console.log('Container options created:', containerOptions.value)
-
           // 첫 번째 컨테이너 자동 선택 (kserve-container 우선)
           if (containers.length > 0) {
             const kserveContainer = containers.find(c => c === 'kserve-container')
             selectedContainer.value = kserveContainer || containers[0]
-            console.log('Selected container:', selectedContainer.value)
           }
         }
       } else {
-        console.warn('No pods found or pods data is not an array')
         // 빈 Pod 목록일 때 수동 입력 옵션 제공
         podOptions.value = [
           { label: '수동 입력...', value: 'manual', containers: ['kserve-container', 'transformer', 'storage-initializer'] }
@@ -343,7 +333,6 @@ const loadPods = async () => {
         errorLabel = '수동 입력 (K8s 서비스 연결 불가)'
       }
 
-      console.error('Pod API response not successful:', response)
       // API 실패시에도 수동 옵션 제공
       podOptions.value = [
         { label: errorLabel, value: 'manual', containers: ['kserve-container', 'transformer', 'storage-initializer'] }
@@ -407,20 +396,12 @@ const refreshLogs = async () => {
       logs.value = []
     }
 
-    // console.log('Loading logs for:', {
-    //   namespace: namespace.value,
-    //   pod: selectedPod.value,
-    //   container: selectedContainer.value
-    // })
-
     const response = await getPodLogs(
       namespace.value,
       actualPodName,
       selectedContainer.value,
       200
     )
-
-    // console.log('Pod logs response:', response)
 
     if (isSuccessResponse(response)) {
       // 응답 구조 확인 및 유연한 파싱
@@ -557,7 +538,6 @@ const extractStatusFromMainData = () => {
       phase: data.value.status?.phase || 'Unknown'
     }
 
-    console.log('Extracted status from main data:', endpointStatus.value)
   } catch (error) {
     console.error('Error extracting status from main data:', error)
     endpointStatus.value = { ready: false, phase: 'Error' }

@@ -283,7 +283,6 @@ const startEvaluationJob = async () => {
       }
     }
   } catch (error: any) {
-    console.error('평가 시작 실패:', error)
     operationMessage.value = `평가 시작 실패: ${error.message || '알 수 없는 오류'}`
   } finally {
     operationLoading.value = false
@@ -306,7 +305,6 @@ const stopEvaluationJob = async () => {
       currentPodName.value = ''
     }
   } catch (error: any) {
-    console.error('평가 중단 실패:', error)
     operationMessage.value = `평가 중단 실패: ${error.message || '알 수 없는 오류'}`
   } finally {
     operationLoading.value = false

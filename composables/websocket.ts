@@ -164,10 +164,6 @@ export const useWebSocket = () => {
       .filter(log => new Date(log.timestamp).getTime() > fiveMinutesAgo)
       .slice(-200)
 
-    // 정리 상황이 많을 때만 로그 출력
-    if (beforeDeploy > fullLogCache.deployment.length + 50 || beforePod > fullLogCache.pods.length + 50) {
-      console.log(`로그 정리 완료 - 배포: ${beforeDeploy}→${fullLogCache.deployment.length}, Pod: ${beforePod}→${fullLogCache.pods.length}`)
-    }
   }
 
   // 2채널 WebSocket URL 생성 (Pod 로그 제외)
@@ -217,12 +213,12 @@ export const useWebSocket = () => {
         const message: WebSocketMessage = JSON.parse(event.data)
         handleMessage(message)
       } catch (error) {
-        console.error(`❌ ${channel} 메시지 파싱 오류:`, error)
+        console.error(`WebSocket 메시지 파싱 오류 (${channel}):`, error)
       }
     }
 
     ws.onerror = (error) => {
-      console.error(`❌ ${channel} WebSocket 오류:`, error)
+      console.error(`WebSocket 오류 (${channel}):`, error)
     }
 
     ws.onclose = () => {
@@ -245,7 +241,7 @@ export const useWebSocket = () => {
         handleInferenceLog(message)
         break
       default:
-        console.warn('❓ 알 수 없는 메시지 타입:', message.type)
+        // 알 수 없는 메시지 타입 무시
     }
   }
 
