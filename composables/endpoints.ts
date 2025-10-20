@@ -97,9 +97,13 @@ const createDeploymentConfig = (
         trafficPercent: formData.canary_traffic_percent || 20
       }
     case 'lora-adapter':
+      // adapter_path에서 hf:// 접두사를 제거
+      const adapterPath = formData.adapter_path || ''
+      const cleanPath = adapterPath.replace(/^hf:\/\//, '')
+
       return {
-        loraName: formData.adapter_name,
-        loraPath: formData.adapter_path
+        loraName: cleanPath,
+        loraPath: cleanPath
       }
     case 'modelmesh':
       return {
