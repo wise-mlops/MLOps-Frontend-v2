@@ -732,7 +732,7 @@ const formatNumber = (value: any): string => {
 // 페이지 로드시 엔드포인트 정보와 input example 가져오기
 onMounted(async () => {
   try {
-    const namespace = "kubeflow-user-example-com";
+    const namespace = route.query.namespace as string || "kubeflow-user-example-com";
     const { endpoint, inputExample, mlModelSignature: signature } = await getEndpointWithInputExample(
       namespace,
       endpointName
@@ -836,9 +836,10 @@ const executeInference = async (inferenceFunction: () => Promise<any>, previewDa
 };
 
 const runLLMInferenceLocal = async () => {
+  const namespace = route.query.namespace as string || "kubeflow-user-example-com";
   await executeInference(
     () => runLLMInference(
-      "kubeflow-user-example-com",
+      namespace,
       endpointName,
       llmData.value.prompt,
       llmData.value.max_tokens,
@@ -861,7 +862,7 @@ const runMLFlowInferenceLocal = async () => {
 
   await executeInference(
     async () => {
-      const namespace = "kubeflow-user-example-com";
+      const namespace = route.query.namespace as string || "kubeflow-user-example-com";
       const apiUrl = `/inference-services/${namespace}/${endpointName}/infer`;
       const config = useAppConfig();
 
