@@ -1,10 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 
 export default defineNuxtConfig({
-  app: {
-    baseURL: process.env.APP_BASE_URL || "/",
-    cdnURL: process.env.APP_BASE_URL || "/"
-  },
   appConfig: {
     head: {
       title: 'WISE MLOps'
@@ -32,7 +28,7 @@ export default defineNuxtConfig({
     isEnabled: true,
     disableServerSideAuth: false,
     // originEnvKey: 'AUTH_ORIGIN',
-    baseURL: process.env.AUTH_ORIGIN || process.env.APP_BASE_URL || '',
+    baseURL: process.env.AUTH_ORIGIN  || '',
     provider: {  
       type:'authjs',
       trustHost: false,
