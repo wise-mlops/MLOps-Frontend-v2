@@ -1,0 +1,173 @@
+{
+	"info": {
+		"_postman_id": "219dc5fb-1453-470c-9301-969108992d71",
+		"name": "mlops-cubox",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "30756499"
+	},
+	"item": [
+		{
+			"name": "mlops.cubox.ai/health",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "mlops.cubox.ai/health",
+					"host": [
+						"mlops",
+						"cubox",
+						"ai"
+					],
+					"path": [
+						"health"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "New Request",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "mlops.cubox.ai/resource",
+					"host": [
+						"mlops",
+						"cubox",
+						"ai"
+					],
+					"path": [
+						"resource"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "resource/status",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "mlops.cubox.ai/resource/status",
+					"host": [
+						"mlops",
+						"cubox",
+						"ai"
+					],
+					"path": [
+						"resource",
+						"status"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "resource/nodes",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "mlops.cubox.ai/resource/status",
+					"host": [
+						"mlops",
+						"cubox",
+						"ai"
+					],
+					"path": [
+						"resource",
+						"status"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "slurm_api/submit",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "mlops.cubox.ai/slurm_api/submit",
+					"host": [
+						"mlops",
+						"cubox",
+						"ai"
+					],
+					"path": [
+						"slurm_api",
+						"submit"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "slurm_api/job/{job_id}",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-SLURM-USER",
+						"value": "wisenut",
+						"type": "text"
+					},
+					{
+						"key": "X-SLURM-PASSWORD",
+						"value": "mlops123",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "mlops.cubox.ai/slurm_api/job/163606",
+					"host": [
+						"mlops",
+						"cubox",
+						"ai"
+					],
+					"path": [
+						"slurm_api",
+						"job",
+						"163606"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "slurm_api/job/{job_id}/output",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-SLURM-USER",
+						"value": "wisenut",
+						"type": "text"
+					},
+					{
+						"key": "X-SLURM-PASSWORD",
+						"value": "mlops123",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "mlops.cubox.ai/slurm_api/job/163606/output",
+					"host": [
+						"mlops",
+						"cubox",
+						"ai"
+					],
+					"path": [
+						"slurm_api",
+						"job",
+						"163606",
+						"output"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

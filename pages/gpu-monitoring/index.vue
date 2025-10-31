@@ -4,43 +4,89 @@
     <LayoutPageHeader :title="pageTitle" />
     <LayoutPageToolbar :links="toolbarLinks" />
 
-    <!-- 연결 상태 및 필터 -->
+    <!-- 탭 네비게이션 -->
     <div class="mb-6">
       <UCard>
-        <div class="flex justify-between items-center">
-          <div class="flex items-center gap-4">
+        <div class="flex border-b border-gray-200">
+          <button
+            @click="activeTab = 'internal'"
+            :class="[
+              'px-6 py-3 text-sm font-medium border-b-2 transition-colors',
+              activeTab === 'internal' 
+                ? 'border-blue-500 text-blue-600 bg-blue-50' 
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            ]"
+          >
             <div class="flex items-center gap-2">
-              <div class="w-2 h-2 rounded-full transition-colors" :class="isConnected ? 'bg-green-500' : 'bg-red-500'"></div>
-              <span class="text-sm text-gray-600">{{ isConnected ? '연결됨' : '연결 끊김' }}</span>
+              <div class="w-2 h-2 rounded-full bg-green-500"></div>
+              Kubernetes GPU 모니터링
             </div>
-            <div class="flex gap-1">
-              <UButton
-                v-for="period in timePeriods"
-                :key="period.value"
-                @click="changePeriod(period.value)"
-                :variant="selectedPeriod === period.value ? 'solid' : 'soft'"
-                :color="selectedPeriod === period.value ? 'primary' : 'gray'"
-                size="sm"
-              >
-                {{ period.label }}
-              </UButton>
+          </button>
+          <button
+            @click="activeTab = 'external'"
+            :class="[
+              'px-6 py-3 text-sm font-medium border-b-2 transition-colors',
+              activeTab === 'external' 
+                ? 'border-blue-500 text-blue-600 bg-blue-50' 
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            ]"
+          >
+            <div class="flex items-center gap-2">
+              <div class="w-2 h-2 rounded-full transition-colors" :class="resourceHealth ? 'bg-green-500' : 'bg-yellow-500'"></div>
+              Slurm GPU 모니터링
             </div>
-          </div>
-          <USelectMenu
-            v-model="selectedInstanceFilter"
-            :options="instanceOptions"
-            value-attribute="value"
-            option-attribute="label"
-            placeholder="인스턴스 선택"
-            class="w-48"
-            @change="onInstanceFilterChange"
-          />
+          </button>
         </div>
       </UCard>
     </div>
 
-    <!-- GPU 메트릭 대시보드 -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+    <!-- 내부 GPU 모니터링 탭 -->
+    <div v-if="activeTab === 'internal'">
+      <!-- 연결 상태 및 필터 -->
+      <div class="mb-6">
+        <UCard>
+          <template #header>
+            <div class="flex justify-between items-center">
+              <div>
+                <h3 class="text-lg font-semibold text-gray-900">Kubernetes GPU 모니터링</h3>
+                <p class="text-sm text-gray-600 mt-1">Kubernetes 클러스터 내 GPU 장비들의 실시간 성능 모니터링</p>
+              </div>
+            </div>
+          </template>
+          <div class="flex justify-between items-center">
+            <div class="flex items-center gap-4">
+              <div class="flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full transition-colors" :class="isConnected ? 'bg-green-500' : 'bg-red-500'"></div>
+                <span class="text-sm text-gray-600">{{ isConnected ? 'Prometheus 연결됨' : 'Prometheus 연결 끊김' }}</span>
+              </div>
+              <div class="flex gap-1">
+                <UButton
+                  v-for="period in timePeriods"
+                  :key="period.value"
+                  @click="changePeriod(period.value)"
+                  :variant="selectedPeriod === period.value ? 'solid' : 'soft'"
+                  :color="selectedPeriod === period.value ? 'primary' : 'gray'"
+                  size="sm"
+                >
+                  {{ period.label }}
+                </UButton>
+              </div>
+            </div>
+            <USelectMenu
+              v-model="selectedInstanceFilter"
+              :options="instanceOptions"
+              value-attribute="value"
+              option-attribute="label"
+              placeholder="인스턴스 선택"
+              class="w-48"
+              @change="onInstanceFilterChange"
+            />
+          </div>
+        </UCard>
+      </div>
+
+      <!-- GPU 메트릭 대시보드 -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
       <!-- GPU Temperature -->
       <UCard class="metric-panel">
         <template #header>
@@ -304,6 +350,185 @@
           </div>
         </div>
       </UCard>
+      </div>
+    </div>
+
+    <!-- 외부 리소스 탭 -->
+    <div v-if="activeTab === 'external'">
+      <UCard>
+        <template #header>
+          <div class="flex justify-between items-center">
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900">Slurm GPU 모니터링</h3>
+              <p class="text-sm text-gray-600 mt-1">Slurm 워크로드 매니저를 통한 GPU 리소스 관리 및 모니터링</p>
+              <div v-if="nodesInfo && nodesInfo.timestamp" class="text-xs text-gray-500 mt-1">
+                마지막 업데이트: {{ nodesInfo.timestamp }}
+              </div>
+            </div>
+            <div class="flex items-center gap-4">
+              <div v-if="nodeStats" class="text-sm text-gray-600">
+                총 {{ nodeStats.total }}개 노드 • K8s: {{ nodeStats.k8sActive }}개 • SLURM: {{ nodeStats.slurmActive }}개
+              </div>
+            </div>
+          </div>
+        </template>
+        
+        <div v-if="!resourceHealth" class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <div class="flex items-center gap-2 text-yellow-800">
+            <div class="w-4 h-4 rounded-full bg-yellow-400"></div>
+            <span class="text-sm font-medium">Cubox API 서버에 연결할 수 없습니다</span>
+          </div>
+          <div class="text-xs text-yellow-700 mt-2 ml-6 space-y-1">
+            <p>다음 사항을 확인해주세요:</p>
+            <ul class="list-disc list-inside space-y-1 ml-2">
+              <li>mlops.cubox.ai 서버가 실행 중인지 확인</li>
+              <li>네트워크 연결 상태 확인</li>
+              <li>방화벽 또는 프록시 설정 확인</li>
+              <li>CORS 정책 설정 확인</li>
+            </ul>
+            <div class="mt-2 pt-2 border-t border-yellow-300">
+              <p class="text-yellow-600">API 서버 URL: <span class="font-mono">http://mlops.cubox.ai</span> (프록시: /api/cubox)</p>
+              <div class="mt-2 flex gap-2">
+                <button 
+                  @click="testApiConnection"
+                  class="px-3 py-1 bg-yellow-200 text-yellow-800 rounded text-xs hover:bg-yellow-300 transition-colors"
+                >
+                  연결 테스트
+                </button>
+                <span v-if="connectionTestResult" class="text-xs px-2 py-1 rounded" :class="connectionTestResult.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
+                  {{ connectionTestResult.message }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div v-else>
+          <!-- 클러스터 개요 -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="p-4 bg-green-50 rounded-lg border border-green-200">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm font-medium text-green-800">총 노드</p>
+                  <p class="text-2xl font-bold text-green-900">{{ nodeStats ? nodeStats.total : 0 }}</p>
+                </div>
+                <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                  <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm font-medium text-blue-800">K8s 활성</p>
+                  <p class="text-2xl font-bold text-blue-900">{{ nodeStats ? nodeStats.k8sActive : 0 }}</p>
+                  <p class="text-xs text-blue-600 mt-1">작업 실행 중</p>
+                </div>
+                <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div class="p-4 bg-purple-50 rounded-lg border border-purple-200">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm font-medium text-purple-800">SLURM 활성</p>
+                  <p class="text-2xl font-bold text-purple-900">{{ nodeStats ? nodeStats.slurmActive : 0 }}</p>
+                  <p class="text-xs text-purple-600 mt-1">작업 실행 중</p>
+                </div>
+                <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                  <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div class="p-4 bg-green-50 rounded-lg border border-green-200">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm font-medium text-green-800">사용가능 노드</p>
+                  <p class="text-2xl font-bold text-green-900">{{ nodeStats ? nodeStats.available : 0 }}</p>
+                  <p class="text-xs text-green-600 mt-1">새 작업 할당 가능</p>
+                </div>
+                <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                  <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 노드 상세 리스트 -->
+          <div class="bg-white rounded-lg border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-200">
+              <h4 class="text-lg font-medium text-gray-900">노드 상세 현황</h4>
+              <p class="text-sm text-gray-600 mt-1">각 노드의 Kubernetes 및 SLURM 상태를 확인할 수 있습니다.</p>
+            </div>
+            <div v-if="nodesInfo && nodesInfo.nodes" class="divide-y divide-gray-200">
+              <div 
+                v-for="(nodeInfo, nodeName) in nodesInfo.nodes" 
+                :key="nodeName"
+                class="px-6 py-4 hover:bg-gray-50 transition-colors"
+              >
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-4">
+                    <div class="flex-shrink-0">
+                      <div 
+                        class="w-10 h-10 rounded-full flex items-center justify-center"
+                        :class="getNodeStatusColor(nodeInfo)"
+                      >
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/>
+                        </svg>
+                      </div>
+                    </div>
+                    <div>
+                      <h5 class="text-sm font-medium text-gray-900">{{ nodeName }}</h5>
+                      <p class="text-xs text-gray-500">{{ getNodeDescription(nodeInfo) }}</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center space-x-2">
+                    <span 
+                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                      :class="getK8sStatusClass(nodeInfo)"
+                    >
+                      <div 
+                        class="w-1.5 h-1.5 rounded-full mr-1.5"
+                        :class="getK8sStatusDotClass(nodeInfo)"
+                      ></div>
+                      K8s {{ getK8sStatusText(nodeInfo) }}
+                    </span>
+                    <span 
+                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                      :class="getSlurmStatusClass(nodeInfo)"
+                    >
+                      <div 
+                        class="w-1.5 h-1.5 rounded-full mr-1.5"
+                        :class="getSlurmStatusDotClass(nodeInfo)"
+                      ></div>
+                      SLURM {{ getSlurmStatusText(nodeInfo) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-else class="px-6 py-8 text-center">
+              <div class="text-gray-400">
+                <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">노드 정보 없음</h3>
+                <p class="mt-1 text-sm text-gray-500">데이터를 로딩 중이거나 연결에 문제가 있습니다.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </UCard>
     </div>
   </div>
 </template>
@@ -319,12 +544,37 @@ const pageTitle = ref('GPU Monitoring')
 
 // GPU 모니터링 로직
 const { fetchCurrentMetrics, fetchTimeSeriesData, testConnection } = useGpuMetrics()
+// Resource API 추가
+const { healthCheck, getResourceInfo, getResourceStatus, getNodes } = useResourceAPI()
+const { submitJob, getJobStatus, getJobOutput } = useSlurmAPI()
 const loading = ref(false)
 const isConnected = ref(false)
 const selectedPeriod = ref(15)
 const selectedInstanceFilter = ref('all')
 const currentMetrics = ref({})
 const timeSeriesData = ref({})
+
+// Resource API 관련 상태
+const resourceHealth = ref(false)
+const resourceInfo = ref(null)
+const resourceStatus = ref(null)
+const nodesInfo = ref(null)
+const connectionTestResult = ref(null)
+
+// 탭 상태
+const activeTab = ref('internal')
+
+// 탭 변경 시 차트 재초기화
+watch(activeTab, async (newTab) => {
+  if (newTab === 'internal') {
+    await nextTick()
+    // 차트 DOM이 완전히 렌더링된 후 초기화
+    setTimeout(async () => {
+      await initCharts()
+      updateCharts()
+    }, 200)
+  }
+})
 
 const timePeriods = [
   { value: 15, label: '15분' },
@@ -599,6 +849,26 @@ const avgTensorUtil = computed(() => {
   return tensors.reduce((sum, item) => sum + item.currentValue, 0) / tensors.length
 })
 
+// 노드 통계 계산
+const nodeStats = computed(() => {
+  if (!nodesInfo.value || !nodesInfo.value.nodes) return null
+  
+  const nodes = nodesInfo.value.nodes
+  const total = Object.keys(nodes).length
+  // k8s_dummy=true면 SLURM이 활성상태, slurm_dummy=true면 K8s가 활성상태
+  const k8sActive = Object.values(nodes).filter(node => node.slurm_dummy).length
+  const slurmActive = Object.values(nodes).filter(node => node.k8s_dummy).length
+  // 둘 다 false일 때 사용가능
+  const available = Object.values(nodes).filter(node => !node.k8s_dummy && !node.slurm_dummy).length
+  
+  return {
+    total,
+    k8sActive,
+    slurmActive,
+    available
+  }
+})
+
 // 유틸리티 함수들
 const getUniqueColor = (displayKey) => {
   if (colorMap.has(displayKey)) {
@@ -638,6 +908,123 @@ const formatMemoryValue = (value) => {
   return `${value} GB`
 }
 
+// 노드 상태 관련 헬퍼 함수들
+const getNodeStatusColor = (nodeInfo) => {
+  // k8s_dummy=true면 SLURM 활성, slurm_dummy=true면 K8s 활성
+  const k8sActive = nodeInfo.slurm_dummy
+  const slurmActive = nodeInfo.k8s_dummy
+  
+  if (k8sActive && slurmActive) {
+    return 'bg-red-500' // 둘 다 활성상태 (사용 불가)
+  } else if (k8sActive || slurmActive) {
+    return 'bg-yellow-500' // 하나만 활성상태
+  } else {
+    return 'bg-green-500' // 둘 다 사용가능 (둘 다 false)
+  }
+}
+
+const getNodeDescription = (nodeInfo) => {
+  // k8s_dummy=true면 SLURM 활성, slurm_dummy=true면 K8s 활성
+  const k8sActive = nodeInfo.slurm_dummy
+  const slurmActive = nodeInfo.k8s_dummy
+  
+  if (slurmActive) {
+    return 'SLURM 작업 실행 중 (K8s 사용 불가)'
+  } else if (k8sActive) {
+    return 'K8s 작업 실행 중 (SLURM 사용 불가)'
+  } else {
+    return '모든 서비스 사용가능'
+  }
+}
+
+// K8s 상태 관련 함수들
+const getK8sStatusClass = (nodeInfo) => {
+  // k8s_dummy=true면 SLURM 활성, slurm_dummy=true면 K8s 활성
+  const slurmActive = nodeInfo.k8s_dummy  // k8s_dummy=true면 SLURM이 활성
+  const k8sActive = nodeInfo.slurm_dummy  // slurm_dummy=true면 K8s가 활성
+  
+  if (slurmActive) {
+    // SLURM이 활성상태면 K8s는 사용 불가
+    return 'bg-gray-100 text-gray-800'
+  } else if (k8sActive) {
+    // K8s 활성상태
+    return 'bg-blue-100 text-blue-800'
+  } else {
+    // K8s 사용가능 (둘 다 false)
+    return 'bg-green-100 text-green-800'
+  }
+}
+
+const getK8sStatusDotClass = (nodeInfo) => {
+  const slurmActive = nodeInfo.k8s_dummy
+  const k8sActive = nodeInfo.slurm_dummy
+  
+  if (slurmActive) {
+    return 'bg-gray-400'  // SLURM 활성으로 인한 사용 불가
+  } else if (k8sActive) {
+    return 'bg-blue-400'  // K8s 활성상태
+  } else {
+    return 'bg-green-400' // K8s 사용가능
+  }
+}
+
+const getK8sStatusText = (nodeInfo) => {
+  const slurmActive = nodeInfo.k8s_dummy
+  const k8sActive = nodeInfo.slurm_dummy
+  
+  if (slurmActive) {
+    return '사용 불가'  // SLURM 활성으로 인한 사용 불가
+  } else if (k8sActive) {
+    return '활성상태'   // K8s 작업 실행 중
+  } else {
+    return '사용가능'   // K8s 사용가능
+  }
+}
+
+// SLURM 상태 관련 함수들
+const getSlurmStatusClass = (nodeInfo) => {
+  // k8s_dummy=true면 SLURM 활성, slurm_dummy=true면 K8s 활성
+  const k8sActive = nodeInfo.slurm_dummy  // slurm_dummy=true면 K8s가 활성
+  const slurmActive = nodeInfo.k8s_dummy  // k8s_dummy=true면 SLURM이 활성
+  
+  if (k8sActive) {
+    // K8s가 활성상태면 SLURM은 사용 불가
+    return 'bg-gray-100 text-gray-800'
+  } else if (slurmActive) {
+    // SLURM 활성상태
+    return 'bg-purple-100 text-purple-800'
+  } else {
+    // SLURM 사용가능 (둘 다 false)
+    return 'bg-green-100 text-green-800'
+  }
+}
+
+const getSlurmStatusDotClass = (nodeInfo) => {
+  const k8sActive = nodeInfo.slurm_dummy
+  const slurmActive = nodeInfo.k8s_dummy
+  
+  if (k8sActive) {
+    return 'bg-gray-400'    // K8s 활성으로 인한 사용 불가
+  } else if (slurmActive) {
+    return 'bg-purple-400'  // SLURM 활성상태
+  } else {
+    return 'bg-green-400'   // SLURM 사용가능
+  }
+}
+
+const getSlurmStatusText = (nodeInfo) => {
+  const k8sActive = nodeInfo.slurm_dummy
+  const slurmActive = nodeInfo.k8s_dummy
+  
+  if (k8sActive) {
+    return '사용 불가'  // K8s 활성으로 인한 사용 불가
+  } else if (slurmActive) {
+    return '활성상태'   // SLURM 작업 실행 중
+  } else {
+    return '사용가능'   // SLURM 사용가능
+  }
+}
+
 // 이벤트 핸들러
 const changePeriod = (period) => {
   selectedPeriod.value = period
@@ -652,6 +1039,67 @@ const onInstanceFilterChange = () => {
 
 const refreshData = async () => {
   await fetchData()
+  await fetchResourceData()
+}
+
+const testApiConnection = async () => {
+  connectionTestResult.value = { success: false, message: '테스트 중...' }
+  
+  try {
+    // 프록시를 통한 테스트
+    const response = await fetch('/api/cubox/health', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
+    
+    if (response.ok) {
+      const data = await response.json()
+      connectionTestResult.value = { 
+        success: true, 
+        message: `연결 성공 (${response.status})` 
+      }
+    } else {
+      connectionTestResult.value = { 
+        success: false, 
+        message: `HTTP ${response.status} 오류` 
+      }
+    }
+  } catch (error) {
+    console.error('Connection test error:', error)
+    connectionTestResult.value = { 
+      success: false, 
+      message: `연결 실패: ${error.message}` 
+    }
+  }
+}
+
+const fetchResourceData = async () => {
+  try {
+    // 헬스 체크
+    try {
+      await healthCheck()
+      resourceHealth.value = true
+    } catch (error) {
+      resourceHealth.value = false
+      // 헬스 체크 실패 시 다른 API 호출하지 않음
+      return
+    }
+
+    // 리소스 정보와 상태는 필요하지 않으므로 제거
+
+    // 노드 정보 가져오기
+    try {
+      nodesInfo.value = await getNodes()
+    } catch (error) {
+      // 조용히 실패 처리 (콘솔 로그 제거)
+      nodesInfo.value = null
+    }
+  } catch (error) {
+    // 전체 실패 시에만 로그
+    console.warn('Resource API temporarily unavailable')
+  }
 }
 
 const fetchData = async () => {
@@ -877,10 +1325,12 @@ const cleanupFunctions = ref([])
 onMounted(async () => {
   await initCharts()
   await fetchData()
+  await fetchResourceData()
 
   const interval = setInterval(() => {
     if (!loading.value) {
       fetchData()
+      fetchResourceData()
     }
   }, 30000)
 

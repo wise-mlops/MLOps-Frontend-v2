@@ -70,6 +70,11 @@ const links = [
     label: 'GPU MONITORING',
     icon: 'i-heroicons-computer-desktop',
     to: '/gpu-monitoring'
+  },
+  {
+    label: 'GPU CLUSTERING',
+    icon: 'i-heroicons-server-stack',
+    to: '/gpu-clustering'
   }
 ]
 </script>

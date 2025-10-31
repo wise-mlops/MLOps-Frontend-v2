@@ -51,5 +51,28 @@ export default defineNuxtConfig({
       baseURL: process.env.APP_BASE_URL || "/",
       prometheusUrl: process.env.PROMETHEUS_URL || 'http://local.prometheus.web.labs.wisenut.com'
     },
+  },
+  nitro: {
+    devProxy: {
+      '/api/cubox': {
+        target: 'http://mlops.cubox.ai',
+        changeOrigin: true,
+        prependPath: true,
+        pathRewrite: {
+          '^/api/cubox': ''
+        },
+        headers: {
+          'Origin': 'http://mlops.cubox.ai',
+          'Referer': 'http://mlops.cubox.ai'
+        },
+        onProxyReq: (proxyReq, req, res) => {
+          // Remove problematic headers
+          proxyReq.removeHeader('referrer-policy')
+          proxyReq.removeHeader('sec-fetch-dest')
+          proxyReq.removeHeader('sec-fetch-mode')
+          proxyReq.removeHeader('sec-fetch-site')
+        }
+      }
+    }
   }
 })
