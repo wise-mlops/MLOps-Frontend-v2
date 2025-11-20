@@ -4,7 +4,7 @@ stages:
 
 deploy-container-image:
   stage: deploy
-  image: docker:stable
+  image: docker:23.0.1
   services:
     - docker:dind
   script:
