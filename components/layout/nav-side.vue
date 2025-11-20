@@ -12,9 +12,14 @@
 const route = useRoute()
 const links = [
   {
-    label: 'HOME',
-    icon: 'i-heroicons-home',
-    to: '/'
+    label: 'GPU MONITORING',
+    icon: 'i-heroicons-computer-desktop',
+    to: '/gpu-monitoring'
+  },
+  {
+    label: 'GPU CLUSTERING',
+    icon: 'i-heroicons-server-stack',
+    to: '/gpu-clustering'
   },
   {
     label: 'EXPERIMENTS',
@@ -42,11 +47,6 @@ const links = [
     to: '/endpoints'
   },
   {
-    label: 'EVALUATIONS',
-    icon: 'i-heroicons-chart-bar',
-    to: '/evaluations'
-  },
-  {
     label: 'NOTEBOOKS',
     icon: 'i-heroicons-document-text',
     to: '/notebooks'
@@ -65,16 +65,6 @@ const links = [
     label: 'AUTO ML',
     icon: 'i-heroicons-cog',
     to: '/auto-ml'
-  },
-  {
-    label: 'GPU MONITORING',
-    icon: 'i-heroicons-computer-desktop',
-    to: '/gpu-monitoring'
-  },
-  {
-    label: 'GPU CLUSTERING',
-    icon: 'i-heroicons-server-stack',
-    to: '/gpu-clustering'
   }
 ]
 </script>
